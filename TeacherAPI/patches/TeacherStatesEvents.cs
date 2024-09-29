@@ -2,7 +2,7 @@
 
 namespace TeacherAPI.patches
 {
-    [HarmonyPatch(typeof(HappyBaldi), nameof(HappyBaldi.OnTriggerExit))]
+    [HarmonyPatch(typeof(HappyBaldi), "OnTriggerExit")]
     internal class OnTriggerExitPatch
     {
         internal static bool Prefix()
@@ -17,7 +17,7 @@ namespace TeacherAPI.patches
                 return false;
             }
 
-            return true;
+            return !TeacherManager.Instance.SpoopModeActivated;
         }
     }
 

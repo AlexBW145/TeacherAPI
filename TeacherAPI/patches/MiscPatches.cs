@@ -13,4 +13,13 @@ namespace TeacherAPI.patches
             return !TeacherAPIConfiguration.DebugMode.Value;
         }
     }
+
+    [HarmonyPatch(typeof(BaseGameManager), "PrepareToLoad")]
+    class NoMoreSound
+    {
+        static void Postfix()
+        {
+            CoreGameManager.Instance.musicMan.FlushQueue(true);
+        }
+    }
 }

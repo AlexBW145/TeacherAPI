@@ -4,6 +4,7 @@ using BepInEx.Logging;
 using HarmonyLib;
 using MTM101BaldAPI;
 using MTM101BaldAPI.AssetTools;
+using MTM101BaldAPI.Reflection;
 using MTM101BaldAPI.Registers;
 using System;
 using System.Collections.Generic;
@@ -17,7 +18,7 @@ using static BepInEx.BepInDependency;
 
 namespace TeacherAPI
 {
-    [BepInPlugin("sakyce.baldiplus.teacherapi", "Teacher API", PluginInfo.PLUGIN_VERSION)]
+    [BepInPlugin("alexbw145.baldiplus.teacherapi", "Teacher API", PluginInfo.PLUGIN_VERSION)]
     [BepInDependency("mtm101.rulerp.bbplus.baldidevapi", DependencyFlags.HardDependency)]
     [BepInDependency("mtm101.rulerp.baldiplus.endlessfloors", DependencyFlags.SoftDependency)]
     public class TeacherPlugin : BaseUnityPlugin
@@ -44,7 +45,7 @@ namespace TeacherAPI
 Please read the instructions to report any bugs in the mod page!
 If you encounter an error, send me the Logs!", false);
             }
-            new Harmony("sakyce.baldiplus.teacherapi").PatchAllConditionals();
+            new Harmony("alexbw145.baldiplus.teacherapi").PatchAllConditionals();
             GeneratorManagement.Register(this, GenerationModType.Base, EditGenerator);
         }
         private void EditGenerator(string floorName, int floorNumber, LevelObject floorObject)
@@ -111,7 +112,7 @@ If you encounter an error, send me the Logs!", false);
         /// <param name="teacher"></param>
         public static void RegisterTeacher(Teacher teacher)
         {
-            teacher.ignorePlayerOnSpawn = true; // Or else, the teacher won't spawn instantly.
+            teacher.ReflectionSetVariable("ignorePlayerOnSpawn", true); // Or else, the teacher won't spawn instantly.
             Instance.whoAreTeachers.Add(teacher.Character, teacher);
         }
 

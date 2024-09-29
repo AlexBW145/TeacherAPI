@@ -14,8 +14,8 @@ namespace TeacherAPI.patches
         internal static void Postfix(LevelGenerator __instance, ref IEnumerator __result)
         {
             var seed = CoreGameManager.Instance.Seed();
-            var man = __instance.ec.gameObject.AddComponent<TeacherManager>();
-            man.Initialize(__instance.ec, seed);
+            var man = __instance.Ec.gameObject.AddComponent<TeacherManager>();
+            man.Initialize(__instance.Ec, seed);
             TeacherPlugin.Instance.CurrentBaldi = TeacherPlugin.Instance.GetPotentialBaldi(__instance.ld);
 
             object itemAction(object obj)
@@ -33,7 +33,7 @@ namespace TeacherAPI.patches
                 var mainTeacher = WeightedSelection<Teacher>.ControlledRandomSelectionList(TeacherPlugin.Instance.potentialTeachers[__instance.ld], rng);
                 man.MainTeacherPrefab = mainTeacher;
                 TeacherPlugin.Instance.potentialTeachers[__instance.ld].PrintWeights("Potential Teachers", TeacherPlugin.Log);
-                TeacherPlugin.Log.LogInfo($"Selected Main Teacher {EnumExtensions.GetExtendedName<Character>((int)mainTeacher.character)}");
+                TeacherPlugin.Log.LogInfo($"Selected Main Teacher {EnumExtensions.GetExtendedName<Character>((int)mainTeacher.Character)}");
 
                 // Assistants setup
                 var policy = mainTeacher.GetAssistantPolicy();
@@ -49,7 +49,7 @@ namespace TeacherAPI.patches
                     if (potentialAssistants.Count > 0 && rng.NextDouble() <= policy.probability && !TeacherAPIConfiguration.DisableAssistingTeachers.Value)
                     {
                         var i = WeightedSelection<Teacher>.ControlledRandomIndex(potentialAssistants.ToArray(), rng);
-                        TeacherPlugin.Log.LogInfo($"Selected Teacher {EnumExtensions.GetExtendedName<Character>((int)potentialAssistants[i].selection.character)}");
+                        TeacherPlugin.Log.LogInfo($"Selected Teacher {EnumExtensions.GetExtendedName<Character>((int)potentialAssistants[i].selection.Character)}");
                         man.assistingTeachersPrefabs.Add(potentialAssistants[i].selection);
                         potentialAssistants.Remove(potentialAssistants[i]);
                     }

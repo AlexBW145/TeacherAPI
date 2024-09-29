@@ -1,8 +1,10 @@
 ﻿using HarmonyLib;
 using MTM101BaldAPI;
+using MTM101BaldAPI.Reflection;
 using System;
 using System.Collections;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 
 namespace TeacherAPI
@@ -26,10 +28,20 @@ namespace TeacherAPI
         private TeacherManager teacherManager;
         public TeacherManager TeacherManager { get => teacherManager; }
 
+        FieldInfo _slapCurve = AccessTools.DeclaredField(typeof(Baldi), "slapCurve");
+        FieldInfo _speedCurve = AccessTools.DeclaredField(typeof(Baldi), "speedCurve");
+        FieldInfo _breakRuler = AccessTools.DeclaredField(typeof(Baldi), "breakRuler");
+        FieldInfo _restoreRuler = AccessTools.DeclaredField(typeof(Baldi), "restoreRuler");
+
         // Overrides
         public override void Initialize()
         {
-            base.Initialize();
+            navigator.Initialize(ec);
+            /*
+             * To: typeof(Baldi_Chase)
+             * You stink, you used ResetSprite() on your initialization!!
+             * From: AlexBW145
+             */
 
             // Cancel state machine of bladder
             behaviorStateMachine.ChangeState(new TeacherState(this));
@@ -37,8 +49,8 @@ namespace TeacherAPI
 
             var baseBaldi = TeacherPlugin.Instance.originalBaldiPerFloor[Singleton<BaseGameManager>.Instance.levelObject];
             TeacherPlugin.Log.LogInfo($"Using {baseBaldi.name} as base Baldi.");
-            slapCurve = baseBaldi.slapCurve;
-            speedCurve = baseBaldi.speedCurve;
+            _slapCurve.SetValue(this, baseBaldi.ReflectionGetVariable("slapCurve"));
+            _speedCurve.SetValue(this, baseBaldi.ReflectionGetVariable("speedCurve"));
 
             baseSpeed = baseBaldi.baseSpeed;
             baseAnger = baseBaldi.baseAnger;
@@ -63,7 +75,7 @@ namespace TeacherAPI
             {
                 MTM101BaldiDevAPI.CauseCrash(TeacherPlugin.Instance.Info, e);
             }
-            Singleton<CoreGameManager>.Instance.GetCamera(0).offestPos += caughtOffset;
+            CoreGameManager.Instance.GetCamera(0).offestPos += caughtOffset;
         }
 
         /// <summary>
@@ -97,44 +109,47 @@ namespace TeacherAPI
             this.slapDistance = this.nextSlapDistance;
             this.nextSlapDistance = 0f;
             this.navigator.SetSpeed(this.slapDistance / (this.Delay * this.MovementPortion));
-            if (breakRuler)
+            if ((bool)_breakRuler.GetValue(this))
             {
                 OnRulerBroken();
-                breakRuler = false;
+                _breakRuler.SetValue(this, false);
                 return;
             }
-            if (restoreRuler)
+            if ((bool)_restoreRuler.GetValue(this))
             {
                 OnRulerRestored();
-                restoreRuler = false;
+                _restoreRuler.SetValue(this, false);
                 return;
             }
         }
 
+        public new void ResetSprite()
+        {
+
+        }
+
         // Methods to customize Teacher
         /// <summary>
-        /// Replace w
+        /// Replace the event text of the initialized event.
         /// </summary>
         /// <typeparam name="RandomEvent"></typeparam>
         /// <param name="text"></param>
+        [Obsolete("Since v0.6.0, event text was replaced with the Baldi TV and a SoundObject intro.")]
         public void ReplaceEventText<RandomEvent>(string text) where RandomEvent : global::RandomEvent
         {
-            if (TeacherManager.MainTeacherPrefab.character != Character) return;
+            Debug.Log("This is not v0.3.8 or v0.5.2, use `ReplaceEventText<RandomEvent>(SoundObject aud)` instead!");
+        }
+        /// <summary>
+        /// Replace the event audio of the initialized event.
+        /// </summary>
+        /// <typeparam name="RandomEvent"></typeparam>
+        /// <param name="aud"></param>
+        public void ReplaceEventText<RandomEvent>(SoundObject aud) where RandomEvent : global::RandomEvent
+        {
+            if (TeacherManager.MainTeacherPrefab.Character != Character) return;
             var events = ec.gameObject.GetComponentsInChildren<RandomEvent>();
             foreach (var randomEvent in events)
-            {
-                randomEvent.eventDescKey = text;
-            }
-
-#if DEBUG
-            // For manually triggered random events
-            var eventsInResources = Resources.FindObjectsOfTypeAll<RandomEvent>();
-            foreach (var randomEvent in eventsInResources)
-            {
-                randomEvent.eventDescKey = text;
-                Debug.LogWarning("Changed event key in Resources, this will need to be reset by a script. (DEBUG BUILD)");
-            }
-#endif
+                randomEvent.ReflectionSetVariable("eventIntro", aud);
         }
 
         /// <summary>
@@ -180,27 +195,31 @@ namespace TeacherAPI
         {
             if (TeacherManager.Instance.SpoopModeActivated)
             {
-                if (Singleton<CoreGameManager>.Instance.currentMode == Mode.Free)
+                if (CoreGameManager.Instance.currentMode == Mode.Free)
                     Despawn();
                 return;
             }
 
             // For which who have spawned the custom teacher after Baldi
             var happyBaldi = ec.GetComponentInChildren<HappyBaldi>();
-            if (happyBaldi) happyBaldi.sprite.enabled = false;
+            if (happyBaldi != null)
+            {
+                var spr = happyBaldi.ReflectionGetVariable("sprite") as SpriteRenderer;
+                spr.enabled = false;
+            }
 
             TeacherManager.Instance.SpoopModeActivated = true;
-            Singleton<MusicManager>.Instance.StopMidi();
-            Singleton<BaseGameManager>.Instance.BeginSpoopMode();
+            MusicManager.Instance.StopMidi();
+            BaseGameManager.Instance.BeginSpoopMode();
             if (!disableNpcs)
             {
                 ec.SpawnNPCs();
             }
-            if (Singleton<CoreGameManager>.Instance.currentMode == Mode.Main)
+            if (CoreGameManager.Instance.currentMode == Mode.Main)
             {
                 // Teacher is already in HappyBaldi position, do nothing.
             }
-            else if (Singleton<CoreGameManager>.Instance.currentMode == Mode.Free)
+            else if (CoreGameManager.Instance.currentMode == Mode.Free)
             {
                 Despawn();
             }
@@ -208,7 +227,7 @@ namespace TeacherAPI
             foreach (var notebook in ec.notebooks)
             {
                 var teacherNotebook = notebook.gameObject.GetComponent<TeacherNotebook>();
-                if (TeacherManager.MainTeacherPrefab.character != teacherNotebook.character)
+                if (TeacherManager.MainTeacherPrefab.Character != teacherNotebook.character)
                 {
                     notebook.Hide(false);
                 }
@@ -241,13 +260,15 @@ namespace TeacherAPI
                 yield break;
             }
             // Because the midi isn't playing immediatlely obviously very ugly hack pls help me
-            Singleton<MusicManager>.Instance.MidiPlayer.MPTK_Volume = 0;
+            MusicManager.Instance.MidiPlayer.MPTK_Volume = 0;
             yield return new WaitForSeconds(0.05f);
-            Singleton<MusicManager>.Instance.StopMidi();
-            ec.audMan.FlushQueue(true);
-            if (snd) ec.audMan.PlaySingle(snd);
+            MusicManager.Instance.StopMidi();
+            if (snd) { // May conflict with The Thinker character from Playable Characters mod.
+                CoreGameManager.Instance.musicMan.QueueAudio(snd, true);
+                CoreGameManager.Instance.musicMan.SetLoop(true);
+            }
             yield return new WaitForSeconds(0.25f);
-            Singleton<MusicManager>.Instance.MidiPlayer.MPTK_Volume = 1;
+            MusicManager.Instance.MidiPlayer.MPTK_Volume = 1;
             yield break;
         }
     }

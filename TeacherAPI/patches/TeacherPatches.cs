@@ -1,7 +1,9 @@
 ﻿using HarmonyLib;
 using MTM101BaldAPI;
+using MTM101BaldAPI.Reflection;
 using System;
 using System.Linq;
+using UnityEngine;
 
 namespace TeacherAPI.patches
 {
@@ -43,7 +45,7 @@ namespace TeacherAPI.patches
                         TeacherManager.Instance.SpawnedMainTeacher = teacher;
                     }
                 }
-                teacher.behaviorStateMachine.ChangeState(teacher.GetHappyState());
+                teacher.behaviorStateMachine.ChangeState(TeacherManager.Instance.SpoopModeActivated ? teacher.GetAngryState() :  teacher.GetHappyState());
                 teacher.HasInitialized = true;
             }
         }
@@ -64,10 +66,12 @@ namespace TeacherAPI.patches
                 __instance.Ec.SpawnNPC(teacherManager.MainTeacherPrefab, happyBaldiPos);
                 TeacherNotebook.RefreshNotebookText();
 
-                happyBaldi.sprite.enabled = false;
-                happyBaldi.audMan.enabled = false;
-                happyBaldi.audMan.disableSubtitles = true;
-                Singleton<MusicManager>.Instance.StopMidi();
+                var spr = happyBaldi.ReflectionGetVariable("sprite") as SpriteRenderer;
+                spr.enabled = false;
+                var aud = happyBaldi.ReflectionGetVariable("audMan") as AudioManager;
+                aud.enabled = false;
+                aud.ReflectionSetVariable("disableSubtitles", true);
+                MusicManager.Instance.StopMidi();
             }
 
             
@@ -81,7 +85,7 @@ namespace TeacherAPI.patches
                 try
                 {
                     __instance.Ec.SpawnNPC(prefab, cells[i].position);
-                } catch (IndexOutOfRangeException e)
+                } catch
                 {
                     TeacherPlugin.Log.LogError($"Can't spawn {EnumExtensions.GetExtendedName<Character>((int)prefab.Character)} because no notebooks have been assigned.");
                     break;
@@ -96,7 +100,7 @@ namespace TeacherAPI.patches
             }
         }
 
-        [HarmonyPatch(typeof(MainGameManager), nameof(MainGameManager.CreateHappyBaldi))]
+        [HarmonyPatch(typeof(MainGameManager), "CreateHappyBaldi")]
         internal class InMainGameManager
         {
             internal static void Postfix(MainGameManager __instance)
@@ -105,7 +109,7 @@ namespace TeacherAPI.patches
             }
         }
 
-        [HarmonyPatch(typeof(EndlessGameManager), nameof(EndlessGameManager.CreateHappyBaldi))]
+        [HarmonyPatch(typeof(EndlessGameManager), "CreateHappyBaldi")]
         internal class InEndlessGameManager
         {
             internal static void Postfix(EndlessGameManager __instance)

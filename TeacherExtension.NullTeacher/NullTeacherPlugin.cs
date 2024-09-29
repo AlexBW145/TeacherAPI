@@ -4,15 +4,17 @@ using MTM101BaldAPI;
 using MTM101BaldAPI.AssetTools;
 using MTM101BaldAPI.Components;
 using MTM101BaldAPI.ObjectCreation;
+using MTM101BaldAPI.Reflection;
 using MTM101BaldAPI.Registers;
+using MTM101BaldAPI.SaveSystem;
 using TeacherAPI;
 using UnityEngine;
 using static BepInEx.BepInDependency;
 
 namespace NullTeacher
 {
-    [BepInPlugin("sakyce.baldiplus.teacherextension.null", "Null Teacher for MoreTeachers", "1.0.0.0")]
-    [BepInDependency("sakyce.baldiplus.teacherapi", DependencyFlags.HardDependency)]
+    [BepInPlugin("alexbw145.baldiplus.teacherextension.null", "Null Teacher for MoreTeachers", "1.0.5.0")]
+    [BepInDependency("alexbw145.baldiplus.teacherapi", DependencyFlags.HardDependency)]
     [BepInDependency("mtm101.rulerp.bbplus.baldidevapi", DependencyFlags.HardDependency)]
     public class NullTeacherPlugin : BaseUnityPlugin
     {
@@ -21,11 +23,12 @@ namespace NullTeacher
 
         internal void Awake()
         {
-            new Harmony("sakyce.baldiplus.teacherextension.null").PatchAllConditionals();
+            new Harmony("alexbw145.baldiplus.teacherextension.null").PatchAllConditionals();
             Instance = this;
             TeacherPlugin.RequiresAssetsFolder(this); // Very important, or else people will complain about Beans!
             NullConfiguration.Setup();
             LoadingEvents.RegisterOnAssetsLoaded(Info, OnassetsLoaded, false);
+            ModdedSaveGame.AddSaveHandler(Info);
         }
 
         private void OnassetsLoaded()
@@ -41,7 +44,7 @@ namespace NullTeacher
                 .SetMinMaxAudioDistance(0, 1000)
                 .SetMetaTags(new string[] { "Teacher" })
                 .Build();
-            teacher.audMan = teacher.GetComponent<AudioManager>();
+            teacher.ReflectionSetVariable("audMan", teacher.GetComponent<AudioManager>());
 
             CustomSpriteAnimator animator = teacher.gameObject.AddComponent<CustomSpriteAnimator>();
             animator.spriteRenderer = teacher.spriteRenderer[0];

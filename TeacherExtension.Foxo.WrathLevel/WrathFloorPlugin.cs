@@ -1,4 +1,5 @@
 ﻿using BepInEx;
+using HarmonyLib;
 using MTM101BaldAPI.Registers;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,10 +10,10 @@ using static BepInEx.BepInDependency;
 namespace TeacherExtension.Foxo
 {
     // There is a lot of dependencies ik
-    [BepInPlugin("sakyce.baldiplus.teacherextension.foxo.wrathfloor", "Foxo Wrath Floor", "1.0.0.0")]
-    [BepInDependency("sakyce.baldiplus.teacherapi", DependencyFlags.HardDependency)]
+    [BepInPlugin("alexbw145.baldiplus.teacherextension.foxo.wrathfloor", "Foxo Wrath Floor", "1.0.0.0")]
+    [BepInDependency("alexbw145.baldiplus.teacherapi", DependencyFlags.HardDependency)]
     [BepInDependency("mtm101.rulerp.bbplus.baldidevapi", DependencyFlags.HardDependency)]
-    [BepInDependency("sakyce.baldiplus.teacherextension.foxo", DependencyFlags.HardDependency)]
+    [BepInDependency("alexbw145.baldiplus.teacherextension.foxo", DependencyFlags.HardDependency)]
     public class WrathFloorPlugin : BaseUnityPlugin
     {
         private static void EditLevelToWrath(LevelObject level)

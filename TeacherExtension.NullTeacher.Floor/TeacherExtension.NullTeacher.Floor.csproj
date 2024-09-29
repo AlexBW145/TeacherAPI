@@ -21,15 +21,15 @@
 	<!-- Post-build event for Debug configuration -->
 	<Target Name="PostBuildEventDebug" AfterTargets="PostBuildEvent" Condition="'$(Configuration)' == 'Debug'">
 		<Message Text="Debug post-build event running..." Importance="high" />
-		<Exec Command="echo F|xcopy /Y &quot;$(MSBuildProjectDirectory)\$(OutDir)$(AssemblyName).dll&quot; &quot;$(PluginGamePath)\TeacherAPI\$(AssemblyName).dll&quot;" />
-		<Exec Command="echo F|xcopy /Y &quot;$(MSBuildProjectDirectory)\$(OutDir)$(AssemblyName).pdb&quot; &quot;$(PluginGamePath)\TeacherAPI\$(AssemblyName).pdb&quot;" />
+		<Exec Command="echo F|xcopy /Y &quot;$(MSBuildProjectDirectory)\$(OutDir)$(AssemblyName).dll&quot; &quot;$(PluginGamePath)$(AssemblyName)\$(AssemblyName).dll&quot;" />
+		<Exec Command="echo F|xcopy /Y &quot;$(MSBuildProjectDirectory)\$(OutDir)$(AssemblyName).pdb&quot; &quot;$(PluginGamePath)$(AssemblyName)\$(AssemblyName).pdb&quot;" />
 	</Target>
 
 	<!-- Post-build event for Release configuration -->
 	<Target Name="PostBuildEventRelease" AfterTargets="PostBuildEvent" Condition="'$(Configuration)' == 'Release'">
 		<Message Text="Release post-build event running..." Importance="high" />
-		<Exec Command="echo F|xcopy /Y &quot;$(MSBuildProjectDirectory)\$(OutDir)$(AssemblyName).dll&quot; &quot;$(PluginGamePath)\TeacherAPI\$(AssemblyName).dll&quot;" />
-		<Exec Command="echo F|xcopy /Y &quot;$(MSBuildProjectDirectory)\$(OutDir)$(AssemblyName).pdb&quot; &quot;$(PluginGamePath)\TeacherAPI\$(AssemblyName).pdb&quot;" />
+		<Exec Command="echo F|xcopy /Y &quot;$(MSBuildProjectDirectory)\$(OutDir)$(AssemblyName).dll&quot; &quot;$(PluginGamePath)$(AssemblyName)\$(AssemblyName).dll&quot;" />
+		<Exec Command="echo F|xcopy /Y &quot;$(MSBuildProjectDirectory)\$(OutDir)$(AssemblyName).pdb&quot; &quot;$(PluginGamePath)$(AssemblyName)\$(AssemblyName).pdb&quot;" />
 	</Target>
 
 	<!-- Bepinex-->
@@ -45,9 +45,8 @@
 
 	<!-- Baldi dlls -->
 	<ItemGroup>
-
 		<Reference Include="Assembly-CSharp">
-		  <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Baldi's Basics Plus\BALDI_Data\Managed\Assembly-CSharp.dll</HintPath>
+			<HintPath>$(LibPath)Assembly-CSharp-publicized.dll</HintPath>
 		</Reference>
 
 		<Reference Include="MTM101BaldAPI">

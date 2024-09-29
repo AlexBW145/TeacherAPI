@@ -1,6 +1,5 @@
 ﻿using BepInEx.Configuration;
 using MTM101BaldAPI.OptionsAPI;
-using MTM101BaldAPI.Reflection;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -30,8 +29,7 @@ namespace TeacherAPI
             );
             toggle.GetComponentInChildren<TextMeshProUGUI>().GetComponent<RectTransform>().sizeDelta += new Vector2(200, 0);
             toggle.transform.SetParent(transform, false);
-            GameObject _hotspot = toggle.ReflectionGetVariable("hotspot") as GameObject;
-            _hotspot.GetComponent<StandardMenuButton>().OnPress.AddListener(() => config.Value = toggle.Value);
+            toggle.hotspot.GetComponent<StandardMenuButton>().OnPress.AddListener(() => config.Value = toggle.Value);
             i++;
         }
         private void AddLabel(string title, Vector2 pos, Vector2 size)

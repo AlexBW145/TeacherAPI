@@ -1,40 +1,33 @@
 ﻿using BepInEx;
 using HarmonyLib;
-using MidiPlayerTK;
 using MTM101BaldAPI;
 using MTM101BaldAPI.AssetTools;
 using MTM101BaldAPI.Components;
 using MTM101BaldAPI.ObjectCreation;
-using MTM101BaldAPI.Reflection;
 using MTM101BaldAPI.Registers;
-using MTM101BaldAPI.SaveSystem;
-using System;
 using System.Linq;
 using TeacherAPI;
-using UnityCipher;
 using UnityEngine;
 using static BepInEx.BepInDependency;
 
 namespace TeacherExtension.Foxo
 {
-    [BepInPlugin("alexbw145.baldiplus.teacherextension.foxo", "Foxo Teacher for MoreTeachers", "1.1.0.0")]
-    [BepInDependency("alexbw145.baldiplus.teacherapi", DependencyFlags.HardDependency)]
+    [BepInPlugin("sakyce.baldiplus.teacherextension.foxo", "Foxo Teacher for MoreTeachers", "1.0.0.0")]
+    [BepInDependency("sakyce.baldiplus.teacherapi", DependencyFlags.HardDependency)]
     [BepInDependency("mtm101.rulerp.bbplus.baldidevapi", DependencyFlags.HardDependency)]
     public class FoxoPlugin : BaseUnityPlugin
     {
         public static FoxoPlugin Instance { get; private set; }
         public Foxo Foxo { get; private set; }
         public Foxo DarkFoxo { get; private set; }
-        public FoxoSave deathCounter = new FoxoSave();
 
         internal void Awake()
         {
-            new Harmony("alexbw145.baldiplus.teacherextension.foxo").PatchAllConditionals();
+            new Harmony("sakyce.baldiplus.teacherextension.foxo").PatchAllConditionals();
             Instance = this;
             FoxoConfiguration.Setup();
             TeacherPlugin.RequiresAssetsFolder(this); // Critical!!!
             LoadingEvents.RegisterOnAssetsLoaded(Info, OnAssetsLoaded, false);
-            ModdedSaveGame.AddSaveHandler(deathCounter);
         }
 
         private Foxo NewFoxo(string name)
@@ -45,10 +38,9 @@ namespace TeacherExtension.Foxo
                 .SetPoster(ObjectCreators.CreatePosterObject(new Texture2D[] { AssetLoader.TextureFromMod(this, "poster.png") }))
                 .AddLooker()
                 .AddTrigger()
-                .DisableNavigationPrecision()
                 .SetMetaTags(new string[] { "Teacher" })
                 .Build();
-            newFoxo.ReflectionSetVariable("audMan", newFoxo.GetComponent<AudioManager>());
+            newFoxo.audMan = newFoxo.GetComponent<AudioManager>();
 
             // Adds a custom animator
             CustomSpriteAnimator animator = newFoxo.gameObject.AddComponent<CustomSpriteAnimator>();
@@ -81,36 +73,8 @@ namespace TeacherExtension.Foxo
             if (floorName.StartsWith("F") || floorName.StartsWith("END") || floorName.Equals("INF"))
             {
                 floorObject.AddPotentialTeacher(Foxo, FoxoConfiguration.Weight.Value);
-                floorObject.AddPotentialAssistingTeacher(Foxo, FoxoConfiguration.Weight.Value);
                 print($"Added Foxo to {floorName} (Floor {floorNumber})");
             }
-        }
-    }
-
-    public class FoxoSave : ModdedSaveGameIOText
-    {
-        public override BepInEx.PluginInfo pluginInfo => FoxoPlugin.Instance.Info;
-        public int deaths { get; internal set; }
-
-        public override void LoadText(string toLoad)
-        {
-            deaths = Convert.ToInt32(RijndaelEncryption.Decrypt(toLoad, "FoxoTeacher_" + PlayerFileManager.Instance.fileName));
-        }
-
-        public override void Reset()
-        {
-            deaths = 0;
-        }
-
-        public override string SaveText()
-        {
-            return RijndaelEncryption.Encrypt(deaths.ToString(), "FoxoTeacher_" + PlayerFileManager.Instance.fileName);
-        }
-
-        public override void OnCGMCreated(CoreGameManager instance, bool isFromSavedGame)
-        {
-            if (!isFromSavedGame)
-                deaths = 0;
         }
     }
 }

@@ -1,6 +1,5 @@
 ﻿using HarmonyLib;
 using MTM101BaldAPI;
-using MTM101BaldAPI.Reflection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -73,8 +72,7 @@ namespace TeacherAPI
             if (randomTeacher.sprites != null)
             {
                 var i = teacherMan.controlledRng.Next(randomTeacher.sprites.Count());
-                SpriteRenderer sprite = notebook.ReflectionGetVariable("sprite") as SpriteRenderer;
-                sprite.sprite = randomTeacher.sprites[i];
+                notebook.sprite.sprite = randomTeacher.sprites[i];
             }
             if (randomTeacher.sound != null)
             {
@@ -92,8 +90,7 @@ namespace TeacherAPI
             {
                 var notebook = gameObject.GetComponent<Notebook>();
                 var i = teacherMan.controlledRng.Next(sprites.Count());
-                SpriteRenderer sprite = notebook.ReflectionGetVariable("sprite") as SpriteRenderer;
-                sprite.sprite = sprites[i];
+                notebook.sprite.sprite = sprites[i];
             }
         }
         internal void OnCollect()
@@ -139,12 +136,12 @@ namespace TeacherAPI
                     ) + '\n';
                 }
                 CoreGameManager.Instance.GetHud(0).gameObject.GetComponent<RectTransform>().sizeDelta = new Vector2(800, 200);
-                CoreGameManager.Instance.GetHud(0).UpdateNotebookText(0, notebookText, true);
+                CoreGameManager.Instance.GetHud(0).UpdateText(0, notebookText);
             }
         }
     }
 
-    [HarmonyPatch(typeof(Notebook), "Start")]
+    [HarmonyPatch(typeof(Notebook), nameof(Notebook.Start))]
     internal static class AttachTeacherNotebook
     {
         internal static void Postfix(Notebook __instance)
@@ -170,13 +167,13 @@ namespace TeacherAPI
     [HarmonyPatch(typeof(MathMachine), nameof(MathMachine.NumberClicked))]
     internal static class PreventMathMachinesFromBeingSolved
     {
-        internal static bool Prefix(MathMachine __instance, ref Notebook ___notebook, ref AudioManager ___audMan, ref SoundObject ___audLose)
+        internal static bool Prefix(MathMachine __instance)
         {
             if (TeacherManager.DefaultBaldiEnabled) return true;
-            var teacherNotebook = ___notebook.gameObject.GetComponent<TeacherNotebook>();
+            var teacherNotebook = __instance.notebook.gameObject.GetComponent<TeacherNotebook>();
             if (!teacherNotebook.teacherMan.SpoopModeActivated && teacherNotebook.character != teacherNotebook.teacherMan.MainTeacherPrefab.Character)
             {
-                ___audMan.PlaySingle(___audLose);
+                __instance.audMan.PlaySingle(__instance.audLose);
                 return false;
             }
             return true;
@@ -184,7 +181,7 @@ namespace TeacherAPI
     }
 
     // Fixes the texture of the notebook being overwritten by defaults when spawning from math machine
-    [HarmonyPatch(typeof(Notebook), "Start")]
+    [HarmonyPatch(typeof(Notebook), nameof(Notebook.Start))]
     internal static class SetNotebookTextureOnStart 
     {
         internal static void Postfix(Notebook __instance)

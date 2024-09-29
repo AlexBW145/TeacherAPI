@@ -1,5 +1,4 @@
 ﻿using MTM101BaldAPI.Components;
-using MTM101BaldAPI.Reflection;
 using System.Collections.Generic;
 using System.Linq;
 using TeacherAPI;
@@ -10,7 +9,7 @@ namespace NullTeacher
 {
     public class NullTeacher : Teacher
     {
-        public CustomSpriteAnimator animator;
+        public new CustomSpriteAnimator animator;
 
         public HashSet<NullPhrase> saidPhrases = new HashSet<NullPhrase>();
         public HashSet<Items> usefulItems = new HashSet<Items>();
@@ -59,12 +58,12 @@ namespace NullTeacher
             animator.animations.Add("Normal", new CustomAnimation<Sprite>(new Sprite[] { NullAssets.nullsprite }, 1f));
             animator.animations.Add("Baldloon", new CustomAnimation<Sprite>(new Sprite[] { NullAssets.baldloon }, 1f));
             animator.SetDefaultAnimation(NullConfiguration.ReplaceNullWithBaldloon.Value ? "Baldloon" : "Normal", 1f);
-            looker.ReflectionSetVariable("layerMask", (LayerMask)98305); // can see windows at this layer
+            looker.layerMask = 98305; // can see windows at this layer
 
             navigator.Entity.SetHeight(5f);
 
             AddLoseSound(
-                CoreGameManager.Instance.Lives < 1 && (int)CoreGameManager.Instance.ReflectionGetVariable("extraLives") < 1
+                CoreGameManager.Instance.lives < 1 && CoreGameManager.Instance.extraLives < 1
                 ? NullAssets.phrases[NullPhrase.Haha]
                 : NullAssets.lose, 1);
 
@@ -83,10 +82,9 @@ namespace NullTeacher
             {
                 if (room.category.Equals(RoomCategory.Faculty) || room.category.Equals(RoomCategory.Hall) || room.category.Equals(RoomCategory.Office))
                 {
-                    Balloon[] bald = randomEvent.ReflectionGetVariable("balloon") as Balloon[];
                     for (var i = 0; i < Random.Range(4, 6); i++)
                     {
-                        Instantiate(bald[Random.Range(0, bald.Length)]).Initialize(room);
+                        Instantiate(randomEvent.balloon[Random.Range(0, randomEvent.balloon.Length)]).Initialize(room);
                     }
                 }
             }
@@ -107,7 +105,7 @@ namespace NullTeacher
         public override TeacherState GetHappyState() => new Null_Happy(this);
         public override string GetNotebooksText(string amount) => $"{amount} Noteboos";
         public override WeightedTeacherNotebook GetTeacherNotebookWeight() => new WeightedTeacherNotebook(this).Weight(100);
-        protected override void VirtualUpdate()
+        public override void VirtualUpdate()
         {
             base.VirtualUpdate();
 
@@ -145,7 +143,7 @@ namespace NullTeacher
                     var num = (dist - 30f) / 70f;
                     if (dist <= 30f)
                     {
-                        if (light.lightOn) light.SetLight(false);
+                        if (light.lightOn) ec.SetLight(false, light);
                     }
                     else if (dist <= 100)
                     {
@@ -153,14 +151,14 @@ namespace NullTeacher
                         {
                             if (!light.lightOn)
                             {
-                                if (Random.Range(0f, 1f) <= num) light.SetLight(true);
+                                if (Random.Range(0f, 1f) <= num) ec.SetLight(true, light);
                             }
-                            else if (Random.Range(0f, 1f) >= num) light.SetLight(false);
+                            else if (Random.Range(0f, 1f) >= num) ec.SetLight(false, light);
                         }
                     }
                     else if (light.lightOn)
                     {
-                        light.SetLight(true);
+                        ec.SetLight(true, light);
                     }
                 }
             }
@@ -215,13 +213,13 @@ namespace NullTeacher
         private void PlayGenericPhrase(NullPhrase phrase)
         {
             genericPhrases.Remove(phrase);
-            try { AudMan.QueueAudio(NullAssets.phrases[phrase]); }
+            try { audMan.QueueAudio(NullAssets.phrases[phrase]); }
             catch (KeyNotFoundException) { Debug.LogWarning($"No sound called {phrase} exists for Null yet"); }
         }
         private void PlayPhrase(NullPhrase phrase)
         {
             saidPhrases.Add(phrase);
-            try { AudMan.QueueAudio(NullAssets.phrases[phrase]); }
+            try { audMan.QueueAudio(NullAssets.phrases[phrase]); }
             catch (KeyNotFoundException) { Debug.LogWarning($"No sound called {phrase} exists for Null yet"); }
         }
 
@@ -235,7 +233,7 @@ namespace NullTeacher
                 case NullPhrase.Enough:
                 case NullPhrase.Hide:
                 case NullPhrase.Bored:
-                    if (!saidPhrases.Contains(phrase) && Random.Range(0f, 1f) <= chance && !AudMan.AnyAudioIsPlaying)
+                    if (!saidPhrases.Contains(phrase) && Random.Range(0f, 1f) <= chance && !audMan.AnyAudioIsPlaying)
                     {
                         PlayPhrase(phrase);
                     }

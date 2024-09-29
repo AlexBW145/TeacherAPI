@@ -16,7 +16,7 @@ namespace TeacherAPI
         /// <returns></returns>
         public static Teacher[] GetTeachers(this EnvironmentController ec)
         {
-            return (from npc in ec.Npcs where npc.IsTeacher() select (Teacher)npc).ToArray();
+            return (from npc in ec.npcs where npc.IsTeacher() select (Teacher)npc).ToArray();
         }
 
         /// <summary>

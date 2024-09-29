@@ -47,7 +47,7 @@ namespace TeacherAPI
 
 		public bool ContainsRealBaldi()
 		{
-            foreach (var baldi in Ec.Npcs)
+            foreach (var baldi in Ec.npcs)
             {
                 if (baldi.Character == Character.Baldi)
                 {
@@ -65,7 +65,7 @@ namespace TeacherAPI
         }
 		public Baldi GetRealBaldi()
 		{
-            foreach (var baldi in Ec.Npcs)
+            foreach (var baldi in Ec.npcs)
             {
                 if (baldi.Character == Character.Baldi)
 				{

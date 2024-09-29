@@ -1,4 +1,5 @@
 ﻿using MTM101BaldAPI.Components;
+using MTM101BaldAPI.Reflection;
 using System.Collections.Generic;
 using System.Linq;
 using TeacherAPI;
@@ -9,7 +10,7 @@ namespace NullTeacher
 {
     public class NullTeacher : Teacher
     {
-        public new CustomSpriteAnimator animator;
+        public CustomSpriteAnimator animator;
 
         public HashSet<NullPhrase> saidPhrases = new HashSet<NullPhrase>();
         public HashSet<Items> usefulItems = new HashSet<Items>();
@@ -58,12 +59,12 @@ namespace NullTeacher
             animator.animations.Add("Normal", new CustomAnimation<Sprite>(new Sprite[] { NullAssets.nullsprite }, 1f));
             animator.animations.Add("Baldloon", new CustomAnimation<Sprite>(new Sprite[] { NullAssets.baldloon }, 1f));
             animator.SetDefaultAnimation(NullConfiguration.ReplaceNullWithBaldloon.Value ? "Baldloon" : "Normal", 1f);
-            looker.layerMask = 98305; // can see windows at this layer
+            looker.ReflectionSetVariable("layerMask", (LayerMask)98305); // can see windows at this layer
 
             navigator.Entity.SetHeight(5f);
 
             AddLoseSound(
-                CoreGameManager.Instance.lives < 1 && CoreGameManager.Instance.extraLives < 1
+                CoreGameManager.Instance.Lives < 1 && (int)CoreGameManager.Instance.ReflectionGetVariable("extraLives") < 1
                 ? NullAssets.phrases[NullPhrase.Haha]
                 : NullAssets.lose, 1);
 
@@ -82,9 +83,10 @@ namespace NullTeacher
             {
                 if (room.category.Equals(RoomCategory.Faculty) || room.category.Equals(RoomCategory.Hall) || room.category.Equals(RoomCategory.Office))
                 {
+                    Balloon[] bald = randomEvent.ReflectionGetVariable("balloon") as Balloon[];
                     for (var i = 0; i < Random.Range(4, 6); i++)
                     {
-                        Instantiate(randomEvent.balloon[Random.Range(0, randomEvent.balloon.Length)]).Initialize(room);
+                        Instantiate(bald[Random.Range(0, bald.Length)]).Initialize(room);
                     }
                 }
             }
@@ -92,17 +94,20 @@ namespace NullTeacher
             ec.standardDarkLevel = new Color(0.15f, 0.025f, 0.15f);
             ec.FlickerLights(false); // Doing this will update the lights
 
-            foreach (var activity in ec.activities)
+            if (!IsHelping())
             {
-                activity.Corrupt(true);
+                foreach (var activity in ec.activities)
+                {
+                    activity.Corrupt(true);
+                }
             }
-
             spriteBase.SetActive(false);
         }
         public override TeacherState GetAngryState() => new Null_Chase(this);
         public override TeacherState GetHappyState() => new Null_Happy(this);
-
-        public override void VirtualUpdate()
+        public override string GetNotebooksText(string amount) => $"{amount} Noteboos";
+        public override WeightedTeacherNotebook GetTeacherNotebookWeight() => new WeightedTeacherNotebook(this).Weight(100);
+        protected override void VirtualUpdate()
         {
             base.VirtualUpdate();
 
@@ -120,7 +125,7 @@ namespace NullTeacher
 
         public void OpenDoors()
         {
-            if (currentCell.doorHere)
+            if (currentCell != null && currentCell.doorHere)
             {
                 currentCell.doors.ForEach(d => d.OpenTimed(0.5f, false));
                 SpeechCheck(NullPhrase.Hide, 0.01f);
@@ -140,7 +145,7 @@ namespace NullTeacher
                     var num = (dist - 30f) / 70f;
                     if (dist <= 30f)
                     {
-                        if (light.lightOn) ec.SetLight(false, light);
+                        if (light.lightOn) light.SetLight(false);
                     }
                     else if (dist <= 100)
                     {
@@ -148,14 +153,14 @@ namespace NullTeacher
                         {
                             if (!light.lightOn)
                             {
-                                if (Random.Range(0f, 1f) <= num) ec.SetLight(true, light);
+                                if (Random.Range(0f, 1f) <= num) light.SetLight(true);
                             }
-                            else if (Random.Range(0f, 1f) >= num) ec.SetLight(false, light);
+                            else if (Random.Range(0f, 1f) >= num) light.SetLight(false);
                         }
                     }
                     else if (light.lightOn)
                     {
-                        ec.SetLight(true, light);
+                        light.SetLight(true);
                     }
                 }
             }
@@ -210,13 +215,13 @@ namespace NullTeacher
         private void PlayGenericPhrase(NullPhrase phrase)
         {
             genericPhrases.Remove(phrase);
-            try { audMan.QueueAudio(NullAssets.phrases[phrase]); }
+            try { AudMan.QueueAudio(NullAssets.phrases[phrase]); }
             catch (KeyNotFoundException) { Debug.LogWarning($"No sound called {phrase} exists for Null yet"); }
         }
         private void PlayPhrase(NullPhrase phrase)
         {
             saidPhrases.Add(phrase);
-            try { audMan.QueueAudio(NullAssets.phrases[phrase]); }
+            try { AudMan.QueueAudio(NullAssets.phrases[phrase]); }
             catch (KeyNotFoundException) { Debug.LogWarning($"No sound called {phrase} exists for Null yet"); }
         }
 
@@ -230,7 +235,7 @@ namespace NullTeacher
                 case NullPhrase.Enough:
                 case NullPhrase.Hide:
                 case NullPhrase.Bored:
-                    if (!saidPhrases.Contains(phrase) && Random.Range(0f, 1f) <= chance && !audMan.AnyAudioIsPlaying)
+                    if (!saidPhrases.Contains(phrase) && Random.Range(0f, 1f) <= chance && !AudMan.AnyAudioIsPlaying)
                     {
                         PlayPhrase(phrase);
                     }
@@ -299,10 +304,9 @@ namespace NullTeacher
             base.DestinationEmpty();
             ohno.UpdateSoundTarget();
         }
-
-        public override void NotebookCollected()
+        public override void NotebookCollected(int currentNotebooks, int maxNotebooks)
         {
-            base.NotebookCollected();
+            base.NotebookCollected(currentNotebooks, maxNotebooks);
             ohno.Hear(CoreGameManager.Instance.GetPlayer(0).transform.position, 127, true);
         }
 
@@ -321,9 +325,9 @@ namespace NullTeacher
             ohno.ReplaceMusic(NullAssets.ambient);
         }
 
-        public override void NotebookCollected()
+        public override void NotebookCollected(int currentNotebooks, int maxNotebooks)
         {
-            base.NotebookCollected();
+            base.NotebookCollected(currentNotebooks, maxNotebooks);
             ohno.behaviorStateMachine.ChangeState(new Null_Chase(ohno));
             ohno.ActivateSpoopMode();
         }
@@ -341,6 +345,10 @@ namespace NullTeacher
         {
             base.Enter();
             noGllitchMat = Resources.FindObjectsOfTypeAll<Material>().FirstOrDefault(x => x.name == "SpriteStandard_Billboard_NoGlitch");
+            if (ohno.IsHelping())
+            {
+                ohno.transform.position = ohno.ec.elevators[0].transform.position;
+            }
             timer = ohno.Delay;
             ohno.ResetSlapDistance();
             ohno.spriteBase.SetActive(true);

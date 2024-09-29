@@ -3,6 +3,9 @@
 ## Create your own Teacher for Baldi!
 
 ## Installation Tutorial
+<<<<<<< HEAD
+WIP
+=======
 Using NuGet, add your package in your csproj. Right click on Dependencies > Manage NuGet Packages and install the last version.
 ![image](https://github.com/Sakyce/TeacherAPI/assets/55030860/262c5c14-4b3d-4cd3-949c-cdb760cb8ca0)
 
@@ -10,6 +13,7 @@ You can also add this as a PackageReference if you can't figure it out in your c
 ```xml
 <PackageReference Include="Sakyce.TeacherAPI" Version="0.*" />
 <PackageReference Include="Sakyce.TeacherAPI.Analyzers" Version="*" /> <!-- Not required but recommended -->
+>>>>>>> d372b57a91bd9a939c6e6a414b175c50f1d35a6d
 ```
 
 If you want to already start with something, you can fork this [Example Teacher](https://github.com/Sakyce/TeacherExample) and create your own Teacher from it. (Very recommended!)

@@ -10,15 +10,9 @@ namespace TeacherAPI.utils
 {
     public static class Extensions
     {
-        /// <summary>
-        /// Convert the textures into an array of sprites
-        /// </summary>
-        /// <param name="textures"></param>
-        /// <param name="pixelsPerUnit"></param>
-        /// <returns></returns>
-        public static Sprite[] ToSprites(this Texture2D[] textures, float pixelsPerUnit)
+        public static Sprite ToSprite(this Texture2D texture, float pixelsPerUnit)
         {
-            return textures.Select(x => AssetLoader.SpriteFromTexture2D(x, pixelsPerUnit)).ToArray();
+            return AssetLoader.SpriteFromTexture2D(texture, pixelsPerUnit);
         }
 
         /// <summary>
@@ -49,6 +43,11 @@ namespace TeacherAPI.utils
             logger.LogInfo("}");
         }
 
+        public static void PrintWeights<T>(this IEnumerable<WeightedSelection<T>> w, string label, ManualLogSource logger)
+        {
+            w.Select(x => $"{x.selection} {x.weight}").Print(label, logger);
+        }
+
         /// <summary>
         /// Used internally for debugging purposes, dont use it in production.
         /// </summary>
@@ -68,6 +67,9 @@ namespace TeacherAPI.utils
         public Action<object> postItemAction = (a) => { };
         public Func<object, object> itemAction = (a) => { return a; };
         IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
+        public SimpleEnumerator(IEnumerator enumerator) {
+            this.enumerator = enumerator;
+        }
         public IEnumerator GetEnumerator()
         {
             prefixAction();

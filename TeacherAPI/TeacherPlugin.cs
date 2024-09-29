@@ -4,6 +4,7 @@ using BepInEx.Logging;
 using HarmonyLib;
 using MTM101BaldAPI;
 using MTM101BaldAPI.AssetTools;
+using MTM101BaldAPI.Reflection;
 using MTM101BaldAPI.Registers;
 using System;
 using System.Collections.Generic;
@@ -17,63 +18,46 @@ using static BepInEx.BepInDependency;
 
 namespace TeacherAPI
 {
-    [BepInPlugin("sakyce.baldiplus.teacherapi", "Teacher API", PluginInfo.PLUGIN_VERSION)]
+    [BepInPlugin("alexbw145.baldiplus.teacherapi", "Teacher API", PluginInfo.PLUGIN_VERSION)]
     [BepInDependency("mtm101.rulerp.bbplus.baldidevapi", DependencyFlags.HardDependency)]
     [BepInDependency("mtm101.rulerp.baldiplus.endlessfloors", DependencyFlags.SoftDependency)]
     public class TeacherPlugin : BaseUnityPlugin
     {
         public static TeacherPlugin Instance { get; private set; }
-        public bool SpoopModeEnabled { get; internal set; }
 
         internal Dictionary<Character, NPC> whoAreTeachers = new Dictionary<Character, NPC>(); // Mostly used to differenciate who are teachers and who are not.
         internal Dictionary<LevelObject, Baldi> originalBaldiPerFloor = new Dictionary<LevelObject, Baldi>();
-        public List<Teacher> spawnedTeachers = new List<Teacher>();
-        public Baldi currentBaldi;
+        public Baldi CurrentBaldi { get; internal set; }
 
+        internal Dictionary<LevelObject, List<WeightedSelection<Teacher>>> potentialTeachers = new Dictionary<LevelObject, List<WeightedSelection<Teacher>>>();
+        internal Dictionary<LevelObject, List<WeightedSelection<Teacher>>> potentialAssistants = new Dictionary<LevelObject, List<WeightedSelection<Teacher>>>();
+        internal Dictionary<LevelObject, int> floorNumbers = new Dictionary<LevelObject, int>();
         public static ManualLogSource Log { get => Instance.Logger; }
 
         internal void Awake()
         {
             Instance = this;
             TeacherAPIConfiguration.Setup();
-            //            foreach (var plugin in Chainloader.PluginInfos)
-            //            {
-            //                if (plugin.Value.Metadata.GUID == "mtm101.rulerp.bbplus.baldidevapi" && plugin.Value.Metadata.Version <= new Version("3.6.0.0"))
-            //                {
-            //                    ShowWarningScreen($@"
-            //The mod <color=blue>TeacherAPI</color> requires a more recent version of <color=red>Baldi Dev API</color>!</color>
-
-            //The current version you have is <color=yellow>{plugin.Value.Metadata.Version}</color> and the required version is <color=green>4.0.0.0</color>
-
-
-            //<alpha=#AA>PRESS ALT + F4 TO CLOSE THIS GAME
-            //");
-            //                    break;
-            //                }
-            //            }
-            new Harmony("sakyce.baldiplus.teacherapi").PatchAllConditionals();
-            GeneratorManagement.Register(this, GenerationModType.Base, EditGenerator);
-
-            // Remove this when a more recent version of Dev API release
-            if (TeacherAPIConfiguration.DebugMode.Value)
+            if (!TeacherAPIConfiguration.DebugMode.Value)
             {
-                SceneManager.LoadScene("MainMenu");
+                MTM101BaldiDevAPI.AddWarningScreen(@"<color=blue>TeacherAPI</color> is still a <color=yellow>prototype</color> and you will see unexpected things!</color>
+
+Please read the instructions to report any bugs in the mod page!
+If you encounter an error, send me the Logs!", false);
             }
-        }
-        internal static Baldi ConvertTeacherToBaldi(Baldi teacher)
-        {
-            return teacher;
+            new Harmony("alexbw145.baldiplus.teacherapi").PatchAllConditionals();
+            GeneratorManagement.Register(this, GenerationModType.Base, EditGenerator);
         }
         private void EditGenerator(string floorName, int floorNumber, LevelObject floorObject)
         {
-            if (floorObject.potentialBaldis.Length < 1)
+            if (floorObject.potentialBaldis.Length != 1)
             {
-                MTM101BaldiDevAPI.CauseCrash(Info, new Exception("No potential baldi found. Possttttibly because of another mod that edit the teacher without using More Teachers API."));
+                MTM101BaldiDevAPI.CauseCrash(Info, new Exception("There is no exactly one PotentialBaldi for this level. What mod did you have installed ?"));
             }
-            else if (floorObject.potentialBaldis.Length > 1)
-            {
-                MTM101BaldiDevAPI.CauseCrash(Info, new Exception("More than one potential baldi found. Possibly because of another mod."));
-            }
+
+            potentialAssistants[floorObject] = new List<WeightedSelection<Teacher>>();
+            potentialTeachers[floorObject] = new List<WeightedSelection<Teacher>>();
+            floorNumbers[floorObject] = floorNumber;
 
             if (!TeacherAPIConfiguration.EnableBaldi.Value)
             {
@@ -93,24 +77,43 @@ namespace TeacherAPI
                 }
             }
 
-            try
+            if (!originalBaldiPerFloor.ContainsKey(floorObject))
             {
                 originalBaldiPerFloor.Add(floorObject, GetPotentialBaldi(floorObject));
             }
-            catch (ArgumentException) { }
         }
+
         internal Baldi GetPotentialBaldi(LevelObject floorObject)
         {
+            if (floorObject.potentialBaldis.Count() <= 0)
+            {
+                Log.LogWarning("potentialBaldis in " + floorObject.name + "is blank!");
+                return originalBaldiPerFloor[floorObject];
+            }
             var baldis = (from x in floorObject.potentialBaldis
                           where x.selection.GetType().Equals(typeof(Baldi))
                           select (Baldi)x.selection).ToArray();
-
             if (baldis.Length > 1)
             {
                 (from baldi in baldis select baldi.name).Print("Baldis", TeacherPlugin.Log);
-                MTM101BaldiDevAPI.CauseCrash(Info, new Exception("Multiple Baldis found in the level!"));
+                MTM101BaldiDevAPI.CauseCrash(Info, new Exception("Multiple Baldis found in " + floorObject.name + "!"));
+            }
+            else if (baldis.Length <= 0)
+            {
+                Log.LogWarning("No Baldi found in " + floorObject.name + "!");
+                return null;
             }
             return baldis.First();
+        }
+
+        /// <summary>
+        /// Make your teacher known to TeacherAPI
+        /// </summary>
+        /// <param name="teacher"></param>
+        public static void RegisterTeacher(Teacher teacher)
+        {
+            teacher.ReflectionSetVariable("ignorePlayerOnSpawn", true); // Or else, the teacher won't spawn instantly.
+            Instance.whoAreTeachers.Add(teacher.Character, teacher);
         }
 
         /// <summary>
@@ -122,25 +125,11 @@ namespace TeacherAPI
             string assetsPath = AssetLoader.GetModPath(plug);
             if (!Directory.Exists(assetsPath))
             {
-                WarningScreenCustomText.ShowWarningScreen(String.Format(@"
+                MTM101BaldiDevAPI.AddWarningScreen(String.Format(@"
 The mod <color=blue>{0}</color> must have the assets file in <color=red>StreamingAssets/Modded</color>!</color>
 
-The name of the assets folder must be <color=red>{1}</color>.
-
-
-<alpha=#AA>PRESS ALT + F4 TO CLOSE THIS GAME
-", Path.GetFileName(plug.Info.Location), plug.Info.Metadata.GUID));
+The name of the assets folder must be <color=red>{1}</color>.", Path.GetFileName(plug.Info.Location), plug.Info.Metadata.GUID), true);
             }
-        }
-
-        public static void ShowWarningScreen(string text)
-        {
-            WarningScreenCustomText.ShowWarningScreen(text);
-        }
-
-        public static T[] GetTeachersOfType<T>() where T : Teacher
-        {
-            return (from teacher in Instance.spawnedTeachers where teacher.GetType().Equals(typeof(T)) select (T)teacher).ToArray();
         }
 
         /// <summary>
@@ -154,16 +143,6 @@ The name of the assets folder must be <color=red>{1}</color>.
                 where x.Key.Equals("mtm101.rulerp.baldiplus.endlessfloors")
                 select x.Key
             ).Count() > 0;
-        }
-
-        /// <summary>
-        /// Make your teacher known to TeacherAPI
-        /// </summary>
-        /// <param name="teacher"></param>
-        public static void RegisterTeacher(Teacher teacher)
-        {
-            teacher.ignorePlayerOnSpawn = true; // Or else, the teacher won't spawn instantly.
-            Instance.whoAreTeachers.Add(teacher.Character, teacher);
         }
 
         /// <summary>
@@ -182,5 +161,29 @@ The name of the assets folder must be <color=red>{1}</color>.
             }
             return textures.ToArray();
         }
+        /// <summary>
+        /// Will be deprecated once MTM101BMDE 4.0 releases
+        /// </summary>
+        public static Texture2D[] TexturesFromFolder(string path, string search = "*.png")
+        {
+            string[] paths = Directory.GetFiles(Path.Combine(path), search);
+            Texture2D[] textures = new Texture2D[paths.Length];
+            for (int i = 0; i < paths.Length; i++)
+            {
+                textures[i] = AssetLoader.TextureFromFile(paths[i]);
+            }
+            return textures;
+        }
+
+        /// <summary>
+        /// Will be deprecated once MTM101BMDE 4.0 releases
+        /// </summary>
+        public static Texture2D[] TexturesFromMod(BaseUnityPlugin plugin, string search, params string[] paths)
+        {
+            List<string> pathz = paths.ToList();
+            pathz.Insert(0, AssetLoader.GetModPath(plugin));
+            return TexturesFromFolder(Path.Combine(pathz.ToArray()), search);
+        }
+
     }
 }

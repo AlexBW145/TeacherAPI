@@ -1,5 +1,6 @@
 ﻿using BepInEx.Configuration;
 using MTM101BaldAPI.OptionsAPI;
+using MTM101BaldAPI.Reflection;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -15,6 +16,7 @@ namespace TeacherAPI
         public static ConfigEntry<bool> EnableCustomWarningScreen  { get; internal set; }
         public static ConfigEntry<bool> DisableAssetsWarningScreen { get; internal set; }
         public static ConfigEntry<bool> DebugMode { get; internal set; }
+        public static ConfigEntry<bool> DisableAssistingTeachers { get; internal set; }
 
         private int i = 0;
         private OptionsMenu optionsMenu;
@@ -28,7 +30,8 @@ namespace TeacherAPI
             );
             toggle.GetComponentInChildren<TextMeshProUGUI>().GetComponent<RectTransform>().sizeDelta += new Vector2(200, 0);
             toggle.transform.SetParent(transform, false);
-            toggle.hotspot.GetComponent<StandardMenuButton>().OnPress.AddListener(() => config.Value = toggle.Value);
+            GameObject _hotspot = toggle.ReflectionGetVariable("hotspot") as GameObject;
+            _hotspot.GetComponent<StandardMenuButton>().OnPress.AddListener(() => config.Value = toggle.Value);
             i++;
         }
         private void AddLabel(string title, Vector2 pos, Vector2 size)
@@ -43,8 +46,9 @@ namespace TeacherAPI
         {
             this.optionsMenu = optionsMenu;
             AddLabel("Open the config file to change values that requires restarts.", new Vector2(-6, 71), new Vector2(375, 40));
-            AddToggle(EnableCustomWarningScreen, "Enable Custom Warning Screen", "Enable the custom Warning Screen text changed by TeacherAPI.");
             AddToggle(DebugMode, "Enable Debug Mode", "Some goodies to help for development");
+            AddToggle(EnableCustomWarningScreen, "Custom Warning Screen", "Enable the custom Warning Screen text changed by TeacherAPI.");
+            AddToggle(DisableAssistingTeachers, "Disable Assisting Teachers", "Completely disables teachers assisting other teachers.");
         }
 
         private static void OnMenuInitialize(OptionsMenu optionsMenu)
@@ -59,14 +63,20 @@ namespace TeacherAPI
             EnableBaldi = TeacherPlugin.Instance.Config.Bind(
                 "General",
                 "EnableBaldi",
-                true,
-                "Set the weight of Baldi to 0 in the generator for every floor. That's cool if you want to only play with the Teachers you installed."
+                false,
+                "Doesn't works yet."
             );
             EnableCustomWarningScreen = TeacherPlugin.Instance.Config.Bind(
                 "General",
                 "EnableCustomWarningScreen",
                 true,
                 "The Warning Screen text at the start of the game is changed by TeacherAPI, doesn't affect the Warning Screen patch."
+            );
+            DisableAssistingTeachers = TeacherPlugin.Instance.Config.Bind(
+                "General",
+                "DisableAssistingTeachers",
+                false,
+                "Completely disables secondary teachers from appearing."
             );
             DisableAssetsWarningScreen = TeacherPlugin.Instance.Config.Bind(
                 "Dangerous",

@@ -9,10 +9,10 @@ using static BepInEx.BepInDependency;
 namespace NullTeacher
 {
     // There is a lot of dependencies ik
-    [BepInPlugin("sakyce.baldiplus.teacherextension.null.nullfloor", "Null Floor", "1.0.0.0")]
-    [BepInDependency("sakyce.baldiplus.teacherapi", DependencyFlags.HardDependency)]
+    [BepInPlugin("alexbw145.baldiplus.teacherextension.null.nullfloor", "Null Floor", "1.0.0.0")]
+    [BepInDependency("alexbw145.baldiplus.teacherapi", DependencyFlags.HardDependency)]
     [BepInDependency("mtm101.rulerp.bbplus.baldidevapi", DependencyFlags.HardDependency)]
-    [BepInDependency("sakyce.baldiplus.teacherextension.null", DependencyFlags.HardDependency)]
+    [BepInDependency("alexbw145.baldiplus.teacherextension.null", DependencyFlags.HardDependency)]
     public class NullFloorPlugin : BaseUnityPlugin
     {
         private static void EditLevelToNull(LevelObject level)
@@ -111,7 +111,7 @@ namespace NullTeacher
             // For safety, only edit the SceneObjects when Infinite Floors is not loaded.
             if (!TeacherPlugin.IsEndlessFloorsLoaded())
             {
-                LoadingEvents.RegisterOnAssetsLoaded(AddNullLevel, false);
+                LoadingEvents.RegisterOnAssetsLoaded(Info, AddNullLevel, false);
             }
 
             // Finalizer BECAUSE he is supposed to be a boss, must have the final say from all the other mods.

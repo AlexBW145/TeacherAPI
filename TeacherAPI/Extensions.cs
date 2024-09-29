@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using MTM101BaldAPI.AssetTools;
 using System;
 using System.Linq;
 using TeacherAPI.utils;
@@ -15,7 +16,7 @@ namespace TeacherAPI
         /// <returns></returns>
         public static Teacher[] GetTeachers(this EnvironmentController ec)
         {
-            return (from npc in ec.npcs where npc.IsTeacher() select (Teacher)npc).ToArray();
+            return (from npc in ec.Npcs where npc.IsTeacher() select (Teacher)npc).ToArray();
         }
 
         /// <summary>
@@ -48,16 +49,40 @@ namespace TeacherAPI
             }
             return promise;
         }
+        internal static void AsTeacherState(this NpcState state, Action<TeacherState> action)
+        {
+            state.AsTeacherState().IfSuccess(action);
+        }
 
         /// <summary>
-        /// Adds your teacher into the pool of potentialBaldis in the LevelObject.
+        /// Adds your teacher into the pool of potential teachers of the level. Doesn't affects potentialBaldis.
         /// </summary>
         /// <param name="levelObject"></param>
         /// <param name="teacher">The teacher to be added</param>
         /// <param name="weight">The weight of the teacher for the selection (as a reference, MoreTeachers default teachers have a weight of 100)</param>
-        public static void AddPotentialTeacher(this LevelObject levelObject, NPC teacher, int weight)
+        public static void AddPotentialTeacher(this LevelObject levelObject, Teacher teacher, int weight)
         {
-            levelObject.potentialBaldis = levelObject.potentialBaldis.AddItem(new WeightedNPC() { selection = teacher, weight = weight }).ToArray();
+            TeacherPlugin.Instance.potentialTeachers[levelObject].Add(
+                new WeightedSelection<Teacher>() { selection = teacher, weight = weight }
+            );
+        }
+
+        /// <summary>
+        /// Adds your teacher into the pool of potential assisting teachers of the level.
+        /// </summary>
+        /// <param name="levelObject"></param>
+        /// <param name="teacher">The teacher to be added</param>
+        /// <param name="weight">The weight of the teacher for the selection (as a reference, MoreTeachers default teachers have a weight of 100)</param>
+        public static void AddPotentialAssistingTeacher(this LevelObject levelObject, Teacher teacher, int weight)
+        {
+            TeacherPlugin.Instance.potentialAssistants[levelObject].Add(
+                new WeightedSelection<Teacher>() { selection = teacher, weight = weight }
+            );
+        }
+
+        public static Sprite ToSprite(this Texture2D tex, float pixelsPerUnit)
+        {
+            return AssetLoader.SpriteFromTexture2D(tex, pixelsPerUnit);
         }
     }
 }

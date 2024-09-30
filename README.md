@@ -64,7 +64,7 @@ UnityEngine.SetupCoroutine:InvokeMoveNext(IEnumerator, IntPtr)
  
 6. If you don't follow these steps correctly, your issue will be closed as not completed without any explaination.
 
-If you don't have Github, you can report it in the appropriate channel in the [Official Discord Guild](https://discord.gg/75ykaFd6sB), still do the same steps as mentionned earlier or Baldi will get angry.
+<!---If you don't have Github, you can report it in the [issues section of the official continuation's Gamebanana submission](https://gamebanana.com/mods/issues/545498), still do the same steps as mentionned earlier or Baldi will get angry.
 
-<!--- > [!NOTE]
+> [!NOTE]
 > Your report on Discord can still be rejected if it badly follows the instructions. We will link you to this page as a warning.

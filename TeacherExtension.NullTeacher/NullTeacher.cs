@@ -11,6 +11,7 @@ namespace NullTeacher
     public class NullTeacher : Teacher
     {
         public CustomSpriteAnimator animator;
+        public override AssistantPolicy GetAssistantPolicy() => new AssistantPolicy(PossibleAssistantAllowType.Allow);
 
         public HashSet<NullPhrase> saidPhrases = new HashSet<NullPhrase>();
         public HashSet<Items> usefulItems = new HashSet<Items>();

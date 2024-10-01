@@ -54,7 +54,7 @@ namespace TeacherExtension.Foxo
             );
             sprites.Add(
                 "Notebook",
-                TeacherPlugin.TexturesFromMod(FoxoPlugin.Instance, "*.png", "comics").ToSprites(20f)
+                AssetLoader.TexturesFromMod(FoxoPlugin.Instance, "*.png", "comics").ToSprites(20f)
             );
             sprites.Add(
                 "floor2Intro",
@@ -477,6 +477,12 @@ namespace TeacherExtension.Foxo
         {
             base.Enter();
             foxo.ec.FlickerLights(false);
+            if (foxo.forceWrath && !foxo.IsHelping())
+            {
+                CoreGameManager.Instance.musicMan.QueueAudio(Foxo.audios.Get<SoundObject>("wrath"), true);
+                CoreGameManager.Instance.musicMan.SetLoop(true);
+                return;
+            }
             AudioManager aud = foxo.ec.ReflectionGetVariable("audMan") as AudioManager;
             aud.PlaySingle(Foxo.audios.Get<SoundObject>("wrath"));
         }

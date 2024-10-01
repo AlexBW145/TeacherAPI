@@ -27,16 +27,18 @@ namespace TeacherExtension.Foxo
             // Only cafeterias
             level.potentialSpecialRooms = (
                 from x in RoomAssetMetaStorage.Instance.AllOfCategory(RoomCategory.Special)
-                where x.value.name.Contains("Cafeteria")
+                where x.value.name.ToLower().Contains("cafeteria")
                 select new WeightedRoomAsset() { selection = x.value, weight = 100 }
             ).ToArray();
 
             // No math machines
-            level.potentialClassRooms = (
+            RoomGroup classes = level.roomGroup.ToList().Find(x => x.name == "Class");
+            classes.potentialRooms = (
                 from x in Resources.FindObjectsOfTypeAll<RoomAsset>()
                 where (x.category == RoomCategory.Class && x.activity.prefab.GetType().Equals(typeof(NoActivity)))
                 select new WeightedRoomAsset() { selection = x, weight = 100 }
             ).ToArray();
+            level.roomGroup[level.roomGroup.ToList().FindIndex(x => x.name == "Class")] = classes;
 
             // Tweaks. We ignore classrooms to let infinite floors decide.
             level.minSpecialRooms = 0;

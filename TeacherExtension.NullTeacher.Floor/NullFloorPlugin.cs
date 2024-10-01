@@ -1,7 +1,11 @@
 ﻿using BepInEx;
+using MTM101BaldAPI;
 using MTM101BaldAPI.Registers;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Linq;
 using TeacherAPI;
 using UnityEngine;
 using static BepInEx.BepInDependency;
@@ -26,7 +30,7 @@ namespace NullTeacher
             // Only cafeterias
             level.potentialSpecialRooms = (
                 from x in RoomAssetMetaStorage.Instance.AllOfCategory(RoomCategory.Special)
-                    //where x.value.name.Contains("Cafeteria")
+                    where x.value.name.ToLower().Contains("cafeteria")
                 select new WeightedRoomAsset() { selection = x.value, weight = 100 }
             ).ToArray();
             foreach (var special in level.potentialSpecialRooms)
@@ -35,11 +39,13 @@ namespace NullTeacher
             }
 
             // Any activities
-            level.potentialClassRooms = (
+            RoomGroup classes = level.roomGroup.ToList().Find(x => x.name == "Class");
+            classes.potentialRooms = (
                 from x in Resources.FindObjectsOfTypeAll<RoomAsset>()
                 where x.category == RoomCategory.Class
                 select new WeightedRoomAsset() { selection = x, weight = 100 }
             ).ToArray();
+            level.roomGroup[level.roomGroup.ToList().FindIndex(x => x.name == "Class")] = classes;
 
             level.classStickToHallChance = 0.5f;
             level.extraStickToHallChance = 0.5f;
@@ -59,13 +65,13 @@ namespace NullTeacher
         // Try not to edit F1,F2,F3,YAY or END as it might clash with other mods
         // Although, it's good to offset the levels to place a level inbetween like I do
         // YAY would be any level after Level 3
-        private static void AddNullLevel()
+        private void AddNullLevel()
         {
             var F3 = (from x in Resources.FindObjectsOfTypeAll<SceneObject>() where x.levelTitle == "F3" select x).First();
             var F1 = (from x in Resources.FindObjectsOfTypeAll<SceneObject>() where x.levelTitle == "F1" select x).First(); // debug, to remove
             var YAY = F3.nextLevel;
             var NULL = Instantiate(F3);
-            var level = Instantiate(NULL.levelObject);
+            CustomLevelObject level = ScriptableObjectHelpers.CloneScriptableObject<LevelObject, CustomLevelObject>(Instantiate(NULL.levelObject));
 
             // Create the level and its scene
             NULL.levelTitle = "NUL";
@@ -73,8 +79,10 @@ namespace NullTeacher
             NULL.nextLevel = YAY;
             NULL.name = "ModdedNullScene";
             NULL.levelObject = level;
+            NULL.mapPrice = 2000;
             YAY.levelNo += 1;
             F3.nextLevel = NULL;
+            GeneratorManagement.Invoke(NULL.levelTitle, NULL.levelNo, level);
 
             EditLevelToNull(level);
         }
@@ -110,10 +118,7 @@ namespace NullTeacher
         {
             // For safety, only edit the SceneObjects when Infinite Floors is not loaded.
             if (!TeacherPlugin.IsEndlessFloorsLoaded())
-            {
                 LoadingEvents.RegisterOnAssetsLoaded(Info, AddNullLevel, false);
-            }
-
             // Finalizer BECAUSE he is supposed to be a boss, must have the final say from all the other mods.
             GeneratorManagement.Register(this, GenerationModType.Finalizer, RegisterGenerator);
         }

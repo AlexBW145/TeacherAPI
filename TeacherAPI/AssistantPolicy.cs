@@ -34,7 +34,7 @@ namespace TeacherAPI
             probability = 1f;
         }
         /// <summary>
-        /// Not used yet.
+        /// Sets how many assistants does the teacher need.
         /// </summary>
         /// <param name="max"></param>
         /// <returns></returns>

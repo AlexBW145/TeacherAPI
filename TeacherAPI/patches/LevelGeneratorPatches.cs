@@ -21,7 +21,7 @@ namespace TeacherAPI.patches
             object itemAction(object obj)
             {
                 if (man.MainTeacherPrefab != null) return obj;
-                if (TeacherPlugin.Instance.potentialTeachers[__instance.ld].Count <= 0 || TeacherPlugin.Instance.originalBaldiPerFloor[__instance.ld] == null)
+                if (TeacherPlugin.Instance.potentialTeachers[__instance.ld].Count <= 0 || TeacherPlugin.Instance.CurrentBaldi == null)
                 {
                     TeacherManager.DefaultBaldiEnabled = true;
                     return obj;

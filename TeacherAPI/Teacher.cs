@@ -210,6 +210,7 @@ namespace TeacherAPI
 
             TeacherManager.Instance.SpoopModeActivated = true;
             MusicManager.Instance.StopMidi();
+            CoreGameManager.Instance.musicMan.FlushQueue(true);
             BaseGameManager.Instance.BeginSpoopMode();
             if (!disableNpcs)
             {

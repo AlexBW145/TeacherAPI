@@ -51,7 +51,7 @@
 		</Reference>
 
 		<Reference Include="MTM101BaldAPI">
-			<HintPath>$(LibPath)MTM101BaldAPI.dll</HintPath>
+		  <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Baldi's Basics Plus\BepInEx\plugins\MTM101BaldAPI.dll</HintPath>
 		</Reference>
 	</ItemGroup>
 

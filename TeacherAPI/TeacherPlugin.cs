@@ -18,8 +18,8 @@ using static BepInEx.BepInDependency;
 
 namespace TeacherAPI
 {
-    [BepInPlugin("alexbw145.baldiplus.teacherapi", "Teacher API", PluginInfo.PLUGIN_VERSION)]
-    [BepInDependency("mtm101.rulerp.bbplus.baldidevapi", DependencyFlags.HardDependency)]
+    [BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
+    [BepInDependency("mtm101.rulerp.bbplus.baldidevapi", MTM101BaldiDevAPI.VersionNumber)]
     [BepInDependency("mtm101.rulerp.baldiplus.endlessfloors", DependencyFlags.SoftDependency)]
     public class TeacherPlugin : BaseUnityPlugin
     {
@@ -45,7 +45,7 @@ namespace TeacherAPI
 Please read the instructions to report any bugs in the mod page!
 If you encounter an error, send me the Logs!", false);
             }
-            new Harmony("alexbw145.baldiplus.teacherapi").PatchAllConditionals();
+            new Harmony(PluginInfo.PLUGIN_GUID).PatchAllConditionals();
             GeneratorManagement.Register(this, GenerationModType.Base, EditGenerator);
         }
         private void EditGenerator(string floorName, int floorNumber, LevelObject floorObject)
@@ -161,29 +161,13 @@ The name of the assets folder must be <color=red>{1}</color>.", Path.GetFileName
             }
             return textures.ToArray();
         }
-        /// <summary>
-        /// Will be deprecated once MTM101BMDE 4.0 releases
-        /// </summary>
-        public static Texture2D[] TexturesFromFolder(string path, string search = "*.png")
-        {
-            string[] paths = Directory.GetFiles(Path.Combine(path), search);
-            Texture2D[] textures = new Texture2D[paths.Length];
-            for (int i = 0; i < paths.Length; i++)
-            {
-                textures[i] = AssetLoader.TextureFromFile(paths[i]);
-            }
-            return textures;
-        }
 
-        /// <summary>
-        /// Will be deprecated once MTM101BMDE 4.0 releases
-        /// </summary>
-        public static Texture2D[] TexturesFromMod(BaseUnityPlugin plugin, string search, params string[] paths)
-        {
-            List<string> pathz = paths.ToList();
-            pathz.Insert(0, AssetLoader.GetModPath(plugin));
-            return TexturesFromFolder(Path.Combine(pathz.ToArray()), search);
-        }
+    }
 
+    public static class PluginInfo
+    {
+        public const string PLUGIN_GUID = "alexbw145.baldiplus.teacherapi";
+        public const string PLUGIN_NAME = "Teacher API";
+        public const string PLUGIN_VERSION = "0.1.1";
     }
 }

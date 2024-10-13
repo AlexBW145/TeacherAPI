@@ -136,4 +136,15 @@ namespace TeacherAPI.patches
             TeacherManager.Instance.DoIfMainTeacher(t => t.RestoreRuler());
         }
     }
+
+    [HarmonyPatch(typeof(BaseGameManager), nameof(BaseGameManager.AngerBaldi))]
+    internal class EndlessAnger
+    {
+        public static void Postfix(float val, BaseGameManager __instance)
+        {
+            foreach (NPC npc in __instance.Ec.Npcs)
+                if (npc.GetComponent<Teacher>() && npc.GetComponent<Teacher>()?.behaviorStateMachine.currentState.GetType() != npc.GetComponent<Teacher>()?.GetHappyState().GetType())
+                    npc.GetComponent<Teacher>().GetAngry(val);
+        }
+    }
 }

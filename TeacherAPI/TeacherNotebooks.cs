@@ -126,7 +126,7 @@ namespace TeacherAPI
                 .AddItem(teacherMan.MainTeacherPrefab)
                 .Concat(teacherMan.assistingTeachersPrefabs);
             
-            if (teachers.Count() > 0)
+            if (teachers.Count() > 0 && EndlessGameManager.Instance == null)
             {
                 var notebookText = "";
                 foreach (var teacher in teachers)

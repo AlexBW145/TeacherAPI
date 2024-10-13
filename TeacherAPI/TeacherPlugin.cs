@@ -51,9 +51,7 @@ If you encounter an error, send me the Logs!", false);
         private void EditGenerator(string floorName, int floorNumber, LevelObject floorObject)
         {
             if (floorObject.potentialBaldis.Length != 1)
-            {
                 MTM101BaldiDevAPI.CauseCrash(Info, new Exception("There is no exactly one PotentialBaldi for this level. What mod did you have installed ?"));
-            }
 
             potentialAssistants[floorObject] = new List<WeightedSelection<Teacher>>();
             potentialTeachers[floorObject] = new List<WeightedSelection<Teacher>>();
@@ -78,9 +76,7 @@ If you encounter an error, send me the Logs!", false);
             }
 
             if (!originalBaldiPerFloor.ContainsKey(floorObject))
-            {
                 originalBaldiPerFloor.Add(floorObject, GetPotentialBaldi(floorObject));
-            }
         }
 
         internal Baldi GetPotentialBaldi(LevelObject floorObject)
@@ -93,12 +89,12 @@ If you encounter an error, send me the Logs!", false);
             var baldis = (from x in floorObject.potentialBaldis
                           where x.selection.GetType().Equals(typeof(Baldi))
                           select (Baldi)x.selection).ToArray();
-            if (baldis.Length > 1)
+            if (baldis.Count() > 1)
             {
                 (from baldi in baldis select baldi.name).Print("Baldis", TeacherPlugin.Log);
                 MTM101BaldiDevAPI.CauseCrash(Info, new Exception("Multiple Baldis found in " + floorObject.name + "!"));
             }
-            else if (baldis.Length <= 0)
+            else if (baldis.Count() <= 0)
             {
                 Log.LogWarning("No Baldi found in " + floorObject.name + "!");
                 return null;

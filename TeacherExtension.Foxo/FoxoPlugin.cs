@@ -11,6 +11,7 @@ using MTM101BaldAPI.SaveSystem;
 using System;
 using System.Linq;
 using TeacherAPI;
+using TeacherExtension.Foxo.Items;
 using UnityCipher;
 using UnityEngine;
 using static BepInEx.BepInDependency;
@@ -69,6 +70,18 @@ namespace TeacherExtension.Foxo
 
                 TeacherPlugin.RegisterTeacher(Foxo);
                 TeacherPlugin.RegisterTeacher(DarkFoxo);
+            }
+            // Also create and register some items specifically to combat against Foxo.
+            {
+                var fireExtinguish = new ItemBuilder(Info)
+                    .SetNameAndDescription("Fire Extinguisher", "A somewhat powerful extinguisher\nthat can make Foxo frustrated, and also mad!")
+                    .SetItemComponent<FireExtinguisher>()
+                    .SetEnum(global::Items.Apple)
+                    .SetGeneratorCost(ItemMetaStorage.Instance.FindByEnum(global::Items.Apple).value.value)
+                    .SetShopPrice(ItemMetaStorage.Instance.FindByEnum(global::Items.Apple).value.price)
+                    .SetSprites(Foxo.sprites.Get<Sprite>("Items/FireExtinguisher_Small"), Foxo.sprites.Get<Sprite>("Items/FireExtinguisher_Large"))
+                    .SetMeta(ItemFlags.Persists, new string[] { "alternative" })
+                    .Build();
             }
 
             GeneratorManagement.Register(this, GenerationModType.Addend, EditGenerator);

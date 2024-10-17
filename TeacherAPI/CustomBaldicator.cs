@@ -20,18 +20,20 @@ namespace TeacherAPI
 	{
 		private CustomImageAnimator animator;
 
-		private Vector3 StartingPosition = new Vector3(320, -276, 0);
-		private Vector3 EndingPosition = new Vector3(320, -180, 0);
+		private Vector2 StartingPosition = new Vector2(0, -96);
+		private Vector2 EndingPosition = new Vector2(0, 0);
 		private IEnumerator animation;
 		[SerializeField] private float posspeed = 6f;
         [SerializeField] private float framedelay = 0.75f;
 
         private Image image;
+		private new RectTransform transform;
 
 		internal void Awake()
 		{
 			image = GetComponent<Image>();
-			animator = gameObject.AddComponent<CustomImageAnimator>();
+            transform = GetComponent<RectTransform>();
+            animator = gameObject.AddComponent<CustomImageAnimator>();
 			animator.affectedObject = image;
 		}
 
@@ -70,10 +72,10 @@ namespace TeacherAPI
             animator.Play("Hearing", 1);
             for (float i = 0; i < 1; i += posspeed * Time.deltaTime)
 			{
-				transform.localPosition = Vector3.Lerp(StartingPosition, EndingPosition, i);
+				transform.anchoredPosition = Vector3.Lerp(StartingPosition, EndingPosition, i);
 				yield return null;
             }
-			transform.localPosition = EndingPosition;
+			transform.anchoredPosition = EndingPosition;
             while (animator.currentAnimationName == "Hearing")
                 yield return null;
             yield return new WaitForSeconds(framedelay);
@@ -84,10 +86,10 @@ namespace TeacherAPI
             yield return new WaitForSeconds(framedelay);
             for (float i = 0; i < 1; i += posspeed * Time.deltaTime)
 			{
-                transform.localPosition = Vector3.Lerp(EndingPosition, StartingPosition, i);
+                transform.anchoredPosition = Vector3.Lerp(EndingPosition, StartingPosition, i);
 				yield return null;
             }
-			transform.localPosition = StartingPosition;
+			transform.anchoredPosition = StartingPosition;
             yield break;
 		}
 	}

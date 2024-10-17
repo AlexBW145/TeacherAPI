@@ -48,6 +48,9 @@
 		<Reference Include="Assembly-CSharp">
 		  <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Baldi's Basics Plus\BALDI_Data\Managed\Assembly-CSharp.dll</HintPath>
 		</Reference>
+		<Reference Include="DaytimeSeasonCycle">
+		  <HintPath>C:\Users\alex1\source\repos\Baldi Basics Plus - Daynight Season Cycle\bin\Release\netstandard2.0\DaytimeSeasonCycle.dll</HintPath>
+		</Reference>
 		<Reference Include="MTM101BaldAPI">
 		  <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Baldi's Basics Plus\BepInEx\plugins\MTM101BaldAPI.dll</HintPath>
 		</Reference>

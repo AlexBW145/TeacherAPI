@@ -5,11 +5,6 @@ VisualStudioVersion = 17.9.34728.123
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TeacherExtension.Foxo.WrathFloor", "TeacherExtension.Foxo.WrathLevel\TeacherExtension.Foxo.WrathFloor.csproj", "{391C0273-F6C8-41E7-B6AF-812FCEACABE5}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E9067505-CFCE-4ACB-B00E-EA8654B6550A}"
-	ProjectSection(SolutionItems) = preProject
-		.editorconfig = .editorconfig
-	EndProjectSection
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TeacherExtension.Foxo", "TeacherExtension.Foxo\TeacherExtension.Foxo.csproj", "{5B531B9A-69F5-4CD6-8960-AF9DD97C5143}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TeacherAPI", "TeacherAPI\TeacherAPI.csproj", "{0E1E2B66-F09C-447F-9F43-FA982AD5B763}"

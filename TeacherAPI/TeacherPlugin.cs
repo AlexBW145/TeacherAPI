@@ -48,18 +48,18 @@ If you encounter an error, send me the Logs!", false);
             new Harmony(PluginInfo.PLUGIN_GUID).PatchAllConditionals();
             GeneratorManagement.Register(this, GenerationModType.Base, EditGenerator);
         }
-        private void EditGenerator(string floorName, int floorNumber, LevelObject floorObject)
+        private void EditGenerator(string floorName, int floorNumber, SceneObject floorObject)
         {
-            if (floorObject.potentialBaldis.Length != 1)
+            if (floorObject.levelObject.potentialBaldis.Length != 1)
                 MTM101BaldiDevAPI.CauseCrash(Info, new Exception("There is no exactly one PotentialBaldi for this level. What mod did you have installed ?"));
 
-            potentialAssistants[floorObject] = new List<WeightedSelection<Teacher>>();
-            potentialTeachers[floorObject] = new List<WeightedSelection<Teacher>>();
-            floorNumbers[floorObject] = floorNumber;
+            potentialAssistants[floorObject.levelObject] = new List<WeightedSelection<Teacher>>();
+            potentialTeachers[floorObject.levelObject] = new List<WeightedSelection<Teacher>>();
+            floorNumbers[floorObject.levelObject] = floorNumber;
 
             if (!TeacherAPIConfiguration.EnableBaldi.Value)
             {
-                foreach (var baldi in floorObject.potentialBaldis)
+                foreach (var baldi in floorObject.levelObject.potentialBaldis)
                 {
                     baldi.weight = 0;
                 }
@@ -69,14 +69,14 @@ If you encounter an error, send me the Logs!", false);
             if (floorName == "INF")
             {
                 // MTM, do you eat clowns at breakfast ? 
-                foreach (var baldi in floorObject.potentialBaldis)
+                foreach (var baldi in floorObject.levelObject.potentialBaldis)
                 {
                     baldi.weight = TeacherAPIConfiguration.EnableBaldi.Value ? 100 : 0;
                 }
             }
 
-            if (!originalBaldiPerFloor.ContainsKey(floorObject))
-                originalBaldiPerFloor.Add(floorObject, GetPotentialBaldi(floorObject));
+            if (!originalBaldiPerFloor.ContainsKey(floorObject.levelObject))
+                originalBaldiPerFloor.Add(floorObject.levelObject, GetPotentialBaldi(floorObject.levelObject));
         }
 
         internal Baldi GetPotentialBaldi(LevelObject floorObject)
@@ -164,6 +164,6 @@ The name of the assets folder must be <color=red>{1}</color>.", Path.GetFileName
     {
         public const string PLUGIN_GUID = "alexbw145.baldiplus.teacherapi";
         public const string PLUGIN_NAME = "Teacher API";
-        public const string PLUGIN_VERSION = "0.1.2";
+        public const string PLUGIN_VERSION = "0.1.3";
     }
 }

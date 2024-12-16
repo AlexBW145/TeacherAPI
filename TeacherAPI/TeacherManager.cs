@@ -1,6 +1,10 @@
-﻿using System;
+﻿using BepInEx;
+using HarmonyLib;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 
 namespace TeacherAPI
@@ -23,11 +27,11 @@ namespace TeacherAPI
 		public bool SpoopModeActivated { get; internal set; }
 		public bool IsBaldiMainTeacher { get; internal set; }
 		public EnvironmentController Ec { get; private set; }
-		public void Initialize(EnvironmentController ec, int seed)
+		public void Initialize(LevelBuilder lb)
 		{
 			Instance = this;
-			Ec = ec;
-            controlledRng = new System.Random(seed);
+			Ec = lb.Ec;
+            controlledRng = lb.controlledRNG;
 		}
 
 		public T[] GetTeachersOfType<T>() where T : Teacher

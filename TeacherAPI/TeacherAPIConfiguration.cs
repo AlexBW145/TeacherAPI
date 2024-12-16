@@ -3,14 +3,13 @@ using MTM101BaldAPI.OptionsAPI;
 using MTM101BaldAPI.Reflection;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Text;
 using TMPro;
 using UnityEngine;
 
 namespace TeacherAPI
 {
-    internal class TeacherAPIConfiguration : MonoBehaviour
+    internal class TeacherAPIConfiguration : CustomOptionsCategory
     {
         public static ConfigEntry<bool> EnableBaldi { get; internal set; }
         public static ConfigEntry<bool> EnableCustomWarningScreen  { get; internal set; }
@@ -19,43 +18,38 @@ namespace TeacherAPI
         public static ConfigEntry<bool> DisableAssistingTeachers { get; internal set; }
 
         private int i = 0;
-        private OptionsMenu optionsMenu;
 
         private void AddToggle(ConfigEntry<bool> config, string title, string tooltip)
         {
-            var toggle = CustomOptionsCore.CreateToggleButton(optionsMenu,
-                new Vector2(135f, i * -40), title,
+            var toggle = CreateToggle(title, title,
                 config.Value,
-                tooltip
+                new Vector2(135f, i * -40),
+                200
             );
-            toggle.GetComponentInChildren<TextMeshProUGUI>().GetComponent<RectTransform>().sizeDelta += new Vector2(200, 0);
+            AddTooltip(toggle, tooltip);
+            /*toggle.GetComponentInChildren<TextMeshProUGUI>().GetComponent<RectTransform>().sizeDelta += new Vector2(200, 0);
             toggle.transform.SetParent(transform, false);
             GameObject _hotspot = toggle.ReflectionGetVariable("hotspot") as GameObject;
-            _hotspot.GetComponent<StandardMenuButton>().OnPress.AddListener(() => config.Value = toggle.Value);
+            _hotspot.GetComponent<StandardMenuButton>().OnPress.AddListener(() => config.Value = toggle.Value);*/
             i++;
         }
         private void AddLabel(string title, Vector2 pos, Vector2 size)
         {
-            var label = CustomOptionsCore.CreateText(optionsMenu, pos, title);
-            label.GetComponent<RectTransform>().sizeDelta = size;
-            label.transform.SetParent(transform, false);
+            CreateText(title, title,
+                pos,
+                MTM101BaldAPI.UI.BaldiFonts.ComicSans24, TextAlignmentOptions.Center,
+                size, Color.black);
+            /*label.GetComponent<RectTransform>().sizeDelta = size;
+            label.transform.SetParent(transform, false);*/
             i++;
         }
 
-        private void Initialize(OptionsMenu optionsMenu)
+        public override void Build()
         {
-            this.optionsMenu = optionsMenu;
             AddLabel("Open the config file to change values that requires restarts.", new Vector2(-6, 71), new Vector2(375, 40));
             AddToggle(DebugMode, "Enable Debug Mode", "Some goodies to help for development");
             AddToggle(EnableCustomWarningScreen, "Custom Warning Screen", "Enable the custom Warning Screen text changed by TeacherAPI.");
             AddToggle(DisableAssistingTeachers, "Disable Assisting Teachers", "Completely disables teachers assisting other teachers.");
-        }
-
-        private static void OnMenuInitialize(OptionsMenu optionsMenu)
-        {
-            var obj = CustomOptionsCore.CreateNewCategory(optionsMenu, "TeacherAPI");
-            var menu = obj.AddComponent<TeacherAPIConfiguration>();
-            menu.Initialize(optionsMenu);
         }
 
         internal static void Setup()
@@ -90,7 +84,6 @@ namespace TeacherAPI
                 false,
                 "Skips Logo, Warning Screen, NameMenu (on later versions of BB +Dev API). And helps a bit with debugging."
             );
-            CustomOptionsCore.OnMenuInitialize += OnMenuInitialize;
         }
     }
 }

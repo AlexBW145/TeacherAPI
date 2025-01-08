@@ -23,7 +23,7 @@ namespace TeacherAPI.patches
             man.Initialize(__instance);
             TeacherPlugin.Instance.CurrentBaldi = TeacherPlugin.Instance.GetPotentialBaldi(__instance.ld);
 
-            TeacherManager.DefaultBaldiEnabled = !(TeacherPlugin.Instance.CurrentBaldi != null);
+            TeacherManager.DefaultBaldiEnabled = !(TeacherPlugin.Instance.CurrentBaldi?.GetComponent<Teacher>() != null);
             if (TeacherManager.DefaultBaldiEnabled)
                 return;
 

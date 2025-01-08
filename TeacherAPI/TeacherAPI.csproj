@@ -5,7 +5,7 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
 		<!-- Path to baldi plugins -->
-		<PluginGamePath>C:\Program Files (x86)\Steam\steamapps\common\Baldi's Basics Plus\BepInEx\plugins\</PluginGamePath>
+		<PluginGamePath>D:\SteamLibrary\steamapps\common\Baldi's Basics Plus\BepInEx\plugins\</PluginGamePath>
 
 		<!-- Path to the dll references -->
 		<LibPath>..\Dependencies\</LibPath>
@@ -54,13 +54,13 @@
 	
 	<ItemGroup>
 		<Reference Include="BaldiEndless">
-		  <HintPath>..\Dependencies\Arcade.dll</HintPath>
+		  <HintPath>$(LibPath)Arcade.dll</HintPath>
 		</Reference>
 		<Reference Include="Assembly-CSharp">
-		  <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Baldi's Basics Plus\BALDI_Data\Managed\Assembly-CSharp.dll</HintPath>
+		  <HintPath>D:\SteamLibrary\steamapps\common\Baldi's Basics Plus\BALDI_Data\Managed\Assembly-CSharp.dll</HintPath>
 		</Reference>
 		<Reference Include="MTM101BaldAPI">
-		  <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Baldi's Basics Plus\BepInEx\plugins\MTM101BaldAPI.dll</HintPath>
+		  <HintPath>D:\SteamLibrary\steamapps\common\Baldi's Basics Plus\BepInEx\plugins\MTM101BaldAPI.dll</HintPath>
 		</Reference>
 		<Reference Include="Unity.TextMeshPro">
 			<HintPath>$(LibPath)Unity.TextMeshPro.dll</HintPath>

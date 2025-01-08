@@ -97,7 +97,7 @@ If you encounter an error, send me the Logs!", false);
             else if (baldis.Count() <= 0)
             {
                 Log.LogWarning("No Baldi found in " + floorObject.name + "!");
-                return null;
+                return NPCMetaStorage.Instance.Get(Character.Baldi).value as Baldi;
             }
             return baldis.First();
         }

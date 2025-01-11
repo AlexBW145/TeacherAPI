@@ -27,6 +27,8 @@ namespace TeacherAPI
                 200
             );
             AddTooltip(toggle, tooltip);
+            GameObject _hotspot = toggle.ReflectionGetVariable("hotspot") as GameObject;
+            _hotspot.GetComponent<StandardMenuButton>().OnPress.AddListener(() => config.Value = toggle.Value);
             /*toggle.GetComponentInChildren<TextMeshProUGUI>().GetComponent<RectTransform>().sizeDelta += new Vector2(200, 0);
             toggle.transform.SetParent(transform, false);
             GameObject _hotspot = toggle.ReflectionGetVariable("hotspot") as GameObject;

@@ -37,6 +37,7 @@
 	    <Message Text="Debug post-build event running..." Importance="high" />
 	    <Exec Command="echo F|xcopy /Y &quot;$(MSBuildProjectDirectory)\$(OutDir)$(AssemblyName).dll&quot; &quot;$(PluginGamePath)\TeacherAPI\$(AssemblyName).dll&quot;" />
 		<Exec Command="echo F|xcopy /Y &quot;$(MSBuildProjectDirectory)\$(OutDir)$(AssemblyName).pdb&quot; &quot;$(PluginGamePath)\TeacherAPI\$(AssemblyName).pdb&quot;" />
+		<Exec Command="echo F|xcopy /Y &quot;$(MSBuildProjectDirectory)\$(OutDir)$(AssemblyName).xml&quot; &quot;$(PluginGamePath)\TeacherAPI\$(AssemblyName).xml&quot;" />
 	</Target>
 
     <!-- Post-build event for Release configuration -->
@@ -44,6 +45,7 @@
 		<Message Text="Release post-build event running..." Importance="high" />
 	    <Exec Command="echo F|xcopy /Y &quot;$(MSBuildProjectDirectory)\$(OutDir)$(AssemblyName).dll&quot; &quot;$(PluginGamePath)\TeacherAPI\$(AssemblyName).dll&quot;" />
 		<Exec Command="echo F|xcopy /Y &quot;$(MSBuildProjectDirectory)\$(OutDir)$(AssemblyName).pdb&quot; &quot;$(PluginGamePath)\TeacherAPI\$(AssemblyName).pdb&quot;" />
+		<Exec Command="echo F|xcopy /Y &quot;$(MSBuildProjectDirectory)\$(OutDir)$(AssemblyName).xml&quot; &quot;$(PluginGamePath)\TeacherAPI\$(AssemblyName).xml&quot;" />
 	</Target>
     
 	<ItemGroup>

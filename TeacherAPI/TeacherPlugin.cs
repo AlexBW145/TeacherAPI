@@ -50,7 +50,7 @@ If you encounter an error, send me the Logs!", false);
             GeneratorManagement.Register(this, GenerationModType.Base, EditGenerator);
             CustomOptionsCore.OnMenuInitialize += (__instance, handler) =>
             {
-                handler.AddCategory<TeacherAPIConfiguration>("PineDebug\nOptions");
+                handler.AddCategory<TeacherAPIConfiguration>("TeacherAPI");
             };
         }
         private void EditGenerator(string floorName, int floorNumber, SceneObject sceneObject)
@@ -84,6 +84,13 @@ If you encounter an error, send me the Logs!", false);
             }
 
             sceneObject.CustomLevelObject()?.SetCustomModValue(Info, "TeacherAPI_OriginalBaldi", GetPotentialBaldi(sceneObject.levelObject));
+        }
+
+        internal Baldi GetPotentialBaldi(CustomLevelObject floorObject)
+        {
+            if (floorObject.GetCustomModValue(Info, "TeacherAPI_OriginalBaldi") != null)
+                return floorObject.GetCustomModValue(Info, "TeacherAPI_OriginalBaldi") as Baldi;
+            return GetPotentialBaldi(floorObject as LevelObject);
         }
 
         internal Baldi GetPotentialBaldi(LevelObject floorObject)

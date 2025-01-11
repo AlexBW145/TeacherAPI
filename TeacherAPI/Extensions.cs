@@ -83,7 +83,7 @@ namespace TeacherAPI
                 assistantList.Add(
                 new WeightedSelection<Teacher>() { selection = teacher, weight = weight }
             );
-            levelObject.SetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialTeachers", assistantList);
+            levelObject.SetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialAssistants", assistantList);
         }
 
         public static Sprite ToSprite(this Texture2D tex, float pixelsPerUnit)

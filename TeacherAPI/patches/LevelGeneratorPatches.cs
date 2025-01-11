@@ -21,7 +21,7 @@ namespace TeacherAPI.patches
             var seed = CoreGameManager.Instance.Seed();
             var man = __instance.Ec.gameObject.AddComponent<TeacherManager>();
             man.Initialize(__instance);
-            TeacherPlugin.Instance.CurrentBaldi = TeacherPlugin.Instance.GetPotentialBaldi(__instance.ld);
+            TeacherPlugin.Instance.CurrentBaldi = TeacherPlugin.Instance.GetPotentialBaldi(__instance.scene.CustomLevelObject());
 
             TeacherManager.DefaultBaldiEnabled = TeacherPlugin.Instance.CurrentBaldi == null || TeacherAPIConfiguration.EnableBaldi.Value;
             if (TeacherManager.DefaultBaldiEnabled)

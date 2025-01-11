@@ -1,4 +1,5 @@
-﻿using HarmonyLib;
+﻿using BepInEx;
+using HarmonyLib;
 using MTM101BaldAPI;
 using MTM101BaldAPI.Reflection;
 using System;
@@ -71,7 +72,6 @@ namespace TeacherAPI.patches
                 var aud = happyBaldi.ReflectionGetVariable("audMan") as AudioManager;
                 aud.enabled = false;
                 aud.ReflectionSetVariable("disableSubtitles", true);
-                MusicManager.Instance.StopMidi();
             }
 
             
@@ -100,23 +100,49 @@ namespace TeacherAPI.patches
             }
         }
 
-        [HarmonyPatch(typeof(MainGameManager), "CreateHappyBaldi")]
-        internal class InMainGameManager
+        [HarmonyPatch]
+        internal class ManagerPatches
         {
-            internal static void Postfix(MainGameManager __instance)
+            [HarmonyPatch(typeof(MainGameManager), "CreateHappyBaldi")]
+            [HarmonyPatch(typeof(EndlessGameManager), "CreateHappyBaldi")]
+            [HarmonyPostfix]
+            internal static void InGame(object __instance)
             {
-                ReplaceHappyBaldi(__instance);
+                ReplaceHappyBaldi(__instance as BaseGameManager);
+            }
+
+            [HarmonyPatch(typeof(MainGameManager), nameof(MainGameManager.BeginPlay))]
+            [HarmonyPatch(typeof(EndlessGameManager), nameof(EndlessGameManager.BeginPlay))]
+            [HarmonyPostfix]
+            static void ReplaceMusic()
+            {
+                var replacement = TeacherManager.Instance.SpawnedMainTeacher.ReplacementMusic;
+                if (replacement.GetType().Equals(typeof(string)))
+                {
+                    string str = replacement as string;
+                    if (str.ToLower() == "mute")
+                    {
+                        MusicManager.Instance.StopMidi();
+                        return;
+                    }
+                    if (!string.IsNullOrWhiteSpace(str))
+                    {
+                        MusicManager.Instance.PlayMidi(str, true);
+                        return;
+                    }
+                }
+                else if (replacement.GetType().Equals(typeof(SoundObject)))
+                {
+                    SoundObject snd = replacement as SoundObject;
+                    MusicManager.Instance.StopMidi();
+                    CoreGameManager.Instance.musicMan.QueueAudio(snd, true);
+                    CoreGameManager.Instance.musicMan.SetLoop(true);
+                    return;
+                }
             }
         }
 
-        [HarmonyPatch(typeof(EndlessGameManager), "CreateHappyBaldi")]
-        internal class InEndlessGameManager
-        {
-            internal static void Postfix(EndlessGameManager __instance)
-            {
-                ReplaceHappyBaldi(__instance);
-            }
-        }
+        
     }
 
     [HarmonyPatch(typeof(RulerEvent), nameof(RulerEvent.Begin))]

@@ -1,6 +1,8 @@
 ﻿using HarmonyLib;
+using MTM101BaldAPI;
 using MTM101BaldAPI.AssetTools;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using TeacherAPI.utils;
 using UnityEngine;
@@ -60,11 +62,13 @@ namespace TeacherAPI
         /// <param name="levelObject"></param>
         /// <param name="teacher">The teacher to be added</param>
         /// <param name="weight">The weight of the teacher for the selection (as a reference, MoreTeachers default teachers have a weight of 100)</param>
-        public static void AddPotentialTeacher(this LevelObject levelObject, Teacher teacher, int weight)
+        public static void AddPotentialTeacher(this CustomLevelObject levelObject, Teacher teacher, int weight)
         {
-            TeacherPlugin.Instance.potentialTeachers[levelObject].Add(
+            var teacherlist = levelObject.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialTeachers") as List<WeightedSelection<Teacher>>;
+                teacherlist.Add(
                 new WeightedSelection<Teacher>() { selection = teacher, weight = weight }
             );
+            levelObject.SetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialTeachers", teacherlist);
         }
 
         /// <summary>
@@ -73,11 +77,13 @@ namespace TeacherAPI
         /// <param name="levelObject"></param>
         /// <param name="teacher">The teacher to be added</param>
         /// <param name="weight">The weight of the teacher for the selection (as a reference, MoreTeachers default teachers have a weight of 100)</param>
-        public static void AddPotentialAssistingTeacher(this LevelObject levelObject, Teacher teacher, int weight)
+        public static void AddPotentialAssistingTeacher(this CustomLevelObject levelObject, Teacher teacher, int weight)
         {
-            TeacherPlugin.Instance.potentialAssistants[levelObject].Add(
+            var assistantList = levelObject.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialAssistants") as List<WeightedSelection<Teacher>>;
+                assistantList.Add(
                 new WeightedSelection<Teacher>() { selection = teacher, weight = weight }
             );
+            levelObject.SetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialTeachers", assistantList);
         }
 
         public static Sprite ToSprite(this Texture2D tex, float pixelsPerUnit)

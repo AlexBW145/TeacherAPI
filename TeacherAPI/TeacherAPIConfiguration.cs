@@ -58,7 +58,7 @@ namespace TeacherAPI
                 "General",
                 "EnableBaldi",
                 false,
-                "Doesn't works yet."
+                "Disables all other teachers and makes Baldi spawn in instead."
             );
             EnableCustomWarningScreen = TeacherPlugin.Instance.Config.Bind(
                 "General",

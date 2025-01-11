@@ -33,6 +33,7 @@ namespace TeacherExtension.Foxo
             new Harmony("alexbw145.baldiplus.teacherextension.foxo").PatchAllConditionals();
             Instance = this;
             FoxoConfiguration.Setup();
+            AssetLoader.LocalizationFromMod(this);
             TeacherPlugin.RequiresAssetsFolder(this); // Critical!!!
             LoadingEvents.RegisterOnAssetsLoaded(Info, OnAssetsLoaded, false);
             ModdedSaveGame.AddSaveHandler(deathCounter);
@@ -60,6 +61,9 @@ namespace TeacherExtension.Foxo
 
         private void OnAssetsLoaded()
         {
+            // I'm dead serious when they always get unloaded!
+            Resources.FindObjectsOfTypeAll<Sprite>().ToList().Find(x => x.name.ToLower() == "exit_transparent").MarkAsNeverUnload();
+            Resources.FindObjectsOfTypeAll<Sprite>().ToList().Find(x => x.name.ToLower() == "exit").MarkAsNeverUnload();
             Foxo.LoadAssets();
 
             // Create and Register Foxo and DarkFoxo
@@ -74,7 +78,7 @@ namespace TeacherExtension.Foxo
             // Also create and register some items specifically to combat against Foxo.
             {
                 var fireExtinguish = new ItemBuilder(Info)
-                    .SetNameAndDescription("Fire Extinguisher", "A somewhat powerful extinguisher\nthat can make Foxo frustrated, and also mad!")
+                    .SetNameAndDescription("Itm_FireExtinguisher", "Desc_FireExtinguisher")
                     .SetItemComponent<FireExtinguisher>()
                     .SetEnum(global::Items.Apple)
                     .SetGeneratorCost(ItemMetaStorage.Instance.FindByEnum(global::Items.Apple).value.value)
@@ -87,14 +91,14 @@ namespace TeacherExtension.Foxo
             GeneratorManagement.Register(this, GenerationModType.Addend, EditGenerator);
         }
 
-        private void EditGenerator(string floorName, int floorNumber, LevelObject floorObject)
+        private void EditGenerator(string floorName, int floorNumber, SceneObject floorObject)
         {
             // It is good practice to check if the level starts with F to make sure to not clash with other mods.
             // INF stands for Infinite Floor
             if (floorName.StartsWith("F") || floorName.StartsWith("END") || floorName.Equals("INF"))
             {
-                floorObject.AddPotentialTeacher(Foxo, FoxoConfiguration.Weight.Value);
-                floorObject.AddPotentialAssistingTeacher(Foxo, FoxoConfiguration.Weight.Value);
+                floorObject.CustomLevelObject().AddPotentialTeacher(Foxo, FoxoConfiguration.Weight.Value);
+                floorObject.CustomLevelObject().AddPotentialAssistingTeacher(Foxo, FoxoConfiguration.Weight.Value);
                 print($"Added Foxo to {floorName} (Floor {floorNumber})");
             }
         }

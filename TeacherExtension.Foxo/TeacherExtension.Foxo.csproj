@@ -5,7 +5,7 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
 		<!-- Path to your baldi plugins, change it if you dare -->
-		<PluginGamePath>C:\Program Files (x86)\Steam\steamapps\common\Baldi's Basics Plus\BepInEx\plugins\</PluginGamePath>
+		<PluginGamePath>D:\SteamLibrary\steamapps\common\Baldi's Basics Plus\BepInEx\plugins\</PluginGamePath>
 
 		<!-- Path to the dll references -->
 		<LibPath>..\Dependencies\</LibPath>
@@ -43,22 +43,25 @@
 	<!-- Baldi dlls -->
 	<ItemGroup>
 		<Reference Include="BaldiEndless">
-		  <HintPath>..\Dependencies\Arcade.dll</HintPath>
+		  <HintPath>$(LibPath)Arcade.dll</HintPath>
 		</Reference>
 		<Reference Include="Assembly-CSharp">
-		  <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Baldi's Basics Plus\BALDI_Data\Managed\Assembly-CSharp.dll</HintPath>
+		  <HintPath>D:\SteamLibrary\steamapps\common\Baldi's Basics Plus\BALDI_Data\Managed\Assembly-CSharp.dll</HintPath>
 		</Reference>
 		<Reference Include="DaytimeSeasonCycle">
 		  <HintPath>C:\Users\alex1\source\repos\Baldi Basics Plus - Daynight Season Cycle\bin\Release\netstandard2.0\DaytimeSeasonCycle.dll</HintPath>
 		</Reference>
 		<Reference Include="MTM101BaldAPI">
-		  <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Baldi's Basics Plus\BepInEx\plugins\MTM101BaldAPI.dll</HintPath>
+		  <HintPath>$(PluginGamePath)\MTM101BaldAPI.dll</HintPath>
 		</Reference>
 		<Reference Include="Unity.TextMeshPro">
 			<HintPath>$(LibPath)Unity.TextMeshPro.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.UI">
-		  <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Baldi's Basics Plus\BALDI_Data\Managed\UnityEngine.UI.dll</HintPath>
+		  <HintPath>D:\SteamLibrary\steamapps\common\Baldi's Basics Plus\BALDI_Data\Managed\UnityEngine.UI.dll</HintPath>
+		</Reference>
+		<Reference Include="UnityEngine.VideoModule">
+		  <HintPath>D:\SteamLibrary\steamapps\common\Baldi's Basics Plus\BALDI_Data\Managed\UnityEngine.VideoModule.dll</HintPath>
 		</Reference>
 	</ItemGroup>
 

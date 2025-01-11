@@ -23,34 +23,36 @@ namespace TeacherAPI.patches
             man.Initialize(__instance);
             TeacherPlugin.Instance.CurrentBaldi = TeacherPlugin.Instance.GetPotentialBaldi(__instance.ld);
 
-            TeacherManager.DefaultBaldiEnabled = !(TeacherPlugin.Instance.CurrentBaldi?.GetComponent<Teacher>() != null);
+            TeacherManager.DefaultBaldiEnabled = TeacherPlugin.Instance.CurrentBaldi == null || TeacherAPIConfiguration.EnableBaldi.Value;
             if (TeacherManager.DefaultBaldiEnabled)
                 return;
 
-            var rng = new System.Random(seed + TeacherPlugin.Instance.floorNumbers[__instance.ld]);
+            var rng = new System.Random(seed + __instance.scene.levelNo);
 
-            var mainTeacher = WeightedSelection<Teacher>.ControlledRandomSelectionList(TeacherPlugin.Instance.potentialTeachers[__instance.ld], rng);
+            List<WeightedSelection<Teacher>> potentialTeachers = __instance.scene.CustomLevelObject().GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialTeachers") as List<WeightedSelection<Teacher>>;
+            List<WeightedSelection<Teacher>> potentialAssistants = __instance.scene.CustomLevelObject().GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialAssistants") as List<WeightedSelection<Teacher>>;
+            var mainTeacher = WeightedSelection<Teacher>.ControlledRandomSelectionList(potentialTeachers, rng);
             man.MainTeacherPrefab = mainTeacher;
-            TeacherPlugin.Instance.potentialTeachers[__instance.ld].PrintWeights("Potential Teachers", TeacherPlugin.Log);
+            potentialTeachers.PrintWeights("Potential Teachers", TeacherPlugin.Log);
             TeacherPlugin.Log.LogInfo($"Selected Main Teacher {EnumExtensions.GetExtendedName<Character>((int)mainTeacher.Character)}");
 
             // Assistants setup
             var policy = mainTeacher.GetAssistantPolicy();
-            var potentialAssistants = TeacherPlugin.Instance.potentialAssistants[__instance.ld]
+            var assistants = potentialAssistants
                 .Where(t => t.selection != man.MainTeacherPrefab)
                 .Where(t => policy.CheckAssistant(t.selection))
                 .ToList();
 
-            potentialAssistants.PrintWeights("Potential Assistants", TeacherPlugin.Log);
+            assistants.PrintWeights("Potential Assistants", TeacherPlugin.Log);
 
             for (var x = 0; x < policy.maxAssistants; x++)
             {
-                if (potentialAssistants.Count > 0 && rng.NextDouble() <= policy.probability && !TeacherAPIConfiguration.DisableAssistingTeachers.Value)
+                if (assistants.Count > 0 && rng.NextDouble() <= policy.probability && !TeacherAPIConfiguration.DisableAssistingTeachers.Value)
                 {
-                    var i = WeightedSelection<Teacher>.ControlledRandomIndex(potentialAssistants.ToArray(), rng);
-                    TeacherPlugin.Log.LogInfo($"Selected Teacher {EnumExtensions.GetExtendedName<Character>((int)potentialAssistants[i].selection.Character)}");
-                    man.assistingTeachersPrefabs.Add(potentialAssistants[i].selection);
-                    potentialAssistants.Remove(potentialAssistants[i]);
+                    var i = WeightedSelection<Teacher>.ControlledRandomIndex(assistants.ToArray(), rng);
+                    TeacherPlugin.Log.LogInfo($"Selected Teacher {EnumExtensions.GetExtendedName<Character>((int)assistants[i].selection.Character)}");
+                    man.assistingTeachersPrefabs.Add(assistants[i].selection);
+                    assistants.Remove(assistants[i]);
                 }
             }
 

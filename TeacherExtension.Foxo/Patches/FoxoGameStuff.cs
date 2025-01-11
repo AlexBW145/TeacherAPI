@@ -1,9 +1,12 @@
 ﻿using HarmonyLib;
+using MTM101BaldAPI.AssetTools;
 using MTM101BaldAPI.Components;
+using MTM101BaldAPI.Reflection;
 using MTM101BaldAPI.Registers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -12,6 +15,7 @@ using TeacherExtension.Foxo.Items;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Video;
 
 namespace TeacherExtension.Foxo.Patches
 {
@@ -21,9 +25,133 @@ namespace TeacherExtension.Foxo.Patches
         [HarmonyPatch(typeof(CoreGameManager), nameof(CoreGameManager.EndGame)), HarmonyPostfix]
         static void DeathCounterIncrease() => FoxoPlugin.Instance.deathCounter.deaths++;
 
+        static bool foxoinF3 = false;
+        [HarmonyPatch(typeof(BaseGameManager), nameof(BaseGameManager.LoadNextLevel)), HarmonyPrefix]
+        static void IsFoxoF3Teach() => foxoinF3 = !TeacherPlugin.IsEndlessFloorsLoaded() && TeacherManager.Instance != null && TeacherManager.Instance?.SpawnedMainTeacher?.GetComponent<Foxo>() != null;
+
+        [HarmonyPatch(typeof(PlaceholderWinManager), nameof(PlaceholderWinManager.Initialize)), HarmonyPrefix]
+        static void FoxoEnding(PlaceholderWinManager __instance)
+        {
+            if (!foxoinF3) return;
+            {
+                VideoPlayer video = __instance.gameObject.AddComponent<VideoPlayer>();
+                video.playOnAwake = false;
+                video.skipOnDrop = false;
+                video.renderMode = VideoRenderMode.CameraNearPlane;
+                video.targetCamera = CoreGameManager.Instance.GetCamera(0).camCom;
+                CoreGameManager.Instance.GetHud(0).Hide(true);
+                video.targetCameraAlpha = 1f;
+                video.audioOutputMode = VideoAudioOutputMode.AudioSource;
+                video.SetTargetAudioSource(0, CoreGameManager.Instance.audMan.audioDevice);
+                video.waitForFirstFrame = false;
+                video.source = VideoSource.Url;
+                video.url = FoxoPlugin.Instance.deathCounter.deaths >= 4
+                    ? Path.Combine("File:///", AssetLoader.GetModPath(FoxoPlugin.Instance), "endings", "GradeCutscene.mov")
+                    : Path.Combine("File:///", AssetLoader.GetModPath(FoxoPlugin.Instance), "endings", "GradeCutscene_Good.mov");
+                video.loopPointReached += (vp) => { if (FoxoPlugin.Instance.deathCounter.deaths >= 4) Application.Quit(); else Congrats(__instance); };
+                video.aspectRatio = VideoAspectRatio.FitInside;
+                __instance.gameObject.GetComponent<VideoPlayer>().Play(); // This is stupid...
+                __instance.gameObject.GetComponent<VideoPlayer>().Pause(); // A stupid workaround...
+            }
+        }
+
+        static void Congrats(PlaceholderWinManager __instance)
+        {
+            Canvas canv = new GameObject("Congrats", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster)).GetComponent<Canvas>();
+            canv.gameObject.layer = LayerMask.NameToLayer("UI");
+            canv.transform.localPosition = Vector3.zero;
+            canv.renderMode = RenderMode.ScreenSpaceCamera;
+            canv.worldCamera = GlobalCam.Instance.Cam;
+            CanvasScaler scale = canv.GetComponent<CanvasScaler>();
+            scale.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scale.referenceResolution = new Vector2(480f, 360f);
+            scale.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
+            scale.referencePixelsPerUnit = 100f;
+            GraphicRaycaster graphic = canv.GetComponent<GraphicRaycaster>();
+            graphic.ignoreReversedGraphics = true;
+            graphic.blockingObjects = GraphicRaycaster.BlockingObjects.None;
+            graphic.blockingMask = ~0;
+            canv.planeDistance = 0.31f;
+            canv.gameObject.SetActive(false);
+            Image image = new GameObject("Image", typeof(RectTransform), typeof(Image)).GetComponent<Image>();
+            image.rectTransform.SetParent(canv.transform);
+            image.gameObject.layer = LayerMask.NameToLayer("UI");
+            image.sprite = Foxo.sprites.Get<Sprite>("Graduated");
+            image.material = Resources.FindObjectsOfTypeAll<Material>().ToList().Find(x => x.name == "UI_AsSprite");
+            image.rectTransform.anchorMin = Vector2.zero;
+            image.rectTransform.anchorMax = Vector2.one;
+            image.rectTransform.pivot = Vector2.one / 2f;
+            image.rectTransform.sizeDelta = new Vector2(480f, 360f) / 12f;
+            image.rectTransform.localPosition = Vector3.zero;
+            image.rectTransform.localScale = new Vector3(0.7f, 1f, 1f);
+            TextMeshProUGUI text = new GameObject("YourName", typeof(RectTransform), typeof(TextMeshProUGUI)).GetComponent<TextMeshProUGUI>();
+            text.rectTransform.SetParent(canv.transform);
+            text.gameObject.layer = LayerMask.NameToLayer("UI");
+            text.text = PlayerFileManager.Instance.fileName;
+            text.font = Foxo.fonts.Get<TMP_FontAsset>("Cooper24");
+            text.fontSize = 24f;
+            text.alignment = TextAlignmentOptions.Center;
+            text.richText = false;
+            text.color = Color.black;
+            text.rectTransform.anchorMin = new Vector2(1f, 0.5f);
+            text.rectTransform.anchorMax = new Vector2(1f, 0.5f);
+            text.rectTransform.pivot = new Vector2(1f, 0.5f);
+            text.rectTransform.localPosition = Vector3.zero;
+            text.rectTransform.anchoredPosition = new Vector2(-140f, 20f);
+            Image exit = new GameObject("Exit", typeof(RectTransform), typeof(Image)).GetComponent<Image>();
+            exit.rectTransform.SetParent(canv.transform);
+            exit.gameObject.layer = LayerMask.NameToLayer("UI");
+            exit.tag = "Button";
+            exit.sprite = Resources.FindObjectsOfTypeAll<Sprite>().ToList().Find(x => x.name.ToLower().EndsWith("exit_transparent")); // For some reason, the exit sprites are unloaded or Advanced Edition messes with them.
+            //exit.material = Resources.FindObjectsOfTypeAll<Material>().ToList().Find(x => x.name == "UI_AsSprite");
+            exit.rectTransform.anchorMin = Vector2.zero;
+            exit.rectTransform.anchorMax = Vector2.zero;
+            exit.rectTransform.pivot = Vector2.zero;
+            exit.raycastTarget = true;
+            exit.rectTransform.localPosition = Vector3.zero;
+            exit.rectTransform.anchoredPosition = Vector2.right * 90f;
+            exit.rectTransform.sizeDelta = Vector2.one * 50f;
+            StandardMenuButton but = exit.gameObject.AddComponent<StandardMenuButton>();
+            but.image = exit;
+            but.unhighlightedSprite = exit.sprite;
+            but.highlightedSprite = Resources.FindObjectsOfTypeAll<Sprite>().ToList().Find(x => x.name.ToLower().EndsWith("exit"));
+            but.swapOnHigh = true;
+            but.OnPress = new UnityEngine.Events.UnityEvent();
+            but.OnPress.AddListener(() => CoreGameManager.Instance.ReturnToMenu());
+            CursorInitiator initat = canv.gameObject.AddComponent<CursorInitiator>();
+            initat.cursorPre = Resources.FindObjectsOfTypeAll<CursorController>().ToList().Find(x => x.name == "CursorOrigin");
+            initat.graphicRaycaster = canv.GetComponent<GraphicRaycaster>();
+            initat.screenSize = canv.GetComponent<CanvasScaler>().referenceResolution;
+            canv.gameObject.SetActive(true);
+            InputManager.Instance.ActivateActionSet("Interface");
+            IEnumerator ThisIsFoxoSaying()
+            {
+                yield return new WaitForSecondsRealtime(5.580f);
+                CoreGameManager.Instance?.audMan?.PlaySingle(Foxo.audios.Get<SoundObject>("graduations"));
+                yield break;
+            }
+            CoreGameManager.Instance.audMan.PlaySingle(Foxo.audios.Get<SoundObject>("graduated"));
+            CoreGameManager.Instance.StartCoroutine(ThisIsFoxoSaying());
+            initat.currentCursor.transform.SetSiblingIndex(but.transform.GetSiblingIndex() + 1);
+        }
+        [HarmonyPatch(typeof(PlaceholderWinManager), nameof(PlaceholderWinManager.BeginPlay)), HarmonyPrefix]
+        static bool FoxoEndPlay(PlaceholderWinManager __instance, ref MovementModifier ___moveMod)
+        {
+            Time.timeScale = 1f;
+            AudioListener.pause = false;
+            if (foxoinF3) {
+                CoreGameManager.Instance.GetPlayer(0).Am.moveMods.Add(___moveMod);
+                CoreGameManager.Instance.GetPlayer(0).itm.Disable(true);
+                __instance.gameObject.GetComponent<VideoPlayer>().Play();
+                CoreGameManager.Instance.disablePause = true;
+            }
+            return !foxoinF3;
+        }
+
         [HarmonyPatch(typeof(BaseGameManager), nameof(BaseGameManager.Initialize)), HarmonyPostfix]
         static void SwapApplesAndExtinguishers(BaseGameManager __instance)
         {
+            CoreGameManager.Instance.musicMan.pitchModifier = 1f;
             if (TeacherManager.Instance?.SpawnedMainTeacher == null) return;
             var mainteach = AccessTools.DeclaredField(typeof(TeacherManager), "<MainTeacherPrefab>k__BackingField").GetValue(TeacherManager.Instance) as Teacher; // I took it from UnityExplorer
             for (int i = 0; i < CoreGameManager.Instance.setPlayers; i++)
@@ -108,7 +236,7 @@ namespace TeacherExtension.Foxo.Patches
     {
         static void Prefix(SubtitleController __instance)
         {
-            if (Foxo.audios.GetAll<SoundObject>().Contains(__instance.soundObject))
+            if (Foxo.audios.GetAll<SoundObject>().Contains(__instance.soundObject) || Foxo.audios.GetAll<SoundObject[]>().ToList().Exists(snd => snd.Contains(__instance.soundObject)))
                 __instance.text.font = Foxo.fonts.Get<TMP_FontAsset>("Cooper24");
         }
     }

@@ -1,0 +1,16 @@
+{"items":[
+    {"key":"Sfx_Foxo_Boing","value":"*Boing!*"},
+    {"key":"Sfx_Foxo_Ding","value":"*Ding!*"},
+    {"key":"Sfx_Foxo_Slap","value":"*Slap!*"},
+    {"key":"Sfx_Foxo_Wrath","value":"?!"},
+    {"key":"Vfx_Foxo_Introduction","value":"Hello there! Welcome to my Fun Schoolhouse."},
+    {"key":"Vfx_Foxo_Scream","value":"*Loud Screaming*"},
+    {"key":"Vfx_Foxo_WrathScream","value":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH"},
+    {"key":"Vfx_Foxo_Praise1","value":"Great job, that's great!"},
+    {"key":"Vfx_Foxo_Praise2","value":"I think you are smarter than me!"},
+    {"key":"Sfx_Foxo_Teleport","value":"*KWAHOOS!*"},
+    {"key":"Vfx_Foxo_Floor2Bad","value":"Get some better grades..."},
+    {"key":"Vfx_Foxo_GoodJob","value":"Wow! You've graduated!"},
+    {"key":"Itm_FireExtinguisher","value":"Fire Extinguisher"},
+    {"key":"Desc_FireExtinguisher","value":"Fire Extinguisher\nA somewhat powerful extinguisher\nthat can make Foxo frustrated, and also mad!"}
+]}

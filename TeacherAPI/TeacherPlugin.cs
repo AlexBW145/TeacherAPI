@@ -4,6 +4,7 @@ using BepInEx.Logging;
 using HarmonyLib;
 using MTM101BaldAPI;
 using MTM101BaldAPI.AssetTools;
+using MTM101BaldAPI.OptionsAPI;
 using MTM101BaldAPI.Reflection;
 using MTM101BaldAPI.Registers;
 using System;
@@ -26,12 +27,12 @@ namespace TeacherAPI
         public static TeacherPlugin Instance { get; private set; }
 
         internal Dictionary<Character, NPC> whoAreTeachers = new Dictionary<Character, NPC>(); // Mostly used to differenciate who are teachers and who are not.
-        internal Dictionary<LevelObject, Baldi> originalBaldiPerFloor = new Dictionary<LevelObject, Baldi>();
+        //internal Dictionary<LevelObject, Baldi> originalBaldiPerFloor = new Dictionary<LevelObject, Baldi>();
         public Baldi CurrentBaldi { get; internal set; }
 
-        internal Dictionary<LevelObject, List<WeightedSelection<Teacher>>> potentialTeachers = new Dictionary<LevelObject, List<WeightedSelection<Teacher>>>();
-        internal Dictionary<LevelObject, List<WeightedSelection<Teacher>>> potentialAssistants = new Dictionary<LevelObject, List<WeightedSelection<Teacher>>>();
-        internal Dictionary<LevelObject, int> floorNumbers = new Dictionary<LevelObject, int>();
+        //internal Dictionary<LevelObject, List<WeightedSelection<Teacher>>> potentialTeachers = new Dictionary<LevelObject, List<WeightedSelection<Teacher>>>();
+        //internal Dictionary<LevelObject, List<WeightedSelection<Teacher>>> potentialAssistants = new Dictionary<LevelObject, List<WeightedSelection<Teacher>>>();
+        //internal Dictionary<LevelObject, int> floorNumbers = new Dictionary<LevelObject, int>();
         public static ManualLogSource Log { get => Instance.Logger; }
 
         internal void Awake()
@@ -47,19 +48,26 @@ If you encounter an error, send me the Logs!", false);
             }
             new Harmony(PluginInfo.PLUGIN_GUID).PatchAllConditionals();
             GeneratorManagement.Register(this, GenerationModType.Base, EditGenerator);
+            CustomOptionsCore.OnMenuInitialize += (__instance, handler) =>
+            {
+                handler.AddCategory<TeacherAPIConfiguration>("PineDebug\nOptions");
+            };
         }
-        private void EditGenerator(string floorName, int floorNumber, SceneObject floorObject)
+        private void EditGenerator(string floorName, int floorNumber, SceneObject sceneObject)
         {
-            if (floorObject.levelObject.potentialBaldis.Length != 1)
+            if (sceneObject.levelObject.potentialBaldis.Length != 1)
                 MTM101BaldiDevAPI.CauseCrash(Info, new Exception("There is no exactly one PotentialBaldi for this level. What mod did you have installed ?"));
 
-            potentialAssistants[floorObject.levelObject] = new List<WeightedSelection<Teacher>>();
+            /*potentialAssistants[floorObject.levelObject] = new List<WeightedSelection<Teacher>>();
             potentialTeachers[floorObject.levelObject] = new List<WeightedSelection<Teacher>>();
-            floorNumbers[floorObject.levelObject] = floorNumber;
+            floorNumbers[floorObject.levelObject] = floorNumber;*/
+
+            sceneObject.CustomLevelObject()?.SetCustomModValue(Info, "TeacherAPI_PotentialTeachers", new List<WeightedSelection<Teacher>>());
+            sceneObject.CustomLevelObject()?.SetCustomModValue(Info, "TeacherAPI_PotentialAssistants", new List<WeightedSelection<Teacher>>());
 
             if (!TeacherAPIConfiguration.EnableBaldi.Value)
             {
-                foreach (var baldi in floorObject.levelObject.potentialBaldis)
+                foreach (var baldi in sceneObject.levelObject.potentialBaldis)
                 {
                     baldi.weight = 0;
                 }
@@ -69,35 +77,29 @@ If you encounter an error, send me the Logs!", false);
             if (floorName == "INF")
             {
                 // MTM, do you eat clowns at breakfast ? 
-                foreach (var baldi in floorObject.levelObject.potentialBaldis)
+                foreach (var baldi in sceneObject.levelObject.potentialBaldis)
                 {
                     baldi.weight = TeacherAPIConfiguration.EnableBaldi.Value ? 100 : 0;
                 }
             }
 
-            if (!originalBaldiPerFloor.ContainsKey(floorObject.levelObject))
-                originalBaldiPerFloor.Add(floorObject.levelObject, GetPotentialBaldi(floorObject.levelObject));
+            sceneObject.CustomLevelObject()?.SetCustomModValue(Info, "TeacherAPI_OriginalBaldi", GetPotentialBaldi(sceneObject.levelObject));
         }
 
         internal Baldi GetPotentialBaldi(LevelObject floorObject)
         {
-            if (floorObject.potentialBaldis.Count() <= 0)
-            {
-                Log.LogWarning("potentialBaldis in " + floorObject.name + "is blank!");
-                return originalBaldiPerFloor[floorObject];
-            }
             var baldis = (from x in floorObject.potentialBaldis
                           where x.selection.GetType().Equals(typeof(Baldi))
                           select (Baldi)x.selection).ToArray();
-            if (baldis.Count() > 1)
+            if (baldis.Count() <= 0)
+            {
+                Log.LogWarning("potentialBaldis in " + floorObject.name + "is blank!");
+                return null; // Why did I do that??
+            }
+            else if (baldis.Count() > 1)
             {
                 (from baldi in baldis select baldi.name).Print("Baldis", TeacherPlugin.Log);
                 MTM101BaldiDevAPI.CauseCrash(Info, new Exception("Multiple Baldis found in " + floorObject.name + "!"));
-            }
-            else if (baldis.Count() <= 0)
-            {
-                Log.LogWarning("No Baldi found in " + floorObject.name + "!");
-                return NPCMetaStorage.Instance.Get(Character.Baldi).value as Baldi;
             }
             return baldis.First();
         }
@@ -164,6 +166,6 @@ The name of the assets folder must be <color=red>{1}</color>.", Path.GetFileName
     {
         public const string PLUGIN_GUID = "alexbw145.baldiplus.teacherapi";
         public const string PLUGIN_NAME = "Teacher API";
-        public const string PLUGIN_VERSION = "0.1.3";
+        public const string PLUGIN_VERSION = "0.1.4";
     }
 }

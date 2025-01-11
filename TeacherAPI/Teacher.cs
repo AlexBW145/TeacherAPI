@@ -47,8 +47,8 @@ namespace TeacherAPI
             behaviorStateMachine.ChangeState(new TeacherState(this));
             behaviorStateMachine.ChangeNavigationState(new NavigationState_DoNothing(this, 0));
 
-            var baseBaldi = TeacherPlugin.Instance.originalBaldiPerFloor[Singleton<BaseGameManager>.Instance.levelObject];
-            TeacherPlugin.Log.LogInfo($"Using {baseBaldi.name} as base Baldi.");
+            var baseBaldi = CoreGameManager.Instance.sceneObject.CustomLevelObject()?.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_OriginalBaldi") as Baldi;
+            TeacherPlugin.Log.LogInfo($"Using {baseBaldi.gameObject.name} as base Baldi.");
             _slapCurve.SetValue(this, baseBaldi.ReflectionGetVariable("slapCurve"));
             _speedCurve.SetValue(this, baseBaldi.ReflectionGetVariable("speedCurve"));
 
@@ -246,14 +246,23 @@ namespace TeacherAPI
         {
             return TeacherManager.MainTeacherPrefab.Character != this.Character;
         }
+
+        /// <summary>
+        /// If set to string, then that selected MIDI music will play or not (if string is set to "mute"). If set to SoundObject, then that audio clip will play. Leave null for schoolhouse music to play.
+        /// </summary>
+        public object ReplacementMusic;
+
+        [Obsolete("Please use Teacher.ReplacementMusic instead.", true)]
         public void ReplaceMusic(SoundObject snd)
         {
             StartCoroutine(ReplaceMusicDelay(snd));
         }
+        [Obsolete("Please use Teacher.ReplacementMusic instead.", true)]
         public void ReplaceMusic()
         {
             StartCoroutine(ReplaceMusicDelay());
         }
+        [Obsolete("Please use Teacher.ReplacementMusic instead.", true)]
         private IEnumerator ReplaceMusicDelay(SoundObject snd = null)
         {
             if (IsHelping())

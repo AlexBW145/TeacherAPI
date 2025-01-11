@@ -163,7 +163,7 @@ namespace TeacherAPI.patches
         }
     }
 
-    [HarmonyPatch(typeof(BaseGameManager), nameof(BaseGameManager.AngerBaldi))]
+    /*[HarmonyPatch(typeof(BaseGameManager), nameof(BaseGameManager.AngerBaldi))]
     internal class EndlessAnger
     {
         public static void Postfix(float val, BaseGameManager __instance)
@@ -172,5 +172,5 @@ namespace TeacherAPI.patches
                 if (npc.GetComponent<Teacher>() && npc.GetComponent<Teacher>()?.behaviorStateMachine.currentState.GetType() != npc.GetComponent<Teacher>()?.GetHappyState().GetType())
                     npc.GetComponent<Teacher>().GetAngry(val);
         }
-    }
+    }*/
 }

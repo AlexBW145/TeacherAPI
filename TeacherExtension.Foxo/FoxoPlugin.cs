@@ -27,6 +27,8 @@ namespace TeacherExtension.Foxo
         public Foxo Foxo { get; private set; }
         public Foxo DarkFoxo { get; private set; }
         public FoxoSave deathCounter = new FoxoSave();
+        public static AssetManager ItemAssets = new AssetManager();
+        internal static PassableObstacle foxoUnpassable;
 
         internal void Awake()
         {
@@ -48,7 +50,7 @@ namespace TeacherExtension.Foxo
                 .AddLooker()
                 .AddTrigger()
                 .DisableNavigationPrecision()
-                .SetMetaTags(new string[] { "Teacher" })
+                .SetMetaTags(new string[] { "teacher" })
                 .Build();
             newFoxo.ReflectionSetVariable("audMan", newFoxo.GetComponent<AudioManager>());
 
@@ -86,7 +88,9 @@ namespace TeacherExtension.Foxo
                     .SetSprites(Foxo.sprites.Get<Sprite>("Items/FireExtinguisher_Small"), Foxo.sprites.Get<Sprite>("Items/FireExtinguisher_Large"))
                     .SetMeta(ItemFlags.Persists, new string[] { "alternative" })
                     .Build();
+                ItemAssets.Add("FireExtinguisher", fireExtinguish);
             }
+            foxoUnpassable = EnumExtensions.ExtendEnum<PassableObstacle>("FoxoUnpassable");
 
             GeneratorManagement.Register(this, GenerationModType.Addend, EditGenerator);
         }

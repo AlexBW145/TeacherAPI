@@ -21,6 +21,7 @@ using UnityEngine.Networking;
 using UnityEngine.TextCore;
 using UnityEngine.TextCore.LowLevel;
 using UnityEngine.Video;
+using static UnityEngine.UIElements.UIR.BestFitAllocator;
 
 namespace TeacherExtension.Foxo
 {
@@ -187,9 +188,47 @@ namespace TeacherExtension.Foxo
             return TeacherPlugin.IsEndlessFloorsLoaded() && num <= BaseGameManager.Instance.CurrentLevel && deaths <= FoxoPlugin.Instance.deathCounter.deaths;
         }
 
+        private EnvironmentController.TempObstacleManagement unaccessibleMang;
+        private EnvironmentController.TempObstacleManagement accessibleMang;
+        public static EnvironmentController.TempObstacleManagement tempOpenSpecial { get; private set; }
+        public static EnvironmentController.TempObstacleManagement tempCloseSpecial { get; private set; }
+
+        private void TempCloseSpecial()
+        {
+            ec.FreezeNavigationUpdates(true);
+            foreach (var special in ec.rooms.FindAll(x => x.category == RoomCategory.Special))
+            {
+                foreach (var cell in special.cells)
+                    for (int i = 0; i < 4; i++)
+                        if (cell.ConstNavigable((Direction)i))
+                            ec.CellFromPosition(cell.position + ((Direction)i).ToIntVector2()).Block(((Direction)i).GetOpposite(), true);
+
+            }
+            ec.FreezeNavigationUpdates(false);
+        }
+
+        private void TempOpenSpecial()
+        {
+            ec.FreezeNavigationUpdates(true);
+            foreach (var special in ec.rooms.FindAll(x => x.category == RoomCategory.Special))
+            {
+                foreach (var cell in special.cells)
+                    for (int i = 0; i < 4; i++)
+                        if (cell.ConstNavigable((Direction)i))
+                            ec.CellFromPosition(cell.position + ((Direction)i).ToIntVector2()).Block(((Direction)i).GetOpposite(), false);
+
+            }
+            ec.FreezeNavigationUpdates(false);
+        }
+
         public override void Initialize()
         {
             base.Initialize();
+            unaccessibleMang = (EnvironmentController.TempObstacleManagement)Delegate.Combine(unaccessibleMang, new EnvironmentController.TempObstacleManagement(TempCloseSpecial));
+            accessibleMang = (EnvironmentController.TempObstacleManagement)Delegate.Combine(accessibleMang, new EnvironmentController.TempObstacleManagement(TempOpenSpecial));
+            tempOpenSpecial = accessibleMang;
+            tempCloseSpecial = unaccessibleMang;
+            navigator.passableObstacles.Add(FoxoPlugin.foxoUnpassable);
 
             // Appearance and sound
             {
@@ -274,13 +313,13 @@ namespace TeacherExtension.Foxo
         // Ruler related events
         protected override void OnRulerBroken()
         {
-            base.OnRulerBroken();
+            if (forceWrath) return;
             extraAnger += 3;
             behaviorStateMachine.ChangeState(new Foxo_Wrath(this));
         }
         protected override void OnRulerRestored()
         {
-            base.OnRulerRestored();
+            if (forceWrath) return;
             behaviorStateMachine.ChangeState(new Foxo_Chase(this));
         }
 
@@ -338,7 +377,8 @@ namespace TeacherExtension.Foxo
         protected override void VirtualUpdate()
         {
             base.VirtualUpdate();
-            target.plm.AddStamina(target.plm.staminaDrop * 0.8f * Time.deltaTime * target.PlayerTimeScale, true);
+            if (target.ruleBreak.ToLower() != "running" && target.plm.Entity.InternalMovement.magnitude <= 0f)
+                target.plm.AddStamina(target.plm.staminaDrop * 0.8f * Time.deltaTime * target.PlayerTimeScale, true);
             if (!animator.currentAnimationName.StartsWith("Jump") && navigator.Entity.InternalHeight != 6.5f)
                 navigator.Entity.SetHeight(6.5f);
         }
@@ -554,7 +594,7 @@ namespace TeacherExtension.Foxo
                 if ((float)foxo.ReflectionGetVariable("extraAnger") > 0 && GetType().Equals(typeof(Foxo_Chase)))
                     foxo.ReflectionSetVariable("extraAnger", (float)foxo.ReflectionGetVariable("extraAnger") - 1);
 
-                foxo.ec.FindPath(foxo.ec.CellFromPosition(foxo.transform.position), foxo.ec.CellFromPosition(foxo.Navigator.CurrentDestination), PathType.Nav, out List<Cell> paths, out bool suc);
+                //foxo.ec.FindPath(foxo.ec.CellFromPosition(foxo.transform.position), foxo.ec.CellFromPosition(foxo.Navigator.CurrentDestination), PathType.Nav, out List<Cell> paths, out bool suc);
                 // This is not fun...
                 if (foxo.Navigator.Entity.CurrentRoom?.category == RoomCategory.Special && currentNavigationState.GetType().Equals(typeof(NavigationState_TargetPlayer)))
                 {
@@ -566,11 +606,11 @@ namespace TeacherExtension.Foxo
                 }
                 // Foxo always know where the player is, except in special rooms
                 if (!((foxo.target?.GetComponent<PlayerEntity>()?.CurrentRoom != null && foxo.target.GetComponent<PlayerEntity>().CurrentRoom?.category == RoomCategory.Special)
-                    || (suc && paths.Exists(x => x.room.category == RoomCategory.Special))))
+                    /*|| (suc && paths.Exists(x => x.room.category == RoomCategory.Special))*/))
                     ChangeNavigationState(new NavigationState_TargetPlayer(foxo, 0, foxo.target.transform.position));
-                else if (!currentNavigationState.GetType().Equals(typeof(NavigationState_WanderRandom)) || (suc && paths.Exists(x => x.room.category == RoomCategory.Special)))
+                else if (!currentNavigationState.GetType().Equals(typeof(NavigationState_WanderRandom)) /*|| (suc && paths.Exists(x => x.room.category == RoomCategory.Special))*/)
                 {
-                    if (suc && paths.Exists(x => x.room.category == RoomCategory.Special)) foxo.Navigator.ClearCurrentDirs();
+                    //if (suc && paths.Exists(x => x.room.category == RoomCategory.Special)) foxo.Navigator.ClearCurrentDirs();
                     ChangeNavigationState(new NavigationState_WanderRandom(foxo, 0));
                 }
 
@@ -661,11 +701,19 @@ namespace TeacherExtension.Foxo
             foxo.spriteBase.SetActive(false);
             ChangeNavigationState(new NavigationState_DoNothing(foxo, 32));
             //foxo.ReplaceMusic();
+            foxo.ReplacementMusic = "mute";
             Cell cell = foxo.ec.RandomCell(false, false, true);
             while ((cell.CenterWorldPosition - foxo.players[0].transform.position).magnitude < 122f)
                 cell = foxo.ec.RandomCell(false, false, true);
             foxo.Navigator.Entity.Teleport(cell.CenterWorldPosition);
-            foxo.behaviorStateMachine.ChangeState(new Foxo_Wrath(foxo));
+            IEnumerator WaitForGameToStart()
+            {
+                while (!foxo.ec.Active)
+                    yield return null;
+                foxo.ActivateSpoopMode();
+                foxo.behaviorStateMachine.ChangeState(new Foxo_Wrath(foxo));
+            }
+            foxo.StartCoroutine(WaitForGameToStart());
         }
         public override void Exit()
         {
@@ -705,7 +753,7 @@ namespace TeacherExtension.Foxo
                 reverb.maxDistance = 1000f;
                 reverb.reverbPreset = AudioReverbPreset.Hallway;
                 CoreGameManager.Instance.musicMan.pitchModifier = 0.66f;
-                CoreGameManager.Instance.musicMan.QueueAudio(Foxo.audios.Get<SoundObject>("wrath1"), true);
+                CoreGameManager.Instance.musicMan.QueueAudio(Foxo.audios.Get<SoundObject>($"wrath{new System.Random(CoreGameManager.Instance.Seed() + CoreGameManager.Instance.sceneObject.levelNo).Next(1, 5)}"), true);
                 CoreGameManager.Instance.musicMan.SetLoop(true);
                 return;
             }

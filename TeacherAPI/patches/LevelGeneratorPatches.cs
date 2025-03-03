@@ -25,7 +25,14 @@ namespace TeacherAPI.patches
 
             TeacherManager.DefaultBaldiEnabled = TeacherPlugin.Instance.CurrentBaldi == null || TeacherAPIConfiguration.EnableBaldi.Value;
             if (TeacherManager.DefaultBaldiEnabled)
+            {
+                if (TeacherAPIConfiguration.EnableBaldi.Value && TeacherPlugin.Instance.CurrentBaldi != null)
+                    __instance.ld.potentialBaldis = new WeightedNPC[] { new WeightedNPC() {
+                    selection = TeacherPlugin.Instance.CurrentBaldi,
+                    weight = 100
+                } };
                 return;
+            }
 
             var rng = new System.Random(seed + __instance.scene.levelNo);
 

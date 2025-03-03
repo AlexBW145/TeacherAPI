@@ -25,9 +25,22 @@ namespace TeacherExtension.Foxo.Patches
         [HarmonyPatch(typeof(CoreGameManager), nameof(CoreGameManager.EndGame)), HarmonyPostfix]
         static void DeathCounterIncrease() => FoxoPlugin.Instance.deathCounter.deaths++;
 
+        [HarmonyPatch(typeof(Navigator), "TempOpenObstacles"), HarmonyPostfix]
+        static void TempOpenInaccessible(Navigator __instance)
+        {
+            if (!__instance.passableObstacles.Contains(FoxoPlugin.foxoUnpassable))
+                Foxo.tempOpenSpecial?.Invoke();
+        }
+        [HarmonyPatch(typeof(Navigator), "TempCloseObstacles"), HarmonyPostfix]
+        static void TempCloseInaccessible(Navigator __instance)
+        {
+            if (__instance.passableObstacles.Contains(FoxoPlugin.foxoUnpassable))
+                Foxo.tempCloseSpecial?.Invoke();
+        }
+
         static bool foxoinF3 = false;
         [HarmonyPatch(typeof(BaseGameManager), nameof(BaseGameManager.LoadNextLevel)), HarmonyPrefix]
-        static void IsFoxoF3Teach() => foxoinF3 = !TeacherPlugin.IsEndlessFloorsLoaded() && TeacherManager.Instance != null && TeacherManager.Instance?.SpawnedMainTeacher?.GetComponent<Foxo>() != null;
+        static void IsFoxoF3Teach() => foxoinF3 = !TeacherPlugin.IsEndlessFloorsLoaded() && TeacherManager.Instance != null && TeacherManager.Instance?.SpawnedMainTeacher != null && TeacherManager.Instance?.SpawnedMainTeacher?.GetComponent<Foxo>() != null;
 
         [HarmonyPatch(typeof(PlaceholderWinManager), nameof(PlaceholderWinManager.Initialize)), HarmonyPrefix]
         static void FoxoEnding(PlaceholderWinManager __instance)
@@ -149,10 +162,10 @@ namespace TeacherExtension.Foxo.Patches
         }
 
         [HarmonyPatch(typeof(BaseGameManager), nameof(BaseGameManager.Initialize)), HarmonyPostfix]
-        static void SwapApplesAndExtinguishers(BaseGameManager __instance)
+        static void SwapApplesAndExtinguishersInventory()
         {
             CoreGameManager.Instance.musicMan.pitchModifier = 1f;
-            if (TeacherManager.Instance?.SpawnedMainTeacher == null) return;
+            if (TeacherManager.Instance == null) return;
             var mainteach = AccessTools.DeclaredField(typeof(TeacherManager), "<MainTeacherPrefab>k__BackingField").GetValue(TeacherManager.Instance) as Teacher; // I took it from UnityExplorer
             for (int i = 0; i < CoreGameManager.Instance.setPlayers; i++)
             {
@@ -160,39 +173,44 @@ namespace TeacherExtension.Foxo.Patches
                 CoreGameManager.Instance.GetPlayer(i).itm.items.DoIf(x => x.itemType == global::Items.Apple, x =>
                 {
                     if (mainteach?.GetComponent<Foxo>() != null)
-                        player.itm.SetItem(ItemMetaStorage.Instance.Find(f => f.value.item.GetComponent<FireExtinguisher>() != null).value, player.itm.items.ToList().IndexOf(x));
-                    else
+                        player.itm.SetItem(FoxoPlugin.ItemAssets.Get<ItemObject>("FireExtinguisher"), player.itm.items.ToList().IndexOf(x));
+                    else if (x == FoxoPlugin.ItemAssets.Get<ItemObject>("FireExtinguisher"))
                         player.itm.SetItem(ItemMetaStorage.Instance.Find(a => a.value.itemType == global::Items.Apple && a.flags.HasFlag(ItemFlags.NoUses)).value, player.itm.items.ToList().IndexOf(x));
                 });
             }
-            foreach (var item in __instance.Ec.items)
-            {
-                if (item.item.itemType != global::Items.Apple) continue;
-                if (mainteach?.GetComponent<Foxo>() != null)
-                    item.AssignItem(ItemMetaStorage.Instance.Find(f => f.value.item.GetComponent<FireExtinguisher>() != null).value);
-                else
-                    item.AssignItem(ItemMetaStorage.Instance.Find(a => a.value.itemType == global::Items.Apple && a.flags.HasFlag(ItemFlags.NoUses)).value);
-            }
         }
-        [HarmonyPatch(typeof(Pickup), nameof(Pickup.AssignItem)), HarmonyPrefix]
-        static bool AssignAppleReplacement(ItemObject item, Pickup __instance)
+
+        [HarmonyPatch(typeof(EnvironmentController), nameof(EnvironmentController.CreateItem)), HarmonyPostfix]
+        static void SwapApplesAndExtinguishers(RoomController room, ItemObject item, Vector2 pos, ref Pickup __result)
         {
-            if (TeacherManager.Instance?.SpawnedMainTeacher == null) return true;
-            if (item == ItemMetaStorage.Instance.Find(a => a.value.itemType == global::Items.Apple && a.flags.HasFlag(ItemFlags.NoUses)).value
-                && TeacherManager.Instance?.SpawnedMainTeacher?.GetComponent<Foxo>() != null)
-            {
-                __instance.AssignItem(ItemMetaStorage.Instance.Find(f => f.value.item.GetComponent<FireExtinguisher>() != null).value);
-                return false;
-            }
-            return true;
+            if (TeacherManager.Instance == null) return;
+            var mainteach = AccessTools.DeclaredField(typeof(TeacherManager), "<MainTeacherPrefab>k__BackingField").GetValue(TeacherManager.Instance) as Teacher; // I took it from UnityExplorer
+            if (item.itemType == global::Items.Apple && mainteach?.GetComponent<Foxo>() != null)
+                __result.AssignItem(FoxoPlugin.ItemAssets.Get<ItemObject>("FireExtinguisher"));
         }
+
+        [HarmonyPatch(typeof(StorageLocker), "Start"), HarmonyPostfix] // I AM NOT PATCHING Pickup.AssignItem NOW.
+        static void StoragePatch(ref Pickup[] ___pickup)
+        {
+            if (TeacherManager.Instance == null) return;
+            var mainteach = AccessTools.DeclaredField(typeof(TeacherManager), "<MainTeacherPrefab>k__BackingField").GetValue(TeacherManager.Instance) as Teacher; // I took it from UnityExplorer
+            for (int i = 0; i < ___pickup.Length; i++)
+            {
+                if (___pickup[i].item.itemType == global::Items.Apple && mainteach?.GetComponent<Foxo>() != null)
+                    ___pickup[i].AssignItem(FoxoPlugin.ItemAssets.Get<ItemObject>("FireExtinguisher"));
+                else if (___pickup[i].item == FoxoPlugin.ItemAssets.Get<ItemObject>("FireExtinguisher"))
+                    ___pickup[i].AssignItem(ItemMetaStorage.Instance.Find(a => a.value.itemType == global::Items.Apple && a.flags.HasFlag(ItemFlags.NoUses)).value);
+
+            }
+        }
+
         [HarmonyPatch(typeof(PartyEvent), nameof(PartyEvent.Begin)), HarmonyPostfix]
         static void WhyTheFix(ref Pickup ___currentPickup)
         {
             if (TeacherManager.Instance == null || TeacherManager.Instance?.SpawnedMainTeacher == null) return;
             if (___currentPickup.item == ItemMetaStorage.Instance.Find(a => a.value.itemType == global::Items.Apple && a.flags.HasFlag(ItemFlags.NoUses)).value
                 && TeacherManager.Instance?.SpawnedMainTeacher?.GetComponent<Foxo>() != null)
-                ___currentPickup.AssignItem(ItemMetaStorage.Instance.Find(f => f.value.item.GetComponent<FireExtinguisher>() != null).value);
+                ___currentPickup.AssignItem(FoxoPlugin.ItemAssets.Get<ItemObject>("FireExtinguisher"));
         }
 
         static FieldInfo ___baldiImage = AccessTools.DeclaredField(typeof(BaldiTV), "baldiImage");
@@ -228,6 +246,57 @@ namespace TeacherExtension.Foxo.Patches
                 img.GetComponent<Animator>().enabled = true;
                 img.GetComponent<VolumeAnimator>().enabled = true;
             }
+        }
+
+        [HarmonyPatch(typeof(TimeOut), nameof(TimeOut.Begin)), HarmonyPostfix, HarmonyPriority(Priority.Last)]
+        static void WrathOut()
+        {
+            if (TeacherManager.Instance?.SpawnedMainTeacher == null) return;
+            if (TeacherManager.Instance.SpawnedMainTeacher.GetComponent<Foxo>() != null)
+            {
+                var foxo = TeacherManager.Instance.SpawnedMainTeacher.GetComponent<Foxo>();
+                if (foxo.forceWrath)
+                {
+                    MusicManager.Instance.StopMidi();
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(TimeOut), "Update"), HarmonyPrefix]
+        static bool WrathLights(ref bool ___active, ref EnvironmentController ___ec, 
+            ref float ___lightOffRate, ref float ___timeToNextLight, ref List<Cell> ___lightsToTurnOff,
+            ref float ___timeToNextAnger, ref float ___baldiAngerRate)
+        {
+            if (!___active || TeacherManager.Instance?.SpawnedMainTeacher == null) return true;
+            if (TeacherManager.Instance.SpawnedMainTeacher.GetComponent<Foxo>() != null)
+            {
+                var foxo = TeacherManager.Instance.SpawnedMainTeacher.GetComponent<Foxo>();
+                if (foxo.forceWrath)
+                {
+                    ___timeToNextAnger -= 0.05f * (Time.deltaTime * ___ec.NpcTimeScale);
+                    ___timeToNextLight -= Time.deltaTime * ___ec.EnvironmentTimeScale;
+                    CoreGameManager.Instance.musicMan.pitchModifier += 0.005f * (Time.deltaTime * ___ec.EnvironmentTimeScale);
+                    if (___timeToNextAnger <= 0f)
+                    {
+                        ___timeToNextAnger = ___baldiAngerRate + ___timeToNextAnger;
+                        foxo.GetAngry(___baldiAngerRate);
+                    }
+
+                    if (___timeToNextLight <= 0f)
+                    {
+                        ___timeToNextLight = ___lightOffRate + ___timeToNextLight;
+                        if (___lightsToTurnOff.Count > 0)
+                        {
+                            ___lightsToTurnOff[0].lightColor = Color.red;
+                            ___ec.QueueLightSourceForRegenerate(___lightsToTurnOff[0]);
+                            ___lightsToTurnOff[0].SetLight(true);
+                            ___lightsToTurnOff.RemoveAt(0);
+                        }
+                    }
+                    return false;
+                }
+            }
+            return true;
         }
     }
 

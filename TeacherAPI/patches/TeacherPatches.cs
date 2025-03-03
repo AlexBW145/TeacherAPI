@@ -14,6 +14,7 @@ namespace TeacherAPI.patches
     {
         public static void Postfix(ref Baldi __result)
         {
+            if (TeacherManager.Instance == null) return;
             if (__result == null && TeacherManager.Instance.SpawnedMainTeacher != null)
             {
                 __result = (Baldi)TeacherManager.Instance.SpawnedMainTeacher;
@@ -26,6 +27,7 @@ namespace TeacherAPI.patches
     {
         internal static bool Prefix()
         {
+            if (TeacherManager.Instance == null) return true;
             TeacherManager.Instance.SpoopModeActivated = true;
             return true;
         }
@@ -36,6 +38,7 @@ namespace TeacherAPI.patches
     {
         internal static void Postfix()
         {
+            if (TeacherManager.Instance == null) return;
             foreach (var teacher in TeacherManager.Instance.spawnedTeachers.Where(x => !x.HasInitialized))
             {
                 var mainTeacherPrefab = TeacherManager.Instance.MainTeacherPrefab;
@@ -56,7 +59,7 @@ namespace TeacherAPI.patches
     {
         internal static void ReplaceHappyBaldi(BaseGameManager __instance)
         {
-            if (TeacherManager.DefaultBaldiEnabled) return;
+            if (TeacherManager.DefaultBaldiEnabled || TeacherManager.Instance == null) return;
             var happyBaldi = __instance.Ec.gameObject.GetComponentInChildren<HappyBaldi>();
             var teacherManager = __instance.Ec.gameObject.GetComponent<TeacherManager>();
 
@@ -67,11 +70,7 @@ namespace TeacherAPI.patches
                 __instance.Ec.SpawnNPC(teacherManager.MainTeacherPrefab, happyBaldiPos);
                 TeacherNotebook.RefreshNotebookText();
 
-                var spr = happyBaldi.ReflectionGetVariable("sprite") as SpriteRenderer;
-                spr.enabled = false;
-                var aud = happyBaldi.ReflectionGetVariable("audMan") as AudioManager;
-                aud.enabled = false;
-                aud.ReflectionSetVariable("disableSubtitles", true);
+                GameObject.Destroy(happyBaldi.gameObject);
             }
 
             
@@ -88,6 +87,7 @@ namespace TeacherAPI.patches
                 } catch
                 {
                     TeacherPlugin.Log.LogError($"Can't spawn {EnumExtensions.GetExtendedName<Character>((int)prefab.Character)} because no notebooks have been assigned.");
+                    __instance.Ec.Npcs.DoIf(x => x.GetType().Equals(prefab), (npc) => npc.Despawn());
                     break;
                 }
             }
@@ -116,6 +116,7 @@ namespace TeacherAPI.patches
             [HarmonyPostfix]
             static void ReplaceMusic()
             {
+                if (TeacherManager.Instance == null) return;
                 var replacement = TeacherManager.Instance.SpawnedMainTeacher.ReplacementMusic;
                 if (replacement.GetType().Equals(typeof(string)))
                 {
@@ -127,6 +128,7 @@ namespace TeacherAPI.patches
                     }
                     if (!string.IsNullOrWhiteSpace(str))
                     {
+                        MusicManager.Instance.StopMidi();
                         MusicManager.Instance.PlayMidi(str, true);
                         return;
                     }
@@ -150,7 +152,7 @@ namespace TeacherAPI.patches
     {
         public static void Postfix()
         {
-            TeacherManager.Instance.DoIfMainTeacher(t => t.BreakRuler());
+            TeacherManager.Instance?.DoIfMainTeacher(t => t.BreakRuler());
         }
     }
 
@@ -159,7 +161,7 @@ namespace TeacherAPI.patches
     {
         public static void Postfix()
         {
-            TeacherManager.Instance.DoIfMainTeacher(t => t.RestoreRuler());
+            TeacherManager.Instance?.DoIfMainTeacher(t => t.RestoreRuler());
         }
     }
 

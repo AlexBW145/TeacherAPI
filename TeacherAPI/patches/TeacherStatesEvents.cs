@@ -7,6 +7,7 @@ namespace TeacherAPI.patches
     {
         internal static bool Prefix()
         {
+            if (TeacherManager.Instance == null) return true;
             if (TeacherManager.Instance.spawnedTeachers.Count > 0)
             {
                 foreach (var teacher in TeacherManager.Instance.spawnedTeachers)
@@ -26,6 +27,7 @@ namespace TeacherAPI.patches
     {
         internal static void Prefix()
         {
+            if (TeacherManager.Instance == null) return;
             foreach (var teacher in TeacherManager.Instance.spawnedTeachers)
             {
                 teacher.behaviorStateMachine.currentState.AsTeacherState().IfSuccess(state => state.GoodMathMachineAnswer());

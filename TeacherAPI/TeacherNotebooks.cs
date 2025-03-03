@@ -47,8 +47,6 @@ namespace TeacherAPI
         private Sprite[] sprites;
         public EnvironmentController ec;
         public TeacherManager teacherMan;
-        private SoundObject sound;
-        private PropagatedAudioManager audMan;
 
         internal void Initialize(EnvironmentController ec)
         {
@@ -77,11 +75,9 @@ namespace TeacherAPI
                 sprite.sprite = randomTeacher.sprites[i];
             }
             if (randomTeacher.sound != null)
-            {
-                sound = randomTeacher.sound;
-            }
+                notebook.audPickup = randomTeacher.sound;
             SetNotebookTexture();
-            audMan = gameObject.AddComponent<PropagatedAudioManager>();
+            //audMan = gameObject.AddComponent<PropagatedAudioManager>();
 
             teacherMan.MaxTeachersNotebooks.TryGetValue(character, out int maxNotebooks);
             teacherMan.MaxTeachersNotebooks[character] = maxNotebooks + 1;
@@ -102,10 +98,6 @@ namespace TeacherAPI
             teacherMan.CurrentTeachersNotebooks[character] = currentNotebooks + 1;
 
             teacherMan.MaxTeachersNotebooks.TryGetValue(character, out int maxNotebooks);
-            if (sound != null)
-            {
-                audMan.PlaySingle(sound);
-            }
 
             // Oh my god, am I drunk ?
             teacherMan.spawnedTeachers

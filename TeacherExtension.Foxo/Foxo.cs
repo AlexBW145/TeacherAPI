@@ -188,10 +188,10 @@ namespace TeacherExtension.Foxo
             return TeacherPlugin.IsEndlessFloorsLoaded() && num <= BaseGameManager.Instance.CurrentLevel && deaths <= FoxoPlugin.Instance.deathCounter.deaths;
         }
 
-        private EnvironmentController.TempObstacleManagement unaccessibleMang;
-        private EnvironmentController.TempObstacleManagement accessibleMang;
-        public static EnvironmentController.TempObstacleManagement tempOpenSpecial { get; private set; }
-        public static EnvironmentController.TempObstacleManagement tempCloseSpecial { get; private set; }
+        internal EnvironmentController.TempObstacleManagement unaccessibleMang;
+        internal EnvironmentController.TempObstacleManagement accessibleMang;
+        //public static EnvironmentController.TempObstacleManagement tempOpenSpecial { get; private set; }
+        //public static EnvironmentController.TempObstacleManagement tempCloseSpecial { get; private set; }
 
         private void TempCloseSpecial()
         {
@@ -205,7 +205,6 @@ namespace TeacherExtension.Foxo
 
             }
             ec.FreezeNavigationUpdates(false);
-            ec.TempCloseWindows();
         }
 
         private void TempOpenSpecial()
@@ -220,7 +219,6 @@ namespace TeacherExtension.Foxo
 
             }
             ec.FreezeNavigationUpdates(false);
-            ec.TempCloseWindows();
         }
 
         public override void Initialize()
@@ -228,9 +226,7 @@ namespace TeacherExtension.Foxo
             base.Initialize();
             unaccessibleMang = (EnvironmentController.TempObstacleManagement)Delegate.Combine(unaccessibleMang, new EnvironmentController.TempObstacleManagement(TempCloseSpecial));
             accessibleMang = (EnvironmentController.TempObstacleManagement)Delegate.Combine(accessibleMang, new EnvironmentController.TempObstacleManagement(TempOpenSpecial));
-            tempOpenSpecial = accessibleMang;
-            tempCloseSpecial = unaccessibleMang;
-            navigator.passableObstacles.Add(FoxoPlugin.foxoUnpassable);
+            //navigator.passableObstacles.Add(FoxoPlugin.foxoUnpassable);
 
             // Appearance and sound
             {
@@ -607,6 +603,7 @@ namespace TeacherExtension.Foxo
                     foxo.AudMan.PlaySingle(Foxo.audios.Get<SoundObject>("teleport"));
                 }
                 // Foxo always know where the player is, except in special rooms
+                foxo.unaccessibleMang?.Invoke();
                 if (!((foxo.target?.GetComponent<PlayerEntity>()?.CurrentRoom != null && foxo.target.GetComponent<PlayerEntity>().CurrentRoom?.category == RoomCategory.Special)
                     /*|| (suc && paths.Exists(x => x.room.category == RoomCategory.Special))*/))
                     ChangeNavigationState(new NavigationState_TargetPlayer(foxo, 0, foxo.target.transform.position));
@@ -615,6 +612,7 @@ namespace TeacherExtension.Foxo
                     //if (suc && paths.Exists(x => x.room.category == RoomCategory.Special)) foxo.Navigator.ClearCurrentDirs();
                     ChangeNavigationState(new NavigationState_WanderRandom(foxo, 0));
                 }
+                foxo.accessibleMang?.Invoke();
 
                 foxo.Slap();
                 ActivateSlapAnimation();

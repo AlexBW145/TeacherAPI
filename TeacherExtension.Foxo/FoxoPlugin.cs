@@ -28,7 +28,6 @@ namespace TeacherExtension.Foxo
         public Foxo DarkFoxo { get; private set; }
         public FoxoSave deathCounter = new FoxoSave();
         public static AssetManager ItemAssets = new AssetManager();
-        internal static PassableObstacle foxoUnpassable;
 
         internal void Awake()
         {
@@ -90,7 +89,6 @@ namespace TeacherExtension.Foxo
                     .Build();
                 ItemAssets.Add("FireExtinguisher", fireExtinguish);
             }
-            foxoUnpassable = EnumExtensions.ExtendEnum<PassableObstacle>("FoxoUnpassable");
 
             GeneratorManagement.Register(this, GenerationModType.Addend, EditGenerator);
         }

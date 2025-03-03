@@ -25,7 +25,7 @@ namespace TeacherExtension.Foxo.Patches
         [HarmonyPatch(typeof(CoreGameManager), nameof(CoreGameManager.EndGame)), HarmonyPostfix]
         static void DeathCounterIncrease() => FoxoPlugin.Instance.deathCounter.deaths++;
 
-        [HarmonyPatch(typeof(Navigator), "TempOpenObstacles"), HarmonyPostfix]
+        /*[HarmonyPatch(typeof(Navigator), "TempOpenObstacles"), HarmonyPostfix]
         static void TempOpenInaccessible(Navigator __instance)
         {
             if (!__instance.passableObstacles.Contains(FoxoPlugin.foxoUnpassable))
@@ -36,7 +36,7 @@ namespace TeacherExtension.Foxo.Patches
         {
             if (__instance.passableObstacles.Contains(FoxoPlugin.foxoUnpassable))
                 Foxo.tempCloseSpecial?.Invoke();
-        }
+        }*/
 
         static bool foxoinF3 = false;
         [HarmonyPatch(typeof(BaseGameManager), nameof(BaseGameManager.LoadNextLevel)), HarmonyPrefix]

@@ -205,6 +205,7 @@ namespace TeacherExtension.Foxo
 
             }
             ec.FreezeNavigationUpdates(false);
+            ec.TempCloseWindows();
         }
 
         private void TempOpenSpecial()
@@ -219,6 +220,7 @@ namespace TeacherExtension.Foxo
 
             }
             ec.FreezeNavigationUpdates(false);
+            ec.TempCloseWindows();
         }
 
         public override void Initialize()

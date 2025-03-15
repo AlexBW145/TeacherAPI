@@ -156,6 +156,7 @@ namespace TeacherExtension.Viktor
         public override void Enter()
         {
             base.Enter();
+            viktor.spriteRenderer[0].sprite = ViktorPlugin.viktorAssets.Get<Sprite>("ViktorSubsitute");
             viktor.ReplacementMusic = ViktorPlugin.viktorAssets.Get<SoundObject>("Music/MathLevel");
             if (!veryHappy)
                 viktor.audMan.PlaySingle(ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/Intro"));

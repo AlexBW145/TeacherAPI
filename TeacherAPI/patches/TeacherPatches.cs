@@ -3,6 +3,7 @@ using HarmonyLib;
 using MTM101BaldAPI;
 using MTM101BaldAPI.Reflection;
 using System;
+using System.Drawing;
 using System.Linq;
 using UnityEngine;
 
@@ -31,6 +32,12 @@ namespace TeacherAPI.patches
             TeacherManager.Instance.SpoopModeActivated = true;
             return true;
         }
+    }
+
+    [HarmonyPatch(typeof(BaseGameManager), nameof(BaseGameManager.AngerBaldi))]
+    internal class NoSharedOrSameEnumAnger
+    {
+        internal static bool Prefix() => TeacherManager.Instance == null;
     }
 
     [HarmonyPatch(typeof(EnvironmentController), nameof(EnvironmentController.SpawnNPC))]
@@ -118,6 +125,7 @@ namespace TeacherAPI.patches
             {
                 if (TeacherManager.Instance == null) return;
                 var replacement = TeacherManager.Instance.SpawnedMainTeacher.ReplacementMusic;
+                if (replacement == null) return;
                 if (replacement.GetType().Equals(typeof(string)))
                 {
                     string str = replacement as string;

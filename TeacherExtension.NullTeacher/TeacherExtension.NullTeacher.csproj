@@ -5,7 +5,7 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
 		<!-- Path to your baldi plugins, change it if you dare -->
-		<PluginGamePath>C:\Program Files (x86)\Steam\steamapps\common\Baldi's Basics Plus\BepInEx\plugins\</PluginGamePath>
+		<PluginGamePath>D:\SteamLibrary\steamapps\common\Baldi's Basics Plus\BepInEx\plugins\</PluginGamePath>
 
 		<!-- Path to the dll references -->
 		<LibPath>..\Dependencies\</LibPath>
@@ -44,11 +44,11 @@
 	<ItemGroup>
 
 		<Reference Include="Assembly-CSharp">
-		  <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Baldi's Basics Plus\BALDI_Data\Managed\Assembly-CSharp.dll</HintPath>
+		  <HintPath>D:\SteamLibrary\steamapps\common\Baldi's Basics Plus\BALDI_Data\Managed\Assembly-CSharp.dll</HintPath>
 		</Reference>
 
 		<Reference Include="MTM101BaldAPI">
-		  <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Baldi's Basics Plus\BepInEx\plugins\MTM101BaldAPI.dll</HintPath>
+		  <HintPath>D:\SteamLibrary\steamapps\common\Baldi's Basics Plus\BepInEx\plugins\MTM101BaldAPI.dll</HintPath>
 		</Reference>
 
 		<ProjectReference Include="..\TeacherAPI\TeacherAPI.csproj" />

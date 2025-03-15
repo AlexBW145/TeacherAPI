@@ -28,6 +28,8 @@ namespace NullTeacher
         public Cell previousCell;
         public Cell currentCell;
 
+        internal AudioManager ambientMan;
+
         public NullTeacher()
         {
             disableNpcs = true;
@@ -42,6 +44,8 @@ namespace NullTeacher
         public override void Initialize()
         {
             base.Initialize();
+            ReplacementMusic = "mute";
+            ambientMan = Instantiate(CoreGameManager.Instance.musicMan, transform);
 
             genericPhrases.Add(NullPhrase.Bored);
             genericPhrases.Add(NullPhrase.Scary);
@@ -69,7 +73,7 @@ namespace NullTeacher
                 ? NullAssets.phrases[NullPhrase.Haha]
                 : NullAssets.lose, 1);
 
-            ReplaceEventText<RulerEvent>("What do you mean Null broke his ruler?!");
+            //ReplaceEventText<RulerEvent>("What do you mean Null broke his ruler?!");
 
             foreach (var light in ec.lights)
             {
@@ -320,17 +324,13 @@ namespace NullTeacher
         {
         }
 
-        public override void Enter()
-        {
-            base.Enter();
-            ohno.ReplaceMusic(NullAssets.ambient);
-        }
-
         public override void NotebookCollected(int currentNotebooks, int maxNotebooks)
         {
             base.NotebookCollected(currentNotebooks, maxNotebooks);
             ohno.behaviorStateMachine.ChangeState(new Null_Chase(ohno));
             ohno.ActivateSpoopMode();
+            ohno.ambientMan.QueueAudio(NullAssets.ambient, true);
+            ohno.ambientMan.SetLoop(true);
         }
     }
 
@@ -421,6 +421,12 @@ namespace NullTeacher
     public class Null_Caught : Null_StateBase
     {
         public Null_Caught(NullTeacher ohno) : base(ohno) { }
+
+        public override void Enter()
+        {
+            base.Enter();
+            ohno.ambientMan.FlushQueue(true); // THIS IS THE STUPIDEST LINE!
+        }
     }
 
 

@@ -42,7 +42,7 @@ namespace NullTeacher
                 .AddTrigger()
                 .AddMetaFlag(NPCFlags.CanHear)
                 .SetMinMaxAudioDistance(0, 1000)
-                .SetMetaTags(new string[] { "Teacher" })
+                .SetMetaTags(new string[] { "teacher" })
                 .Build();
             teacher.ReflectionSetVariable("audMan", teacher.GetComponent<AudioManager>());
 
@@ -56,11 +56,11 @@ namespace NullTeacher
             GeneratorManagement.Register(this, GenerationModType.Addend, EditGenerator);
         }
 
-        private void EditGenerator(string floorname, int floornumber, LevelObject ld)
+        private void EditGenerator(string floorname, int floornumber, SceneObject ld)
         {
             if (floorname.StartsWith("F") || floorname.StartsWith("END") || floorname.Equals("INF"))
             {
-                ld.AddPotentialTeacher(NullTeacher, NullConfiguration.SpawnWeight.Value);
+                ld.CustomLevelObject().AddPotentialTeacher(NullTeacher, NullConfiguration.SpawnWeight.Value);
                 print($"Added Null to {floorname} (Floor {floornumber})");
             }
         }

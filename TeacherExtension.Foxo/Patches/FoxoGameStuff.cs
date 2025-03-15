@@ -303,7 +303,7 @@ namespace TeacherExtension.Foxo.Patches
     [HarmonyPatch(typeof(SubtitleController), nameof(SubtitleController.Initialize)), HarmonyPriority(Priority.Last)]
     class FoxoFont
     {
-        static void Prefix(SubtitleController __instance)
+        static void Postfix(SubtitleController __instance)
         {
             if (Foxo.audios.GetAll<SoundObject>().Contains(__instance.soundObject) || Foxo.audios.GetAll<SoundObject[]>().ToList().Exists(snd => snd.Contains(__instance.soundObject)))
                 __instance.text.font = Foxo.fonts.Get<TMP_FontAsset>("Cooper24");

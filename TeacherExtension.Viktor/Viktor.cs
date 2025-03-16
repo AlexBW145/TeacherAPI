@@ -108,11 +108,11 @@ namespace TeacherExtension.Viktor
             viktor.Hear(position, value, true);
         }
 
-        public override void NotebookCollected(int currentNotebooks, int maxNotebooks)
+        public virtual void ThePrank() // I'm not even using Viktor's notebooks.
         {
-            if (currentNotebooks == Mathf.RoundToInt(maxNotebooks / 2) && viktor.isQuiet && !viktor.IsHelping())
+            if (BaseGameManager.Instance.FoundNotebooks == Mathf.RoundToInt(viktor.ec.notebookTotal / 2) && viktor.isQuiet && !viktor.IsHelping())
                 CoreGameManager.Instance.GetHud(0).BaldiTv.Speak(ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/HalfNotebooks"));
-            if (currentNotebooks >= maxNotebooks)
+            if (BaseGameManager.Instance.FoundNotebooks >= viktor.ec.notebookTotal)
             {
                 if (!viktor.IsHelping() && !viktor.AllNotebooksPrank)
                 {
@@ -164,7 +164,6 @@ namespace TeacherExtension.Viktor
 
         public override void NotebookCollected(int currentNotebooks, int maxNotebooks)
         {
-            base.NotebookCollected(currentNotebooks, maxNotebooks);
             if (veryHappy) return;
             viktor.audMan.FlushQueue(true);
             viktor.audMan.PlaySingle(ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/Triggered"));

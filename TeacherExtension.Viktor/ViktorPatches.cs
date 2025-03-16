@@ -75,3 +75,17 @@ class ChalkEraserPatch
         }
     }
 }
+
+[HarmonyPatch(typeof(BaseGameManager), nameof(BaseGameManager.CollectNotebooks))]
+class PranksOfAllTime
+{
+    static void Postfix()
+    {
+        if (TeacherManager.Instance == null) return;
+        if (TeacherManager.Instance?.SpawnedMainTeacher?.GetComponent<Viktor>() != null)
+        {
+            var statebase = TeacherManager.Instance.SpawnedMainTeacher.behaviorStateMachine.CurrentState as Viktor_StateBase;
+            statebase.ThePrank();
+        }
+    }
+}

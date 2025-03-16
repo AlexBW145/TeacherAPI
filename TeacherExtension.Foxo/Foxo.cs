@@ -198,7 +198,7 @@ namespace TeacherExtension.Foxo
             ec.FreezeNavigationUpdates(true);
             foreach (var special in ec.rooms.FindAll(x => x.category == RoomCategory.Special))
             {
-                foreach (var cell in special.cells)
+                foreach (var cell in special.cells.Where(c => !c.hideFromMap && !c.offLimits))
                     for (int i = 0; i < 4; i++)
                         if (cell.ConstNavigable((Direction)i))
                             ec.CellFromPosition(cell.position + ((Direction)i).ToIntVector2()).Block(((Direction)i).GetOpposite(), true);
@@ -212,7 +212,7 @@ namespace TeacherExtension.Foxo
             ec.FreezeNavigationUpdates(true);
             foreach (var special in ec.rooms.FindAll(x => x.category == RoomCategory.Special))
             {
-                foreach (var cell in special.cells)
+                foreach (var cell in special.cells.Where(c => !c.hideFromMap && !c.offLimits))
                     for (int i = 0; i < 4; i++)
                         if (cell.ConstNavigable((Direction)i))
                             ec.CellFromPosition(cell.position + ((Direction)i).ToIntVector2()).Block(((Direction)i).GetOpposite(), false);

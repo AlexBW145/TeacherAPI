@@ -134,7 +134,7 @@ namespace TeacherExtension.Viktor
             viktor.UpdateSoundTarget();
         }
 
-        public override void PlayerSighted(PlayerManager player)
+        public override void PlayerInSight(PlayerManager player)
         {
             viktor.ClearSoundLocations();
             viktor.Hear(player.transform.position, 127, false);
@@ -178,7 +178,7 @@ namespace TeacherExtension.Viktor
         public override void Hear(Vector3 position, int value)
         {
         }
-        public override void PlayerSighted(PlayerManager player)
+        public override void PlayerInSight(PlayerManager player)
         {
         }
     }
@@ -281,7 +281,7 @@ namespace TeacherExtension.Viktor
                 viktor.behaviorStateMachine.ChangeState(prevState);
         }
 
-        public override void PlayerSighted(PlayerManager player)
+        public override void PlayerInSight(PlayerManager player)
         {
         }
     }

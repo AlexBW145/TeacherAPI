@@ -15,6 +15,8 @@ namespace TeacherExtension.Baldimore
         public override TeacherState GetAngryState() => new TeacherBaldi_Chase(this);
         public override TeacherState GetHappyState() => new TeacherBaldi_Happy(this);
         public override AssistantPolicy GetAssistantPolicy() => new AssistantPolicy(PossibleAssistantAllowType.Deny).MaxAssistants(Mathf.Max(BaseGameManager.Instance.CurrentLevel, CoreGameManager.Instance.sceneObject.levelNo));
+        public override WeightedTeacherNotebook GetTeacherNotebookWeight() => new WeightedTeacherNotebook(this)
+            .Weight(150);
 
         public AudioManager audMan;
         [SerializeField] internal SoundObject[] audCountdown;
@@ -24,18 +26,23 @@ namespace TeacherExtension.Baldimore
         [SerializeField] internal Animator animator;
         [SerializeField] internal VolumeAnimator volumeAnimator;
         [SerializeField] internal RuntimeAnimatorController spoopAnimController;
-        //[SerializeField] internal CustomSpriteAnimator animatorForIntro;
+        [SerializeField] internal CustomSpriteAnimator animatorForIntro;
+        [SerializeField] internal Sprite[] spritesofIntro;
+        [SerializeField] internal Sprite count;
+        [SerializeField] internal Sprite countpeek;
+        [SerializeField] internal Sprite countidle;
         private bool brokeRuler; // I don't know why I didn't make it a public getter...
 
         public override void Initialize()
         {
             base.Initialize();
-            /*animatorForIntro = gameObject.AddComponent<CustomSpriteAnimator>();
+            animatorForIntro = gameObject.AddComponent<CustomSpriteAnimator>();
             animatorForIntro.spriteRenderer = spriteRenderer[0];
             animatorForIntro.useUnscaledTime = false;
-            animatorForIntro.animations.Add("Wavee", animator.getclip)*/
+            animatorForIntro.animations.Add("Wavee", new CustomAnimation<Sprite>(spritesofIntro, 2.5f)); //1.6833f
             navigator.Entity.SetHeight(5.5f);
             volumeAnimator.enabled = false;
+            animator.enabled = false;
             behaviorStateMachine.ChangeState(GetHappyState());
             behaviorStateMachine.ChangeNavigationState(new NavigationState_DoNothing(this, 0));
         }
@@ -107,29 +114,38 @@ namespace TeacherExtension.Baldimore
         {
         }
 
+        public override void Enter()
+        {
+            baldi.spriteRenderer[0].sprite = baldi.spritesofIntro.First();
+            base.Enter();
+        }
+
         public override void Initialize()
         {
             base.Initialize();
             if (baldi.IsHelping()) return;
-            SoundObject hello = Resources.FindObjectsOfTypeAll<SoundObject>().Last(snd => snd.name == "BAL_IntroKL2");
-            if (BaseGameManager.Instance is MainGameManager)
-            {
-                var maingame = BaseGameManager.Instance as MainGameManager;
-                var happb = maingame.ReflectionGetVariable("happyBaldiPre") as HappyBaldi;
-                hello = happb.ReflectionGetVariable("audIntro") as SoundObject;
-            }
-            else if (BaseGameManager.Instance is EndlessGameManager)
-            {
-                var endless = BaseGameManager.Instance as EndlessGameManager;
-                var happb = endless.ReflectionGetVariable("happyBaldiPre") as HappyBaldi;
-                hello = happb.ReflectionGetVariable("audIntro") as SoundObject;
-            }
-            baldi.animator.Play("BAL_Wave", -1, 0f);
-            baldi.audMan.PlaySingle(hello);
+            baldi.animatorForIntro.Play("Wavee", 1f);
         }
 
         public override void Update()
         {
+            if (baldi.animatorForIntro.enabled && !baldi.IsHelping() && baldi.animatorForIntro.currentFrameIndex == 12 && !baldi.audMan.QueuedAudioIsPlaying)
+            {
+                SoundObject hello = Resources.FindObjectsOfTypeAll<SoundObject>().Last(snd => snd.name == "BAL_IntroKL2");
+                if (BaseGameManager.Instance is MainGameManager)
+                {
+                    var maingame = BaseGameManager.Instance as MainGameManager;
+                    var happb = maingame.ReflectionGetVariable("happyBaldiPre") as HappyBaldi;
+                    hello = happb.ReflectionGetVariable("audIntro") as SoundObject;
+                }
+                else if (BaseGameManager.Instance is EndlessGameManager)
+                {
+                    var endless = BaseGameManager.Instance as EndlessGameManager;
+                    var happb = endless.ReflectionGetVariable("happyBaldiPre") as HappyBaldi;
+                    hello = happb.ReflectionGetVariable("audIntro") as SoundObject;
+                }
+                baldi.audMan.PlaySingle(hello);
+            }
             if (!baldi.IsHelping() && !baldi.audMan.QueuedAudioIsPlaying && Vector3.Distance(teacher.transform.position, teacher.players[0].transform.position) >= 25f && !activated)
             {
                 activated = true;
@@ -148,6 +164,8 @@ namespace TeacherExtension.Baldimore
 
         private void GoHunt()
         {
+            baldi.animator.enabled = true;
+            baldi.animatorForIntro.enabled = false;
             teacher.ActivateSpoopMode();
             baldi.animator.runtimeAnimatorController = baldi.spoopAnimController;
             baldi.behaviorStateMachine.ChangeState(baldi.GetAngryState());
@@ -160,22 +178,24 @@ namespace TeacherExtension.Baldimore
             yield return null;
             float time = 1f;
             int count = 9;
-            while (baldi.audMan.QueuedAudioIsPlaying || Singleton<CoreGameManager>.Instance.Paused)
-            {
+            while (baldi.audMan.QueuedAudioIsPlaying || CoreGameManager.Instance.Paused)
                 yield return null;
-            }
+            baldi.animatorForIntro.enabled = false;
 
             while (count >= 0)
             {
                 baldi.audMan.QueueAudio(baldi.audCountdown[count]);
-                if (UnityEngine.Random.value * 100f < 1f)
-                    baldi.animator.Play("BAL_CountPeek", -1, 0f);
-                else
-                    baldi.animator.Play("BAL_CountNormal", -1, 0f);
-
+                baldi.spriteRenderer[0].sprite = baldi.count;
                 while (time > 0f)
                 {
                     time -= Time.deltaTime * baldi.ec.NpcTimeScale * 0.5f;
+                    if (time <= 0.5f && baldi.spriteRenderer[0].sprite == baldi.count)
+                    {
+                        if (UnityEngine.Random.value * 100f < 1f)
+                            baldi.spriteRenderer[0].sprite = baldi.countpeek;
+                        else
+                            baldi.spriteRenderer[0].sprite = baldi.countidle;
+                    }
                     yield return null;
                 }
 
@@ -184,11 +204,10 @@ namespace TeacherExtension.Baldimore
             }
 
             baldi.audMan.QueueAudio(baldi.audHere);
+            baldi.spriteRenderer[0].sprite = baldi.countidle;
             yield return null;
-            while (baldi.audMan.QueuedAudioIsPlaying || Singleton<CoreGameManager>.Instance.Paused)
-            {
+            while (baldi.audMan.QueuedAudioIsPlaying || CoreGameManager.Instance.Paused)
                 yield return null;
-            }
             GoHunt();
         }
     }

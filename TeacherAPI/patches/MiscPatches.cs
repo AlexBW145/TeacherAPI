@@ -22,4 +22,15 @@ namespace TeacherAPI.patches
             CoreGameManager.Instance.musicMan.FlushQueue(true);
         }
     }
+
+    [HarmonyPatch(typeof(HudManager), nameof(HudManager.ReInit))]
+    class CustomBaldicatorRemoval
+    {
+        static void Postfix(HudManager __instance)
+        {
+            foreach (CustomBaldicator baldicator in __instance.GetComponentsInChildren<CustomBaldicator>(true)) {
+                GameObject.Destroy(baldicator.gameObject);
+            }
+        }
+    }
 }

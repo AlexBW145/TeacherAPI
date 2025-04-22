@@ -14,7 +14,8 @@ namespace TeacherExtension.Baldimore
     {
         public override TeacherState GetAngryState() => new TeacherBaldi_Chase(this);
         public override TeacherState GetHappyState() => new TeacherBaldi_Happy(this);
-        public override AssistantPolicy GetAssistantPolicy() => new AssistantPolicy(PossibleAssistantAllowType.Deny).MaxAssistants(Mathf.Max(BaseGameManager.Instance.CurrentLevel, CoreGameManager.Instance.sceneObject.levelNo));
+        public override AssistantPolicy GetAssistantPolicy() => new AssistantPolicy(PossibleAssistantAllowType.Deny)
+            .MaxAssistants(BaldiPlugin.EveryAssistantIsHere.Value ? (int)BaseGameManager.Instance?.levelObject?.roomGroup.ToList()?.Find(rm => rm.name == "Class").maxRooms : Mathf.Max(BaseGameManager.Instance.CurrentLevel, CoreGameManager.Instance.sceneObject.levelNo));
         public override WeightedTeacherNotebook GetTeacherNotebookWeight() => new WeightedTeacherNotebook(this)
             .Weight(150);
 
@@ -69,24 +70,35 @@ namespace TeacherExtension.Baldimore
     {
         protected TeacherBaldi baldi;
         public TeacherBaldi_StateBase(TeacherBaldi baldi) : base(baldi) { this.baldi = baldi; }
-
-        public override void Hear(Vector3 position, int value)
+        public override void Hear(GameObject source, Vector3 position, int value)
         {
-            base.Hear(position, value);
-            teacher.Hear(position, value, true);
+            base.Hear(source, position, value);
+            teacher.Hear(source, position, value, true);
         }
 
         public override void PlayerInSight(PlayerManager player)
         {
             base.PlayerInSight(player);
             teacher.ClearSoundLocations();
-            teacher.Hear(player.transform.position, 127, false);
+            teacher.Hear(null, player.transform.position, 127, false);
+        }
+
+        public override void NavigationStateChanged()
+        {
+            base.NavigationStateChanged();
+            teacher.ClearDestinationInteraction();
         }
 
         public override void DestinationEmpty()
         {
             base.DestinationEmpty();
-            teacher.UpdateSoundTarget();
+            if (baldi.CurrentDestinationInteraction != null && baldi.CurrentDestinationInteraction.Check(baldi))
+            {
+                baldi.CurrentDestinationInteraction.Trigger(baldi);
+                baldi.ClearDestinationInteraction();
+            }
+
+            baldi.UpdateSoundTarget();
         }
 
         protected virtual void ActivateSlapAnimation() => teacher.SlapNormal();
@@ -110,7 +122,7 @@ namespace TeacherExtension.Baldimore
         public TeacherBaldi_Happy(TeacherBaldi baldi) : base(baldi) { }
         private bool activated;
 
-        public override void Hear(Vector3 position, int value)
+        public override void Hear(GameObject source, Vector3 position, int value)
         {
         }
 
@@ -146,7 +158,7 @@ namespace TeacherExtension.Baldimore
                 }
                 baldi.audMan.PlaySingle(hello);
             }
-            if (!baldi.IsHelping() && !baldi.audMan.QueuedAudioIsPlaying && Vector3.Distance(teacher.transform.position, teacher.players[0].transform.position) >= 25f && !activated)
+            if (!baldi.IsHelping() && !baldi.audMan.QueuedAudioIsPlaying && Vector3.Distance(teacher.transform.position, teacher.ec.Players[0].transform.position) >= 25f && !activated)
             {
                 activated = true;
                 teacher.StartCoroutine(SpawnWait());

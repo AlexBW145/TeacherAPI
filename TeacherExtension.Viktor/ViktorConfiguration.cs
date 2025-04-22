@@ -14,7 +14,7 @@ namespace TeacherExtension.Viktor
         internal static void Setup()
         {
             Weight = ViktorPlugin.Instance.Config.Bind(
-                "Foxo",
+                "Viktor",
                 "Weight",
                 100,
                 "More it is higher, more there is a chance of him spawning. (Defaults to 100. For comparison, Baldi weight is 100) (Requires Restart)"

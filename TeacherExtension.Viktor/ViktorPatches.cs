@@ -20,7 +20,7 @@ class ViktorTV
     static FieldInfo ___baldiImage = AccessTools.DeclaredField(typeof(BaldiTV), "baldiImage");
     static FieldInfo ___baldiTvAudioManager = AccessTools.DeclaredField(typeof(BaldiTV), "baldiTvAudioManager");
 
-    [HarmonyPatch("BaldiSpeaks"), HarmonyPostfix]
+    /*[HarmonyPatch("BaldiSpeaks"), HarmonyPostfix]
     static IEnumerator InitStuff(IEnumerator result, SoundObject sound, BaldiTV __instance)
     {
         var img = ___baldiImage.GetValue(__instance) as Image;
@@ -28,7 +28,7 @@ class ViktorTV
 
         if (sound == ViktorAllNotebooks)
         {
-            /*img.GetComponent<Animator>().enabled = false;
+            img.GetComponent<Animator>().enabled = false;
             img.GetComponent<VolumeAnimator>().enabled = false;
             var anim = img.gameObject.AddComponent<CustomImageAnimator>();
             anim.image = img;
@@ -37,7 +37,7 @@ class ViktorTV
                 anim.animations.Add("JenTalk" + i, new CustomAnimation<Sprite>([VanessaPlugin.assetMan.Get<Sprite[]>("JennyLiveTVReaction")[i]], 0.25f));
             vol.animator = anim;
             vol.audioSource = audman.audioDevice;
-            vol.animations = anim.animations.Keys.ToArray();*/
+            vol.animations = anim.animations.Keys.ToArray();
         }
 
         while (result.MoveNext())
@@ -45,12 +45,12 @@ class ViktorTV
 
         if (sound == ViktorAllNotebooks)
         {
-            /*GameObject.Destroy(img.GetComponent<CustomVolumeAnimator>());
+            GameObject.Destroy(img.GetComponent<CustomVolumeAnimator>());
             GameObject.Destroy(img.GetComponent<CustomImageAnimator>());
             img.GetComponent<Animator>().enabled = true;
-            img.GetComponent<VolumeAnimator>().enabled = true;*/
+            img.GetComponent<VolumeAnimator>().enabled = true;
         }
-    }
+    }*/
 
     [HarmonyPatch(typeof(MainGameManager), "AllNotebooks"), HarmonyPrefix]
     static bool ViktorFinalNotebookPrank()

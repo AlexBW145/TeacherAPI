@@ -206,8 +206,11 @@ namespace TeacherExtension.Viktor
             // INF stands for Infinite Floor
             if (floorName.StartsWith("F") || floorName.StartsWith("END") || floorName.Equals("INF"))
             {
-                floorObject.CustomLevelObject().AddPotentialTeacher(Viktor, ViktorConfiguration.Weight.Value);
-                floorObject.CustomLevelObject().AddPotentialAssistingTeacher(Viktor, ViktorConfiguration.Weight.Value);
+                foreach (var ld in floorObject.GetCustomLevelObjects())
+                {
+                    ld.AddPotentialTeacher(Viktor, ViktorConfiguration.Weight.Value);
+                    ld.AddPotentialAssistingTeacher(Viktor, ViktorConfiguration.Weight.Value);
+                }
                 print($"Added Viktor Strobovski to {floorName} (Floor {floorNumber})");
             }
         }

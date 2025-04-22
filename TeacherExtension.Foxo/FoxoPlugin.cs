@@ -99,8 +99,11 @@ namespace TeacherExtension.Foxo
             // INF stands for Infinite Floor
             if (floorName.StartsWith("F") || floorName.StartsWith("END") || floorName.Equals("INF"))
             {
-                floorObject.CustomLevelObject().AddPotentialTeacher(Foxo, FoxoConfiguration.Weight.Value);
-                floorObject.CustomLevelObject().AddPotentialAssistingTeacher(Foxo, FoxoConfiguration.Weight.Value);
+                foreach (var ld in floorObject.GetCustomLevelObjects())
+                {
+                    ld.AddPotentialTeacher(Foxo, FoxoConfiguration.Weight.Value);
+                    ld.AddPotentialAssistingTeacher(Foxo, FoxoConfiguration.Weight.Value);
+                }
                 print($"Added Foxo to {floorName} (Floor {floorNumber})");
             }
         }

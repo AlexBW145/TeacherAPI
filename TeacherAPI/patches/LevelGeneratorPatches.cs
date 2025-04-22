@@ -18,16 +18,17 @@ namespace TeacherAPI.patches
         [HarmonyPatch(nameof(LevelGenerator.StartGenerate)), HarmonyPostfix]
         static void TeacherManagerInitalize(LevelGenerator __instance)
         {
+            var ld = __instance.ld as CustomLevelObject;
             var seed = CoreGameManager.Instance.Seed();
             var man = __instance.Ec.gameObject.AddComponent<TeacherManager>();
             man.Initialize(__instance);
-            TeacherPlugin.Instance.CurrentBaldi = TeacherPlugin.Instance.GetPotentialBaldi(__instance.scene.CustomLevelObject());
+            TeacherPlugin.Instance.CurrentBaldi = TeacherPlugin.Instance.GetPotentialBaldi(ld);
 
             TeacherManager.DefaultBaldiEnabled = TeacherPlugin.Instance.CurrentBaldi == null || TeacherAPIConfiguration.EnableBaldi.Value;
             if (TeacherManager.DefaultBaldiEnabled)
             {
                 if (TeacherAPIConfiguration.EnableBaldi.Value && TeacherPlugin.Instance.CurrentBaldi != null)
-                    __instance.ld.potentialBaldis = new WeightedNPC[] { new WeightedNPC() {
+                    ld.potentialBaldis = new WeightedNPC[] { new WeightedNPC() {
                     selection = TeacherPlugin.Instance.CurrentBaldi,
                     weight = 100
                 } };
@@ -36,8 +37,8 @@ namespace TeacherAPI.patches
 
             var rng = new System.Random(seed + __instance.scene.levelNo);
 
-            List<WeightedSelection<Teacher>> potentialTeachers = __instance.scene.CustomLevelObject().GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialTeachers") as List<WeightedSelection<Teacher>>;
-            List<WeightedSelection<Teacher>> potentialAssistants = __instance.scene.CustomLevelObject().GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialAssistants") as List<WeightedSelection<Teacher>>;
+            List<WeightedSelection<Teacher>> potentialTeachers = ld.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialTeachers") as List<WeightedSelection<Teacher>>;
+            List<WeightedSelection<Teacher>> potentialAssistants = ld.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialAssistants") as List<WeightedSelection<Teacher>>;
             var mainTeacher = WeightedSelection<Teacher>.ControlledRandomSelectionList(potentialTeachers, rng);
             man.MainTeacherPrefab = mainTeacher;
             potentialTeachers.PrintWeights("Potential Teachers", TeacherPlugin.Log);
@@ -63,7 +64,7 @@ namespace TeacherAPI.patches
                 }
             }
 
-            __instance.ld.potentialBaldis = new WeightedNPC[] { }; // Don't put anything in EC.NPCS, only secondary teachers can be there.
+            ld.potentialBaldis = new WeightedNPC[] { }; // Don't put anything in EC.NPCS, only secondary teachers can be there.
         }
         [HarmonyPatch(typeof(CharacterPostersRoomFunction), nameof(CharacterPostersRoomFunction.Build)), HarmonyPostfix]
         static void JustAddinEmPosters(LevelBuilder builder, System.Random rng, CharacterPostersRoomFunction __instance)

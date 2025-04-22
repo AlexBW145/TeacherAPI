@@ -55,40 +55,41 @@ If you encounter an error, send me the Logs!", false);
         }
         private void EditGenerator(string floorName, int floorNumber, SceneObject sceneObject)
         {
-            if (sceneObject.levelObject.potentialBaldis.Length != 1)
-                MTM101BaldiDevAPI.CauseCrash(Info, new Exception("There is no exactly one PotentialBaldi for this level. What mod did you have installed ?"));
-
-            /*potentialAssistants[floorObject.levelObject] = new List<WeightedSelection<Teacher>>();
-            potentialTeachers[floorObject.levelObject] = new List<WeightedSelection<Teacher>>();
-            floorNumbers[floorObject.levelObject] = floorNumber;*/
-
-            sceneObject.CustomLevelObject()?.SetCustomModValue(Info, "TeacherAPI_PotentialTeachers", new List<WeightedSelection<Teacher>>());
-            sceneObject.CustomLevelObject()?.SetCustomModValue(Info, "TeacherAPI_PotentialAssistants", new List<WeightedSelection<Teacher>>());
-
-            if (!TeacherAPIConfiguration.EnableBaldi.Value)
+            foreach (var levelObject in sceneObject.GetCustomLevelObjects())
             {
-                foreach (var baldi in sceneObject.levelObject.potentialBaldis)
-                {
-                    baldi.weight = 0;
+                if (levelObject.potentialBaldis.Length != 1) {
+                    MTM101BaldiDevAPI.CauseCrash(Info, new Exception("There is no exactly one PotentialBaldi for this level. What mod did you have installed ?"));
+                    break;
                 }
-                Logger.LogInfo("Set Baldi weight to 0 for this floor");
-            }
 
-            if (floorName == "INF")
-            {
-                // MTM, do you eat clowns at breakfast ? 
-                foreach (var baldi in sceneObject.levelObject.potentialBaldis)
+                /*potentialAssistants[floorObject.levelObject] = new List<WeightedSelection<Teacher>>();
+                potentialTeachers[floorObject.levelObject] = new List<WeightedSelection<Teacher>>();
+                floorNumbers[floorObject.levelObject] = floorNumber;*/
+
+                levelObject.SetCustomModValue(Info, "TeacherAPI_PotentialTeachers", new List<WeightedSelection<Teacher>>());
+                levelObject.SetCustomModValue(Info, "TeacherAPI_PotentialAssistants", new List<WeightedSelection<Teacher>>());
+
+                if (!TeacherAPIConfiguration.EnableBaldi.Value)
                 {
-                    baldi.weight = TeacherAPIConfiguration.EnableBaldi.Value ? 100 : 0;
+                    foreach (var baldi in levelObject.potentialBaldis)
+                        baldi.weight = 0;
+                    Logger.LogInfo("Set Baldi weight to 0 for this floor");
                 }
-            }
 
-            sceneObject.CustomLevelObject()?.SetCustomModValue(Info, "TeacherAPI_OriginalBaldi", GetPotentialBaldi(sceneObject.levelObject));
+                if (floorName == "INF")
+                {
+                    // MTM, do you eat clowns at breakfast ? 
+                    foreach (var baldi in levelObject.potentialBaldis)
+                        baldi.weight = TeacherAPIConfiguration.EnableBaldi.Value ? 100 : 0;
+                }
+
+                levelObject.SetCustomModValue(Info, "TeacherAPI_OriginalBaldi", GetPotentialBaldi(levelObject));
+            }
         }
 
         internal Baldi GetPotentialBaldi(CustomLevelObject floorObject)
         {
-            if (floorObject.GetCustomModValue(Info, "TeacherAPI_OriginalBaldi") != null)
+            if (floorObject.GetCustomModValue(Info, "TeacherAPI_OriginalBaldi") is Baldi)
                 return floorObject.GetCustomModValue(Info, "TeacherAPI_OriginalBaldi") as Baldi;
             return GetPotentialBaldi(floorObject as LevelObject);
         }
@@ -173,6 +174,6 @@ The name of the assets folder must be <color=red>{1}</color>.", Path.GetFileName
     {
         public const string PLUGIN_GUID = "alexbw145.baldiplus.teacherapi";
         public const string PLUGIN_NAME = "Teacher API";
-        public const string PLUGIN_VERSION = "0.1.5";
+        public const string PLUGIN_VERSION = "0.1.6";
     }
 }

@@ -290,17 +290,17 @@ namespace NullTeacher
             this.ohno = ohno;
         }
 
-        public override void Hear(Vector3 position, int value)
+        public override void Hear(GameObject source, Vector3 position, int value)
         {
-            base.Hear(position, value);
-            ohno.Hear(position, value, true);
+            base.Hear(source, position, value);
+            ohno.Hear(source, position, value, true);
         }
 
         public override void PlayerInSight(PlayerManager player)
         {
             base.PlayerInSight(player);
             ohno.ClearSoundLocations();
-            ohno.Hear(player.transform.position, 127, false);
+            ohno.Hear(null, player.transform.position, 127, false);
             ohno.timeSinceNullHasSeenPlayer = 0f;
         }
 
@@ -312,7 +312,7 @@ namespace NullTeacher
         public override void NotebookCollected(int currentNotebooks, int maxNotebooks)
         {
             base.NotebookCollected(currentNotebooks, maxNotebooks);
-            ohno.Hear(CoreGameManager.Instance.GetPlayer(0).transform.position, 127, true);
+            ohno.Hear(null, CoreGameManager.Instance.GetPlayer(0).transform.position, 127, true);
         }
 
         protected NullTeacher ohno;

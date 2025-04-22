@@ -12,14 +12,17 @@ using UnityEngine;
 using TeacherAPI;
 using System.Collections.Generic;
 using BepInEx.Configuration;
+using BepInEx.Bootstrap;
 
 namespace TeacherExtension.Baldimore;
 
 [BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
 [BepInDependency("alexbw145.baldiplus.teacherapi", "0.1.5")]
+[BepInDependency("pixelguy.pixelmodding.baldiplus.balditvannouncer", BepInDependency.DependencyFlags.SoftDependency)]
 public class BaldiPlugin : BaseUnityPlugin
 {
     internal static ConfigEntry<int> BaldiWeight;
+    internal static ConfigEntry<bool> EveryAssistantIsHere;
 
     private void Awake()
     {
@@ -29,6 +32,12 @@ public class BaldiPlugin : BaseUnityPlugin
                 "Weight",
                 99,
                 "The higher the weight number, the more there is a chance of him spawning. (Defaults to 99. For comparison, base game Baldi weight is 100) (Requires Restart)"
+            );
+        EveryAssistantIsHere = Config.Bind(
+                "Baldi",
+                "All Assistants Spawn",
+                false,
+                "If the TeacherAPI port of Baldi is chosen as the main teacher, he'll grab every possible assistants to be put into one level. (Not guaranteed for winning & sometimes teachers will have 0 notebooks assigned leading to possible exclusion)"
             );
         harmony.PatchAllConditionals();
         LoadingEvents.RegisterOnAssetsLoaded(Info, PreLoad(), false);
@@ -91,10 +100,16 @@ public class BaldiPlugin : BaseUnityPlugin
         Baldi.countpeek = Resources.FindObjectsOfTypeAll<Sprite>().Last(spr => spr.name == "BAL_Countdown_Sheet_2");
         Baldi.countidle = Resources.FindObjectsOfTypeAll<Sprite>().Last(spr => spr.name == "BAL_Countdown_Sheet_0");
 
+        if (Chainloader.PluginInfos.ContainsKey("pixelguy.pixelmodding.baldiplus.balditvannouncer"))
+            AnnouncerTVFixer.BugfixForBaldiTVAnnouncement(Baldi, theBald);
+
         GeneratorManagement.Register(this, GenerationModType.Addend, (title, num, scene) =>
         {
-            scene?.CustomLevelObject()?.AddPotentialTeacher(Baldi, BaldiWeight.Value);
-            scene?.CustomLevelObject()?.AddPotentialAssistingTeacher(Baldi, BaldiWeight.Value);
+            foreach (var levelObject in scene.GetCustomLevelObjects())
+            {
+                levelObject.AddPotentialTeacher(Baldi, BaldiWeight.Value);
+                levelObject.AddPotentialAssistingTeacher(Baldi, BaldiWeight.Value);
+            }
         });
     }
 }
@@ -103,5 +118,5 @@ public static class PluginInfo
 {
     public const string PLUGIN_GUID = "alexbw145.baldiplus.teacherextension.baldi";
     public const string PLUGIN_NAME = "Baldi TeacherAPI Port";
-    public const string PLUGIN_VERSION = "1.0";
+    public const string PLUGIN_VERSION = "1.1";
 }

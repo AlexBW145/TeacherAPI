@@ -425,7 +425,7 @@ namespace TeacherExtension.Foxo
                 foreach (var light in BaseGameManager.Instance.Ec.lights)
                     light.SetLight(!(light.room.category != RoomCategory.Special));
                 Cell cell = foxo.ec.RandomCell(false, false, true);
-                while ((cell.CenterWorldPosition - foxo.players[0].transform.position).magnitude < 111f && cell.room.category != RoomCategory.Hall)
+                while ((cell.CenterWorldPosition - foxo.ec.Players[0].transform.position).magnitude < 111f && cell.room.category != RoomCategory.Hall)
                     cell = foxo.ec.RandomCell(false, false, true);
                 foxo.Navigator.Entity.Teleport(cell.CenterWorldPosition);
                 foxo.StartCoroutine(JustWaitForGameToStart());
@@ -528,7 +528,7 @@ namespace TeacherExtension.Foxo
             else if ((foxo.IsBadFloor(1, 2) || foxo.IsBadFloor(2, 2) || infbad) && !foxo.IsBadFloor(2, 4) && !infmessed)
             {
                 Cell cell = foxo.ec.RandomCell(false, false, true);
-                while ((cell.CenterWorldPosition - foxo.players[0].transform.position).magnitude < 111f)
+                while ((cell.CenterWorldPosition - foxo.ec.Players[0].transform.position).magnitude < 111f)
                     cell = foxo.ec.RandomCell(false, false, true);
                 foxo.Navigator.Entity.Teleport(cell.CenterWorldPosition);
                 foxo.AudMan.audioDevice.reverbZoneMix = 1;
@@ -690,7 +690,7 @@ namespace TeacherExtension.Foxo
             base.Initialize();
             var lanternmode = foxo.ec.gameObject.GetOrAddComponent<LanternMode>();
             if ((EnvironmentController)lanternmode.ReflectionGetVariable("ec") == null) lanternmode.Initialize(foxo.ec);
-            lanternmode.AddSource(foxo.players[0].transform, 5.5f, Color.white);
+            lanternmode.AddSource(foxo.ec.Players[0].transform, 5.5f, Color.white);
         }
 
         public override void Enter()
@@ -703,7 +703,7 @@ namespace TeacherExtension.Foxo
             //foxo.ReplaceMusic();
             foxo.ReplacementMusic = "mute";
             Cell cell = foxo.ec.RandomCell(false, false, true);
-            while ((cell.CenterWorldPosition - foxo.players[0].transform.position).magnitude < 122f)
+            while ((cell.CenterWorldPosition - foxo.ec.Players[0].transform.position).magnitude < 122f)
                 cell = foxo.ec.RandomCell(false, false, true);
             foxo.Navigator.Entity.Teleport(cell.CenterWorldPosition);
             IEnumerator WaitForGameToStart()

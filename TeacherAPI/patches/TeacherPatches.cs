@@ -95,7 +95,7 @@ namespace TeacherAPI.patches
                 {
                     TeacherPlugin.Log.LogError($"Can't spawn {EnumExtensions.GetExtendedName<Character>((int)prefab.Character)} because no notebooks have been assigned.");
                     __instance.Ec.Npcs.DoIf(x => x.GetType().Equals(prefab), (npc) => npc.Despawn());
-                    break;
+                    continue;
                 }
             }
 

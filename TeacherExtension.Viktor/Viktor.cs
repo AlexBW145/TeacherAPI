@@ -1,4 +1,6 @@
-﻿using MTM101BaldAPI;
+﻿using HarmonyLib;
+using MTM101BaldAPI;
+using MTM101BaldAPI.Components;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -27,10 +29,16 @@ namespace TeacherExtension.Viktor
             .CollectSound(ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/NotebookJingle"))
             .Sprite(ViktorPlugin.viktorAssets.Get<Sprite>("Notebook"));
 
+        internal CustomBaldicator Viktorcator { get; private set; }
+
         public override void Initialize()
         {
             AllNotebooksPrank = ec.notebookTotal < 9;
             base.Initialize();
+            Viktorcator = CustomBaldicator.CreateBaldicator();
+            Viktorcator.SetHearingAnimation(new CustomAnimation<Sprite>([ViktorPlugin.viktorAssets.Get<Sprite>("ViktorSubsitute")], 0.1f));
+            Viktorcator.AddAnimation("Coming", new CustomAnimation<Sprite>([ViktorPlugin.viktorAssets.Get<Sprite>("ViktorEvil")], 0.3f));
+            Viktorcator.AddAnimation("ForLater", new CustomAnimation<Sprite>([ViktorPlugin.viktorAssets.Get<Sprite>("ViktorSubsitute")], 0.3f));
             PollutionManager = ec.gameObject.GetOrAddComponent<ViktorTilePollutionManager>();
             Navigator.SetSpeed(0f);
             Navigator.maxSpeed = 0f;
@@ -50,6 +58,18 @@ namespace TeacherExtension.Viktor
             audMan.PlaySingle(ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/Walk"));
             Navigator.SetSpeed(slapDistance / (Delay * (MovementPortion * 3f)));
             //StartCoroutine(StopDelay());
+        }
+
+        public new void Hear(GameObject source, Vector3 position, int value, bool indicator)
+        {
+            var currentSoundVal = (int)AccessTools.Field(typeof(Baldi), "currentSoundVal").GetValue(this);
+            if (value >= currentSoundVal && indicator)
+                for (int i = 0; i < CoreGameManager.Instance.setPlayers; i++)
+                    Viktorcator.ActivateBaldicator("Coming");
+            else if (indicator)
+                for (int j = 0; j < CoreGameManager.Instance.setPlayers; j++)
+                    Viktorcator.ActivateBaldicator("ForLater");
+            base.Hear(null, position, value, false);
         }
 
         [Obsolete("Part of the old version", true)]
@@ -103,9 +123,9 @@ namespace TeacherExtension.Viktor
             this.viktor = viktor;
         }
 
-        public override void Hear(Vector3 position, int value)
+        public override void Hear(GameObject source, Vector3 position, int value)
         {
-            viktor.Hear(position, value, true);
+            viktor.Hear(source, position, value, true);
         }
 
         public virtual void ThePrank() // I'm not even using Viktor's notebooks.
@@ -116,7 +136,7 @@ namespace TeacherExtension.Viktor
             {
                 if (!viktor.IsHelping() && !viktor.AllNotebooksPrank)
                 {
-                    var activities = viktor.ec.notebooks.Where(act => act.activity.room != viktor.players[0].plm.Entity.CurrentRoom).ToList();
+                    var activities = viktor.ec.notebooks.Where(act => act.activity.room != viktor.ec.Players[0].plm.Entity.CurrentRoom).ToList();
                     ListExtensions.ControlledShuffle(activities, new System.Random(CoreGameManager.Instance.Seed()));
                     activities.First().activity.StartResetTimer(0);
                     viktor.ec.notebookTotal++;
@@ -124,9 +144,13 @@ namespace TeacherExtension.Viktor
                     CoreGameManager.Instance.GetHud(0).BaldiTv.Speak(ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/LastNotebook"));
                     BaseGameManager.Instance.CollectNotebooks(0);
                 }
-                else if (viktor.IsHelping() && viktor.behaviorStateMachine.CurrentState is not Viktor_Subsitute)
-                    viktor.behaviorStateMachine.ChangeState(new Viktor_Subsitute(viktor) { veryHappy = true });
             }
+        }
+
+        public override void NotebookCollected(int currentNotebooks, int maxNotebooks)
+        {
+            if (viktor.IsHelping() && currentNotebooks >= maxNotebooks && viktor.behaviorStateMachine.CurrentState is not Viktor_Subsitute)
+                viktor.behaviorStateMachine.ChangeState(new Viktor_Subsitute(viktor) { veryHappy = true });
         }
 
         public override void DestinationEmpty()
@@ -137,7 +161,7 @@ namespace TeacherExtension.Viktor
         public override void PlayerInSight(PlayerManager player)
         {
             viktor.ClearSoundLocations();
-            viktor.Hear(player.transform.position, 127, false);
+            viktor.Hear(null, player.transform.position, 127, false);
         }
     }
 
@@ -158,12 +182,12 @@ namespace TeacherExtension.Viktor
             base.Enter();
             viktor.spriteRenderer[0].sprite = ViktorPlugin.viktorAssets.Get<Sprite>("ViktorSubsitute");
             viktor.ReplacementMusic = ViktorPlugin.viktorAssets.Get<SoundObject>("Music/MathLevel");
-            if (!veryHappy)
-                viktor.audMan.PlaySingle(ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/Intro"));
+            viktor.audMan.PlaySingle(!veryHappy ? ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/Intro") : ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/Praise"));
         }
 
         public override void NotebookCollected(int currentNotebooks, int maxNotebooks)
         {
+            base.NotebookCollected(currentNotebooks, maxNotebooks);
             if (veryHappy) return;
             viktor.audMan.FlushQueue(true);
             viktor.audMan.PlaySingle(ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/Triggered"));
@@ -174,7 +198,7 @@ namespace TeacherExtension.Viktor
         public override void DestinationEmpty()
         { 
         }
-        public override void Hear(Vector3 position, int value)
+        public override void Hear(GameObject source, Vector3 position, int value)
         {
         }
         public override void PlayerInSight(PlayerManager player)
@@ -228,10 +252,10 @@ namespace TeacherExtension.Viktor
         {
             base.Initialize();
             viktor.ClearSoundLocations();
-            foreach (var player in viktor.players)
+            foreach (var player in viktor.ec.Players)
                 if (player.plm.Entity?.CurrentRoom?.category == RoomCategory.Class)
                 {
-                    viktor.Hear(player.transform.position, 127, false);
+                    viktor.Hear(null, player.transform.position, 127, false);
                     return;
                 }
             viktor.UpdateSoundTarget();
@@ -262,7 +286,7 @@ namespace TeacherExtension.Viktor
             ChangeNavigationState(new NavigationState_TargetPosition(viktor, 127, loc));
         }
 
-        public override void Hear(Vector3 position, int value)
+        public override void Hear(GameObject source, Vector3 position, int value)
         {
         }
 

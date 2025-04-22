@@ -58,9 +58,13 @@ namespace TeacherAPI
             animator.SetDefaultAnimation("Hearing_Static", 0);
         }
 
-		public static CustomBaldicator CreateBaldicator()
+        /// <summary>
+        /// Create a custom baldicator for your teacher
+        /// </summary>
+        /// <returns>An instantiated <see cref="CustomBaldicator"/></returns>
+        public static CustomBaldicator CreateBaldicator()
 		{
-			var hudManager = Singleton<CoreGameManager>.Instance.GetHud(0);
+			var hudManager = CoreGameManager.Instance.GetHud(0);
 			var baldiclone = Instantiate(hudManager.gameObject.transform.Find("Baldi").gameObject, hudManager.transform, true);
 			baldiclone.name = "Custom Baldicator";
 			return baldiclone.AddComponent<CustomBaldicator>();

@@ -18,7 +18,7 @@ namespace TeacherAPI.patches
         [HarmonyPatch(nameof(LevelGenerator.StartGenerate)), HarmonyPostfix]
         static void TeacherManagerInitalize(LevelGenerator __instance)
         {
-            var ld = __instance.ld as CustomLevelObject;
+            var ld = __instance.ld as CustomLevelGenerationParameters;
             var seed = CoreGameManager.Instance.Seed();
             var man = __instance.Ec.gameObject.AddComponent<TeacherManager>();
             man.Initialize(__instance);

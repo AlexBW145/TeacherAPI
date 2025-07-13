@@ -87,6 +87,13 @@ If you encounter an error, send me the Logs!", false);
             }
         }
 
+        internal Baldi GetPotentialBaldi(CustomLevelGenerationParameters floorObject)
+        {
+            if (floorObject.GetCustomModValue(Info, "TeacherAPI_OriginalBaldi") is Baldi)
+                return floorObject.GetCustomModValue(Info, "TeacherAPI_OriginalBaldi") as Baldi;
+            return GetPotentialBaldi(floorObject as LevelGenerationParameters);
+        }
+
         internal Baldi GetPotentialBaldi(CustomLevelObject floorObject)
         {
             if (floorObject.GetCustomModValue(Info, "TeacherAPI_OriginalBaldi") is Baldi)
@@ -95,6 +102,24 @@ If you encounter an error, send me the Logs!", false);
         }
 
         internal Baldi GetPotentialBaldi(LevelObject floorObject)
+        {
+            var baldis = (from x in floorObject.potentialBaldis
+                          where x.selection.GetType().Equals(typeof(Baldi))
+                          select (Baldi)x.selection).ToArray();
+            if (baldis.Count() <= 0)
+            {
+                Log.LogWarning("potentialBaldis in " + floorObject.name + "is blank!");
+                return null; // Why did I do that??
+            }
+            else if (baldis.Count() > 1)
+            {
+                (from baldi in baldis select baldi.name).Print("Baldis", TeacherPlugin.Log);
+                MTM101BaldiDevAPI.CauseCrash(Info, new Exception("Multiple Baldis found in " + floorObject.name + "!"));
+            }
+            return baldis.First();
+        }
+
+        internal Baldi GetPotentialBaldi(LevelGenerationParameters floorObject)
         {
             var baldis = (from x in floorObject.potentialBaldis
                           where x.selection.GetType().Equals(typeof(Baldi))
@@ -174,6 +199,6 @@ The name of the assets folder must be <color=red>{1}</color>.", Path.GetFileName
     {
         public const string PLUGIN_GUID = "alexbw145.baldiplus.teacherapi";
         public const string PLUGIN_NAME = "Teacher API";
-        public const string PLUGIN_VERSION = "0.1.6";
+        public const string PLUGIN_VERSION = "0.1.7";
     }
 }

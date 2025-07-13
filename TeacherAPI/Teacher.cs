@@ -47,7 +47,7 @@ namespace TeacherAPI
             behaviorStateMachine.ChangeState(new TeacherState(this));
             behaviorStateMachine.ChangeNavigationState(new NavigationState_DoNothing(this, 0));
 
-            var ld = BaseGameManager.Instance.levelObject as CustomLevelObject;
+            var ld = BaseGameManager.Instance.levelObject as CustomLevelGenerationParameters;
             var baseBaldi = ld.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_OriginalBaldi") as Baldi;
             TeacherPlugin.Log.LogInfo($"Using {baseBaldi.gameObject.name} as base Baldi.");
             _slapCurve.SetValue(this, baseBaldi.ReflectionGetVariable("slapCurve"));

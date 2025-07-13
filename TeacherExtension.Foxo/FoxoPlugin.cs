@@ -36,7 +36,7 @@ namespace TeacherExtension.Foxo
             FoxoConfiguration.Setup();
             AssetLoader.LocalizationFromMod(this);
             TeacherPlugin.RequiresAssetsFolder(this); // Critical!!!
-            LoadingEvents.RegisterOnAssetsLoaded(Info, OnAssetsLoaded, false);
+            LoadingEvents.RegisterOnAssetsLoaded(Info, OnAssetsLoaded, LoadingEventOrder.Pre);
             ModdedSaveGame.AddSaveHandler(deathCounter);
         }
 
@@ -49,9 +49,10 @@ namespace TeacherExtension.Foxo
                 .AddLooker()
                 .AddTrigger()
                 .DisableNavigationPrecision()
-                .SetMetaTags(new string[] { "teacher" })
+                .SetMetaTags(new string[] { "teacher", "faculty" })
                 .Build();
             newFoxo.ReflectionSetVariable("audMan", newFoxo.GetComponent<AudioManager>());
+            newFoxo.Navigator.passableObstacles.Add(PassableObstacle.LockedDoor);
 
             // Adds a custom animator
             CustomSpriteAnimator animator = newFoxo.gameObject.AddComponent<CustomSpriteAnimator>();

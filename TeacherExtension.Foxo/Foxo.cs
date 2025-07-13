@@ -35,6 +35,11 @@ namespace TeacherExtension.Foxo
         internal System.Random jumpRNG = new System.Random();
         public float jumpChance => MovementPortion + (nextSlapDistance / Delay);
 
+        // Max of 8 deaths from all floors (2 deaths per floor)
+        internal bool IsBadPhase1 => IsBadFloor(1, 2) || IsBadFloor(2, 2) || IsBadFloor(3, 4) || IsBadFloor(4, 4) || (!TeacherPlugin.IsEndlessFloorsLoaded() && PlayerFileManager.Instance.lifeMode == LifeMode.Intense && BaseGameManager.Instance.CurrentLevel == 2);
+        internal bool IsBadPhase2 => IsBadFloor(2, 4) || IsBadFloor(3, 6) || IsBadFloor(4, 6) || (!TeacherPlugin.IsEndlessFloorsLoaded() && PlayerFileManager.Instance.lifeMode == LifeMode.Intense && BaseGameManager.Instance.CurrentLevel == 3);
+        internal bool IsBadPhase3 => (!TeacherPlugin.IsEndlessFloorsLoaded() && PlayerFileManager.Instance.lifeMode == LifeMode.Intense && BaseGameManager.Instance.CurrentLevel == 4);
+
         // Foxo specifically uses a CustomSpriteAnimator
         public CustomSpriteAnimator animator;
 
@@ -235,7 +240,7 @@ namespace TeacherExtension.Foxo
                 var wrathSprites = sprites.Get<Sprite[]>("Wrath");
                 animator.animations.Add("Wave", new CustomAnimation<Sprite>(waveSprites, 3f));
                 animator.animations.Add("Happy", new CustomAnimation<Sprite>(new Sprite[] { waveSprites[waveSprites.Length - 1] }, 1f));
-                animator.animations.Add("Stare", new CustomAnimation<Sprite>((IsBadFloor(1, 2) || IsBadFloor(2, 2) || IsBadEndlessFloor(Mathf.RoundToInt((BaseGameManager.Instance.CurrentLevel + 1) / 2f), 3)) ? sprites.Get<Sprite[]>("floor2Intro") : new Sprite[] { sprites.Get<Sprite>("Stare") }, 0.02f));
+                animator.animations.Add("Stare", new CustomAnimation<Sprite>((IsBadPhase1 || IsBadEndlessFloor(Mathf.RoundToInt((BaseGameManager.Instance.CurrentLevel + 1) / 2f), 3)) ? sprites.Get<Sprite[]>("floor2Intro") : new Sprite[] { sprites.Get<Sprite>("Stare") }, 0.02f));
 
                 animator.animations.Add("Slap", new CustomAnimation<Sprite>(slapSprites, 1f));
                 animator.animations.Add("SlapIdle", new CustomAnimation<Sprite>(new Sprite[] { slapSprites[slapSprites.Length - 1] }, 1f));
@@ -402,7 +407,7 @@ namespace TeacherExtension.Foxo
             bool infbad = foxo.IsBadEndlessFloor(Mathf.RoundToInt(floor / 2f), 3);
             bool infmessed = foxo.IsBadEndlessFloor(Mathf.RoundToInt(floor / 4f), 6);
             bool infwrath = foxo.IsBadEndlessFloor(Mathf.RoundToInt(floor / 6f), 10);
-            if (!((foxo.IsBadFloor(1, 2) || foxo.IsBadFloor(2, 2) || foxo.IsBadFloor(2, 4)
+            if (!((foxo.IsBadPhase1 || foxo.IsBadPhase2 || foxo.IsBadPhase3
                 || infbad || infmessed || infwrath || (!TeacherPlugin.IsEndlessFloorsLoaded() && PlayerFileManager.Instance.lifeMode == LifeMode.Intense && BaseGameManager.Instance.CurrentLevel > 0))
                 && !foxo.IsHelping()))
             {
@@ -410,7 +415,7 @@ namespace TeacherExtension.Foxo
                 foxo.animator.SetDefaultAnimation("Happy", 1f);
                 foxo.AudMan.PlaySingle(Foxo.audios.Get<SoundObject>("hellothere"));
             }
-            else if (infwrath || (!TeacherPlugin.IsEndlessFloorsLoaded() && PlayerFileManager.Instance.lifeMode == LifeMode.Intense && BaseGameManager.Instance.CurrentLevel == 2))
+            else if (foxo.IsBadPhase3 || infwrath)
             {
                 foreach (var light in BaseGameManager.Instance.Ec.lights)
                     light.SetPower(false);
@@ -419,8 +424,8 @@ namespace TeacherExtension.Foxo
                 foxo.behaviorStateMachine.ChangeState(foxo.GetHappyState());
                 return;
             }
-            else if ((foxo.IsBadFloor(2, 4) || infmessed || (!TeacherPlugin.IsEndlessFloorsLoaded() && PlayerFileManager.Instance.lifeMode == LifeMode.Intense && BaseGameManager.Instance.CurrentLevel == 1))
-                && !(infwrath || (!TeacherPlugin.IsEndlessFloorsLoaded() && PlayerFileManager.Instance.lifeMode == LifeMode.Intense && BaseGameManager.Instance.CurrentLevel == 2)))
+            else if ((foxo.IsBadPhase2 || infmessed)
+                && !(foxo.IsBadPhase3 || infwrath))
             {
                 foreach (var light in BaseGameManager.Instance.Ec.lights)
                     light.SetLight(!(light.room.category != RoomCategory.Special));
@@ -430,19 +435,22 @@ namespace TeacherExtension.Foxo
                 foxo.Navigator.Entity.Teleport(cell.CenterWorldPosition);
                 foxo.StartCoroutine(JustWaitForGameToStart());
             }
-            else if ((foxo.IsBadFloor(1, 2) || foxo.IsBadFloor(2, 2) || infbad)
-                && !foxo.IsBadFloor(2, 4) 
-                && !(infmessed || (!TeacherPlugin.IsEndlessFloorsLoaded() && PlayerFileManager.Instance.lifeMode == LifeMode.Intense && BaseGameManager.Instance.CurrentLevel == 1)))
+            else if ((foxo.IsBadPhase1 || infbad)
+                && !(foxo.IsBadPhase2 && infmessed))
             {
                 foxo.animator.Play("Stare", 1f);
                 foxo.animator.SetDefaultAnimation("Stare", 1f);
                 foxo.AudMan.PlaySingle(Foxo.audios.Get<SoundObject>("bettergrades"));
                 foxo.StartCoroutine(cutsceneFloor2());
             }
+            else if (!TeacherPlugin.IsEndlessFloorsLoaded() && PlayerFileManager.Instance.lifeMode == LifeMode.Intense && BaseGameManager.Instance.CurrentLevel == 1 && !foxo.IsBadPhase1)
+            {
+                foxo.spriteBase.transform.localPosition += Vector3.down * 10f;
+            }
             foxo.Navigator.SetSpeed(0f);
             ChangeNavigationState(new NavigationState_DoNothing(foxo, 32));
 
-            if (!(foxo.IsBadFloor(1, 2) || foxo.IsBadFloor(2, 2) || foxo.IsBadFloor(2, 4) || infbad || infmessed || infwrath || (!TeacherPlugin.IsEndlessFloorsLoaded() && PlayerFileManager.Instance.lifeMode == LifeMode.Intense && BaseGameManager.Instance.CurrentLevel > 0)))
+            if (!(foxo.IsBadPhase1 || foxo.IsBadPhase2 || foxo.IsBadPhase3 || infbad || infmessed || infwrath || (!TeacherPlugin.IsEndlessFloorsLoaded() && PlayerFileManager.Instance.lifeMode == LifeMode.Intense && BaseGameManager.Instance.CurrentLevel > 0)))
                 if (Chainloader.PluginInfos.ContainsKey("alexbw145.baldiplus.seasons"))
                     foxo.ReplacementMusic = SeasonCycleStuff.CheckIfNight() ? Foxo.audios.Get<SoundObject>("schoolnight") : Foxo.audios.Get<SoundObject>("school");
                 else
@@ -509,7 +517,8 @@ namespace TeacherExtension.Foxo
             bool infbad = foxo.IsBadEndlessFloor(Mathf.RoundToInt(floor / 2f), 3);
             bool infmessed = foxo.IsBadEndlessFloor(Mathf.RoundToInt(floor / 4f), 6);
             bool infwrath = foxo.IsBadEndlessFloor(Mathf.RoundToInt(floor / 6f), 10);
-            if (!(foxo.IsBadFloor(1, 2) || foxo.IsBadFloor(2, 2) || foxo.IsBadFloor(2, 4) || infbad || infmessed || infwrath))
+            bool intenseMode = (!TeacherPlugin.IsEndlessFloorsLoaded() && PlayerFileManager.Instance.lifeMode == LifeMode.Intense && BaseGameManager.Instance.CurrentLevel == 1);
+            if (!(intenseMode || foxo.IsBadPhase1 || foxo.IsBadPhase2 || foxo.IsBadPhase3 || infbad || infmessed || infwrath))
             {
                 foxo.animator.SetDefaultAnimation("Stare", 1f);
                 foxo.animator.Play("Stare", 1f);
@@ -525,7 +534,12 @@ namespace TeacherExtension.Foxo
 
                 foxo.StartCoroutine(GetMad());
             }
-            else if ((foxo.IsBadFloor(1, 2) || foxo.IsBadFloor(2, 2) || infbad) && !foxo.IsBadFloor(2, 4) && !infmessed)
+            else if (intenseMode)
+            {
+                foxo.ActivateSpoopMode();
+                foxo.behaviorStateMachine.ChangeState(new Foxo_Chase(foxo));
+            }
+            else if ((foxo.IsBadPhase1 || infbad) && !foxo.IsBadPhase2 && !infmessed)
             {
                 Cell cell = foxo.ec.RandomCell(false, false, true);
                 while ((cell.CenterWorldPosition - foxo.ec.Players[0].transform.position).magnitude < 111f)

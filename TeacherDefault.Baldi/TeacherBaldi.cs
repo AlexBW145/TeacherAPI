@@ -70,6 +70,7 @@ namespace TeacherExtension.Baldimore
     {
         protected TeacherBaldi baldi;
         public TeacherBaldi_StateBase(TeacherBaldi baldi) : base(baldi) { this.baldi = baldi; }
+
         public override void Hear(GameObject source, Vector3 position, int value)
         {
             base.Hear(source, position, value);

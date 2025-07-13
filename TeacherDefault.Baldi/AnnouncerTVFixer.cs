@@ -35,9 +35,11 @@ internal class AnnouncerTVFixer
     }
 }
 
-[ConditionalPatchMod("pixelguy.pixelmodding.baldiplus.balditvannouncer"), HarmonyPatch(typeof(Baldi_Announcer), nameof(Baldi_Announcer.Enter))]
+[ConditionalPatchMod("pixelguy.pixelmodding.baldiplus.balditvannouncer"), HarmonyPatch]
 internal class DoNotTheHappyBaldi
 {
+    [HarmonyPatch(typeof(Baldi_Announcer), nameof(Baldi_Announcer.Enter))]
+    [HarmonyPatch(typeof(Baldi_GoToRoom), nameof(Baldi_GoToRoom.Enter))]
     static void Postfix(ref Baldi ___baldi, ref NpcState ___previousState)
     {
         if (___previousState is TeacherBaldi_Happy)

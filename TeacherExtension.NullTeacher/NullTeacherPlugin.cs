@@ -27,7 +27,7 @@ namespace NullTeacher
             Instance = this;
             TeacherPlugin.RequiresAssetsFolder(this); // Very important, or else people will complain about Beans!
             NullConfiguration.Setup();
-            LoadingEvents.RegisterOnAssetsLoaded(Info, OnassetsLoaded, false);
+            LoadingEvents.RegisterOnAssetsLoaded(Info, OnassetsLoaded, LoadingEventOrder.Pre);
             ModdedSaveGame.AddSaveHandler(Info);
         }
 
@@ -42,9 +42,10 @@ namespace NullTeacher
                 .AddTrigger()
                 .AddMetaFlag(NPCFlags.CanHear)
                 .SetMinMaxAudioDistance(0, 1000)
-                .SetMetaTags(new string[] { "teacher" })
+                .SetMetaTags(new string[] { "teacher", "faculty" })
                 .Build();
             teacher.ReflectionSetVariable("audMan", teacher.GetComponent<AudioManager>());
+            teacher.Navigator.passableObstacles.Add(PassableObstacle.LockedDoor);
 
             CustomSpriteAnimator animator = teacher.gameObject.AddComponent<CustomSpriteAnimator>();
             animator.spriteRenderer = teacher.spriteRenderer[0];

@@ -40,7 +40,7 @@ public class BaldiPlugin : BaseUnityPlugin
                 "If the TeacherAPI port of Baldi is chosen as the main teacher, he'll grab every possible assistants to be put into one level. (Not guaranteed for winning & sometimes teachers will have 0 notebooks assigned leading to possible exclusion)"
             );
         harmony.PatchAllConditionals();
-        LoadingEvents.RegisterOnAssetsLoaded(Info, PreLoad(), false);
+        LoadingEvents.RegisterOnAssetsLoaded(Info, PreLoad(), LoadingEventOrder.Pre);
 
         ModdedSaveGame.AddSaveHandler(Info);
     }
@@ -61,10 +61,11 @@ public class BaldiPlugin : BaseUnityPlugin
             .SetPoster(theBald.Poster)
             .SetMinMaxAudioDistance(10f, 300f)
             .SetForcedSubtitleColor((Color)theBald.gameObject.GetComponent<AudioManager>().ReflectionGetVariable("subtitleColor"))
-            .SetMetaTags(["teacher"])
+            .SetMetaTags(["teacher", "faculty"])
             .Build();
         Baldi.audMan = Baldi.gameObject.GetComponent<AudioManager>();
         Baldi.animator = Baldi.gameObject.AddComponent<Animator>();
+        Baldi.Navigator.passableObstacles.Add(PassableObstacle.LockedDoor);
         Baldi.audCountdown = Resources.FindObjectsOfTypeAll<HappyBaldi>().Last().ReflectionGetVariable("audCountdown") as SoundObject[];
         Baldi.audHere = Resources.FindObjectsOfTypeAll<HappyBaldi>().Last().ReflectionGetVariable("audHere") as SoundObject;
         Baldi.animator.runtimeAnimatorController = Resources.FindObjectsOfTypeAll<HappyBaldi>().Last().gameObject.GetComponent<Animator>().runtimeAnimatorController;

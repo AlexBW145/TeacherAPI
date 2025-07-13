@@ -9,6 +9,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 using System.Text;
 using TeacherAPI;
 using TeacherExtension.Foxo.Items;
@@ -58,7 +60,7 @@ namespace TeacherExtension.Foxo.Patches
                 video.SetTargetAudioSource(0, CoreGameManager.Instance.audMan.audioDevice);
                 video.waitForFirstFrame = false;
                 video.source = VideoSource.Url;
-                video.url = FoxoPlugin.Instance.deathCounter.deaths >= 4
+                video.url = FoxoPlugin.Instance.deathCounter.deaths >= 6
                     ? Path.Combine("File:///", AssetLoader.GetModPath(FoxoPlugin.Instance), "endings", "GradeCutscene.mov")
                     : Path.Combine("File:///", AssetLoader.GetModPath(FoxoPlugin.Instance), "endings", "GradeCutscene_Good.mov");
                 video.loopPointReached += (vp) => { if (FoxoPlugin.Instance.deathCounter.deaths >= 4) Application.Quit(); else Congrats(__instance); };
@@ -216,37 +218,45 @@ namespace TeacherExtension.Foxo.Patches
         static FieldInfo ___baldiImage = AccessTools.DeclaredField(typeof(BaldiTV), "baldiImage");
         static FieldInfo ___baldiTvAudioManager = AccessTools.DeclaredField(typeof(BaldiTV), "baldiTvAudioManager");
 
-        [HarmonyPatch(typeof(BaldiTV), "BaldiSpeaks"), HarmonyPostfix]
-        static IEnumerator GlitchOut(IEnumerator result, SoundObject sound, BaldiTV __instance)
-        {
-            var img = ___baldiImage.GetValue(__instance) as Image;
-            var audman = ___baldiTvAudioManager.GetValue(__instance) as AudioManager;
-            var foxoSprites = Foxo.sprites.GetAll<Sprite[]>().ToList().FindAll(x => x.ToList().Find(f => !f.name.ToLower().Contains("wrath") && !f.name.ToLower().Contains("notebook")));
-
-            if (sound == Foxo.audios.Get<SoundObject>("WrathEventAud"))
+        [HarmonyPatch(typeof(BaldiTV), "BaldiSpeaks", MethodType.Enumerator), HarmonyTranspiler]
+        static IEnumerable<CodeInstruction> GlitchOut(IEnumerable<CodeInstruction> i) => new CodeMatcher(i).Start()
+            .MatchForward(true,
+            new CodeMatch(OpCodes.Ldloc_1),
+            new CodeMatch(CodeInstruction.LoadField(typeof(BaldiTV), "baldiTvAudioManager")),
+            new CodeMatch(OpCodes.Ldarg_0),
+            new CodeMatch(CodeInstruction.LoadField(AccessTools.Method(typeof(BaldiTV), "BaldiSpeaks", new Type[] { typeof(SoundObject) }).GetCustomAttribute<StateMachineAttribute>().StateMachineType, "sound")),
+            new CodeMatch(OpCodes.Callvirt, AccessTools.Method(typeof(AudioManager), nameof(AudioManager.QueueAudio), new Type[] { typeof(SoundObject) })))
+            .ThrowIfInvalid("Something went wrong!")
+            .Advance(1)
+            .InsertAndAdvance(
+            new CodeInstruction(OpCodes.Ldarg_0),
+            CodeInstruction.LoadField(AccessTools.Method(typeof(BaldiTV), "BaldiSpeaks", new Type[] { typeof(SoundObject) }).GetCustomAttribute<StateMachineAttribute>().StateMachineType, "sound"),
+            new CodeInstruction(OpCodes.Ldloc_1),
+            Transpilers.EmitDelegate<Action<SoundObject, BaldiTV>>((sound, __instance) =>
             {
-                img.GetComponent<Animator>().enabled = false;
-                img.GetComponent<VolumeAnimator>().enabled = false;
-                while (audman.QueuedAudioIsPlaying && img.enabled)
-                {
-                    img.sprite = foxoSprites[UnityEngine.Random.RandomRangeInt(0, foxoSprites.Count)].First();
-                    yield return null;
-                }
-            }
+                var img = ___baldiImage.GetValue(__instance) as Image;
+                var audman = ___baldiTvAudioManager.GetValue(__instance) as AudioManager;
+                var foxoSprites = Foxo.sprites.GetAll<Sprite[]>().ToList().FindAll(x => x.ToList().Find(f => !f.name.ToLower().Contains("wrath") && !f.name.ToLower().Contains("notebook")));
 
-            while (result.MoveNext())
-            {
                 if (sound == Foxo.audios.Get<SoundObject>("WrathEventAud"))
-                    img.sprite = foxoSprites[UnityEngine.Random.RandomRangeInt(0, foxoSprites.Count)].First();
-                yield return result.Current;
-            }
-
-            if (sound == Foxo.audios.Get<SoundObject>("WrathEventAud"))
-            {
-                img.GetComponent<Animator>().enabled = true;
-                img.GetComponent<VolumeAnimator>().enabled = true;
-            }
-        }
+                {
+                    img.GetComponent<Animator>().enabled = false;
+                    img.GetComponent<VolumeAnimator>().enabled = false;
+                    IEnumerator FreakOut()
+                    {
+                        while (audman.QueuedAudioIsPlaying && img.enabled)
+                        {
+                            img.sprite = foxoSprites[UnityEngine.Random.RandomRangeInt(0, foxoSprites.Count)].First();
+                            yield return null;
+                        }
+                        img.GetComponent<Animator>().enabled = true;
+                        img.GetComponent<VolumeAnimator>().enabled = true;
+                        yield break;
+                    }
+                    __instance.StartCoroutine(FreakOut());
+                }
+            }))
+            .InstructionEnumeration();
 
         [HarmonyPatch(typeof(TimeOut), nameof(TimeOut.Begin)), HarmonyPostfix, HarmonyPriority(Priority.Last)]
         static void WrathOut()

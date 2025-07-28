@@ -21,7 +21,7 @@ namespace TeacherAPI
 {
     [BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
     [BepInDependency("mtm101.rulerp.bbplus.baldidevapi", MTM101BaldiDevAPI.VersionNumber)]
-    [BepInDependency("mtm101.rulerp.baldiplus.endlessfloors", DependencyFlags.SoftDependency)]
+    [BepInDependency("alexbw145.baldiplus.arcadeendlessforever", DependencyFlags.SoftDependency)]
     public class TeacherPlugin : BaseUnityPlugin
     {
         public static TeacherPlugin Instance { get; private set; }
@@ -96,27 +96,17 @@ If you encounter an error, send me the Logs!", false);
 
         internal Baldi GetPotentialBaldi(CustomLevelObject floorObject)
         {
-            if (floorObject.GetCustomModValue(Info, "TeacherAPI_OriginalBaldi") is Baldi)
-                return floorObject.GetCustomModValue(Info, "TeacherAPI_OriginalBaldi") as Baldi;
-            return GetPotentialBaldi(floorObject as LevelObject);
+            var param = new CustomLevelGenerationParameters();
+            param.AssignData(floorObject, new LevelGenerationModifier());
+            param.AssignExtraData(floorObject);
+            return GetPotentialBaldi(param);
         }
 
         internal Baldi GetPotentialBaldi(LevelObject floorObject)
         {
-            var baldis = (from x in floorObject.potentialBaldis
-                          where x.selection.GetType().Equals(typeof(Baldi))
-                          select (Baldi)x.selection).ToArray();
-            if (baldis.Count() <= 0)
-            {
-                Log.LogWarning("potentialBaldis in " + floorObject.name + "is blank!");
-                return null; // Why did I do that??
-            }
-            else if (baldis.Count() > 1)
-            {
-                (from baldi in baldis select baldi.name).Print("Baldis", TeacherPlugin.Log);
-                MTM101BaldiDevAPI.CauseCrash(Info, new Exception("Multiple Baldis found in " + floorObject.name + "!"));
-            }
-            return baldis.First();
+            var param = new LevelGenerationParameters();
+            param.AssignData(floorObject, new LevelGenerationModifier());
+            return GetPotentialBaldi(param);
         }
 
         internal Baldi GetPotentialBaldi(LevelGenerationParameters floorObject)
@@ -143,8 +133,11 @@ If you encounter an error, send me the Logs!", false);
         /// <param name="teacher"></param>
         public static void RegisterTeacher(Teacher teacher)
         {
-            teacher.ReflectionSetVariable("ignorePlayerOnSpawn", true); // Or else, the teacher won't spawn instantly.
+            teacher.ReflectionSetVariable("ignorePlayerOnSpawn", true); // Or else the teacher won't spawn instantly.
             Instance.whoAreTeachers.Add(teacher.Character, teacher);
+            CustomBaldiInteraction.teacherCheck.Add(teacher.Character, new Dictionary<Type, Func<BaldiInteraction, Teacher, bool>>());
+            CustomBaldiInteraction.teacherTriggers.Add(teacher.Character, new Dictionary<Type, Action<BaldiInteraction, Teacher>>());
+            CustomBaldiInteraction.teacherPayloads.Add(teacher.Character, new Dictionary<Type, Action<BaldiInteraction, Teacher>>());
         }
 
         /// <summary>
@@ -171,7 +164,7 @@ The name of the assets folder must be <color=red>{1}</color>.", Path.GetFileName
         {
             return (
                 from x in Chainloader.PluginInfos
-                where x.Key.Equals("mtm101.rulerp.baldiplus.endlessfloors")
+                where x.Key.Equals("alexbw145.baldiplus.arcadeendlessforever")
                 select x.Key
             ).Count() > 0;
         }
@@ -199,6 +192,6 @@ The name of the assets folder must be <color=red>{1}</color>.", Path.GetFileName
     {
         public const string PLUGIN_GUID = "alexbw145.baldiplus.teacherapi";
         public const string PLUGIN_NAME = "Teacher API";
-        public const string PLUGIN_VERSION = "0.1.7";
+        public const string PLUGIN_VERSION = "0.1.8";
     }
 }

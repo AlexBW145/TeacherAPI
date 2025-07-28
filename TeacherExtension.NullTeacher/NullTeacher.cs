@@ -128,15 +128,6 @@ namespace NullTeacher
             timeSinceExcitingThing += dt;
         }
 
-        public void OpenDoors()
-        {
-            if (currentCell != null && currentCell.doorHere)
-            {
-                currentCell.doors.ForEach(d => d.OpenTimed(0.5f, false));
-                SpeechCheck(NullPhrase.Hide, 0.01f);
-            }
-        }
-
         public void FlickerLights()
         {
             flickerDelay -= Time.deltaTime * this.ec.EnvironmentTimeScale;
@@ -307,6 +298,11 @@ namespace NullTeacher
         public override void DestinationEmpty()
         {
             base.DestinationEmpty();
+            if (ohno.CurrentDestinationInteraction != null && ohno.CurrentDestinationInteraction.Check(me: ohno))
+            {
+                ohno.CurrentDestinationInteraction.Trigger(me: ohno);
+                ohno.ClearDestinationInteraction();
+            }
             ohno.UpdateSoundTarget();
         }
         public override void NotebookCollected(int currentNotebooks, int maxNotebooks)
@@ -358,7 +354,6 @@ namespace NullTeacher
         public override void Update()
         {
             base.Update();
-            ohno.OpenDoors();
             ohno.CheckSpeeches();
             ohno.FlickerLights();
 
@@ -369,6 +364,20 @@ namespace NullTeacher
                 ohno.Slap();
                 timer = ohno.Delay;
             }
+        }
+
+        public override void DoorHit(StandardDoor door)
+        {
+            if (door.locked)
+            {
+                door.Unlock();
+                door.OpenTimed(0.5f, false);
+            }
+            else
+            {
+                base.DoorHit(door);
+            }
+            ohno.SpeechCheck(NullPhrase.Hide, 0.01f);
         }
 
         public override void OnStateTriggerStay(Collider other)

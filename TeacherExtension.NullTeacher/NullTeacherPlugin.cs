@@ -53,6 +53,9 @@ namespace NullTeacher
 
             TeacherPlugin.RegisterTeacher(teacher);
             NullTeacher = teacher;
+            teacher.AddNewBaldiInteraction<HideableLockerBaldiInteraction>(
+                (interaction, feacher) => interaction.GetComponent<HideableLockerBaldiInteraction>().Check(baldi: feacher),
+                (interaction, feacher) => interaction.GetComponent<HideableLockerBaldiInteraction>().Payload(baldi: feacher));
 
             GeneratorManagement.Register(this, GenerationModType.Addend, EditGenerator);
         }

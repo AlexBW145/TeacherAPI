@@ -76,6 +76,10 @@ namespace TeacherExtension.Foxo
 
                 TeacherPlugin.RegisterTeacher(Foxo);
                 TeacherPlugin.RegisterTeacher(DarkFoxo);
+                Foxo.AddNewBaldiInteraction<HideableLockerBaldiInteraction>(
+                check: CustomFoxoInteractions.LockerCheck,
+                trigger: CustomFoxoInteractions.LockerInteract,
+                payload: CustomFoxoInteractions.LockerPayload);
             }
             // Also create and register some items specifically to combat against Foxo.
             {
@@ -90,6 +94,31 @@ namespace TeacherExtension.Foxo
                     .Build();
                 ItemAssets.Add("FireExtinguisher", fireExtinguish);
             }
+#if DEBUG
+            {
+                var bucketofwater = new ItemBuilder(Info)
+                    .SetNameAndDescription("Itm_WaterBucketOfWater", "Desc_WaterBucketOfWater")
+                    .SetItemComponent<WaterBucketOfWater>()
+                    .SetEnum("WaterBucketOfWater")
+                    .SetGeneratorCost(ItemMetaStorage.Instance.FindByEnum(global::Items.Wd40).value.value + 30)
+                    .SetShopPrice(ItemMetaStorage.Instance.FindByEnum(global::Items.Wd40).value.price)
+                    .SetSprites(Foxo.sprites.Get<Sprite>("Items/WaterBucketOfWater_Small"), Foxo.sprites.Get<Sprite>("Items/WaterBucketOfWater_Large"))
+                    .SetMeta(ItemFlags.Persists, new string[] { "alternative", "crmp_contraband" })
+                    .Build();
+                GameObject quad = Instantiate(Resources.FindObjectsOfTypeAll<Chalkboard>().ToList().First(), bucketofwater.item.transform, false).gameObject;
+                quad.transform.Find("Chalkbaord").Find("Quad").SetParent(bucketofwater.item.transform, false);
+                Destroy(quad.gameObject);
+                bucketofwater.item.transform.Find("Quad").rotation = Quaternion.Euler(90f, 0f, 0f);
+                bucketofwater.item.transform.Find("Quad").localPosition = new Vector3(0f, -4.9f, 0f);
+                bucketofwater.item.transform.Find("Quad").localScale = new Vector3(10f, 10f, 10f);
+                Material spillmat = Instantiate(Resources.FindObjectsOfTypeAll<Material>().ToList().Find(x => x.name == "BlankChalk"));
+                spillmat.name = "WaterBucketOfWaterSpill";
+                spillmat.SetMainTexture(AssetLoader.TextureFromMod(this, "items", "WaterBucketWater_Splash.png"));
+                bucketofwater.item.transform.Find("Quad").GetComponent<MeshRenderer>().SetMaterial(spillmat);
+                bucketofwater.item.gameObject.GetComponent<WaterBucketOfWater>().wrongPlacement = Resources.FindObjectsOfTypeAll<SoundObject>().ToList().Find(x => x.name == "ErrorMaybe");
+                ItemAssets.Add("WaterBucketOfWater", bucketofwater);
+            }
+#endif
 
             GeneratorManagement.Register(this, GenerationModType.Addend, EditGenerator);
         }
@@ -104,6 +133,12 @@ namespace TeacherExtension.Foxo
                 {
                     ld.AddPotentialTeacher(Foxo, FoxoConfiguration.Weight.Value);
                     ld.AddPotentialAssistingTeacher(Foxo, FoxoConfiguration.Weight.Value);
+                    if (floorNumber >= 3)
+                        ld.potentialItems = ld.potentialItems.AddToArray(new WeightedItemObject()
+                        {
+                            selection = ItemAssets.Get<ItemObject>("FireExtinguisher"),
+                            weight = 20
+                        });
                 }
                 print($"Added Foxo to {floorName} (Floor {floorNumber})");
             }

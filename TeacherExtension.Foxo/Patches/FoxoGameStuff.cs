@@ -163,7 +163,7 @@ namespace TeacherExtension.Foxo.Patches
             return !foxoinF3;
         }
 
-        [HarmonyPatch(typeof(BaseGameManager), nameof(BaseGameManager.Initialize)), HarmonyPostfix]
+        /*[HarmonyPatch(typeof(BaseGameManager), nameof(BaseGameManager.Initialize)), HarmonyPostfix]
         static void SwapApplesAndExtinguishersInventory()
         {
             CoreGameManager.Instance.musicMan.pitchModifier = 1f;
@@ -213,7 +213,7 @@ namespace TeacherExtension.Foxo.Patches
             if (___currentPickup.item == ItemMetaStorage.Instance.Find(a => a.value.itemType == global::Items.Apple && a.flags.HasFlag(ItemFlags.NoUses)).value
                 && TeacherManager.Instance?.SpawnedMainTeacher?.GetComponent<Foxo>() != null)
                 ___currentPickup.AssignItem(FoxoPlugin.ItemAssets.Get<ItemObject>("FireExtinguisher"));
-        }
+        }*/
 
         static FieldInfo ___baldiImage = AccessTools.DeclaredField(typeof(BaldiTV), "baldiImage");
         static FieldInfo ___baldiTvAudioManager = AccessTools.DeclaredField(typeof(BaldiTV), "baldiTvAudioManager");

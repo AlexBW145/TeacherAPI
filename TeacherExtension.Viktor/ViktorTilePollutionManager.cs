@@ -24,6 +24,7 @@ namespace TeacherExtension.Viktor
         public bool IsCellPolluted(Cell cell) => pollutedCells.ContainsKey(cell) && pollutedCells[cell] > 0f;
 
         public void PolluteCell(Cell cell, float duration) => pollutedCells[cell] = duration;
+        public void UnpolluteCell(Cell cell) => pollutedCells[cell] = 0f;
 
         private Dictionary<Cell, float> pollutedCells = new Dictionary<Cell, float>();
 

@@ -14,6 +14,7 @@ namespace TeacherExtension.Viktor
     public class Viktor : Teacher
     {
         public bool AllNotebooksPrank { get; internal set; }
+        public bool SawPlayerInInteraction { get; private set; } = false;
         public bool isQuiet => BaseGameManager.Instance.FoundNotebooks >= Mathf.RoundToInt(ec.notebookTotal / 2) && ec.notebookTotal >= 6;
         internal ViktorTilePollutionManager PollutionManager { get; private set; }
         private bool FirstJacketDirty;
@@ -60,6 +61,13 @@ namespace TeacherExtension.Viktor
             //StartCoroutine(StopDelay());
         }
 
+        public void ClearDestinationInteraction(bool interactionUnsee)
+        {
+            ClearDestinationInteraction();
+            if (SawPlayerInInteraction == true)
+                SawPlayerInInteraction = !interactionUnsee;
+        }
+
         public new void Hear(GameObject source, Vector3 position, int value, bool indicator)
         {
             var currentSoundVal = (int)AccessTools.Field(typeof(Baldi), "currentSoundVal").GetValue(this);
@@ -69,7 +77,11 @@ namespace TeacherExtension.Viktor
             else if (indicator)
                 for (int j = 0; j < CoreGameManager.Instance.setPlayers; j++)
                     Viktorcator.ActivateBaldicator("ForLater");
-            base.Hear(null, position, value, false);
+            base.Hear(source, position, value, false);
+            if (value == 127 && indicator == false)
+                SawPlayerInInteraction = true;
+            else if (source != null && source.GetComponent<HideableLockerBaldiInteraction>() == null && CurrentDestinationInteraction == null)
+                SawPlayerInInteraction = false;
         }
 
         [Obsolete("Part of the old version", true)]
@@ -149,13 +161,23 @@ namespace TeacherExtension.Viktor
 
         public override void NotebookCollected(int currentNotebooks, int maxNotebooks)
         {
-            if (viktor.IsHelping() && currentNotebooks >= maxNotebooks && viktor.behaviorStateMachine.CurrentState is not Viktor_Subsitute)
+            if (BaseGameManager.Instance is not EndlessGameManager && viktor.IsHelping() && currentNotebooks >= maxNotebooks && viktor.behaviorStateMachine.CurrentState is not Viktor_Subsitute)
                 viktor.behaviorStateMachine.ChangeState(new Viktor_Subsitute(viktor) { veryHappy = true });
         }
 
         public override void DestinationEmpty()
         {
+            if (viktor.CurrentDestinationInteraction != null && viktor.CurrentDestinationInteraction.Check(me: viktor))
+            {
+                viktor.CurrentDestinationInteraction.Trigger(me: viktor);
+                viktor.ClearDestinationInteraction(false);
+            }
             viktor.UpdateSoundTarget();
+        }
+
+        public override void NavigationStateChanged()
+        {
+            base.NavigationStateChanged();
         }
 
         public override void PlayerInSight(PlayerManager player)
@@ -228,8 +250,7 @@ namespace TeacherExtension.Viktor
                 delayTimer -= Time.deltaTime * viktor.ec.NpcTimeScale;
             IntVector2 gridPosition = IntVector2.GetGridPosition(viktor.transform.position);
             Cell cell = this.viktor.ec.CellFromPosition(gridPosition);
-            bool flag2 = cell != null && this.viktor.PollutionManager.IsCellPolluted(cell);
-            if (flag2)
+            if (cell != null && this.viktor.PollutionManager.IsCellPolluted(cell))
             {
                 this.viktor.StopCoroutine("StopDelay");
                 this.viktor.behaviorStateMachine.ChangeState(new Viktor_Jacket(viktor, this));
@@ -305,6 +326,48 @@ namespace TeacherExtension.Viktor
         }
 
         public override void PlayerInSight(PlayerManager player)
+        {
+        }
+    }
+
+    public class Viktor_Locker : Viktor_SubState
+    {
+        private float time;
+        private BaldiInteraction interaction;
+        public Viktor_Locker(Viktor viktor, Viktor_StateBase prevState, float Time, HideableLockerBaldiInteraction locker) : base(viktor, prevState)
+        {
+            time = Time;
+            interaction = locker;
+        }
+
+        public override void Enter()
+        {
+            base.Enter();
+            viktor.Navigator.SetSpeed(0f);
+            viktor.Navigator.maxSpeed = 0f;
+        }
+
+        public override void Update()
+        {
+            base.Update();
+            if (time > 0f)
+                time -= Time.deltaTime * viktor.TimeScale;
+            else if (time <= 0f || interaction.ShouldBeCancelled())
+            {
+                Exit();
+                viktor.behaviorStateMachine.ChangeState(prevState);
+            }
+        }
+
+        public override void Exit()
+        {
+            base.Exit();
+            if (viktor.SawPlayerInInteraction)
+                interaction.Payload(baldi: viktor);
+            viktor.ClearDestinationInteraction(true);
+        }
+
+        public override void DestinationEmpty()
         {
         }
     }

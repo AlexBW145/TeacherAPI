@@ -54,7 +54,6 @@ public class BaldiPlugin : BaseUnityPlugin
         var Baldi = new NPCBuilder<TeacherBaldi>(Info)
             .SetName("Baldi_TeacherAPI")
             .SetEnum(Character.Baldi)
-            .DisableNavigationPrecision()
             .AddLooker()
             .AddTrigger()
             .AddSpawnableRoomCategories(RoomCategory.Null)
@@ -63,6 +62,7 @@ public class BaldiPlugin : BaseUnityPlugin
             .SetForcedSubtitleColor((Color)theBald.gameObject.GetComponent<AudioManager>().ReflectionGetVariable("subtitleColor"))
             .SetMetaTags(["teacher", "faculty"])
             .Build();
+        TeacherPlugin.RegisterTeacher(Baldi);
         Baldi.audMan = Baldi.gameObject.GetComponent<AudioManager>();
         Baldi.animator = Baldi.gameObject.AddComponent<Animator>();
         Baldi.Navigator.passableObstacles.Add(PassableObstacle.LockedDoor);

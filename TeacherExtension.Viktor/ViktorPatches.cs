@@ -75,7 +75,27 @@ class ChalkEraserPatch
         }
     }
 }
-
+[HarmonyPatch(typeof(SteamValveController), nameof(SteamValveController.Set))]
+class ValvePatch
+{
+    private static void Postfix(bool on, SteamValveController __instance, ref DijkstraMap ___spreadMap)
+    {
+        ViktorTilePollutionManager pollutionManager = __instance.Ec.GetComponent<ViktorTilePollutionManager>();
+        if (pollutionManager != null)
+        {
+            if (on)
+            {
+                foreach (IntVector2 foundCellPosition in ___spreadMap.FoundCellPositions)
+                    pollutionManager.PolluteCell(__instance.Ec.CellFromPosition(foundCellPosition), float.PositiveInfinity);
+            }
+            else
+            {
+                foreach (IntVector2 foundCellPosition in ___spreadMap.FoundCellPositions)
+                    pollutionManager.UnpolluteCell(__instance.Ec.CellFromPosition(foundCellPosition));
+            }
+        }
+    }
+}
 [HarmonyPatch(typeof(BaseGameManager), nameof(BaseGameManager.CollectNotebooks))]
 class PranksOfAllTime
 {

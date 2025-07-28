@@ -196,6 +196,16 @@ namespace TeacherExtension.Viktor
             Viktor.Navigator.SetRoomAvoidance(false);
             Viktor.spriteRenderer[0].sprite = viktorAssets.Get<Sprite>("ViktorSubsitute");
 
+            TeacherPlugin.RegisterTeacher(Viktor);
+            Viktor.AddNewBaldiInteraction<HideableLockerBaldiInteraction>((interaction, evil) => interaction.GetComponent<HideableLockerBaldiInteraction>().Check(baldi: evil),
+                (interaction, evil) =>
+                {
+                    Debug.Log("Invoking Viktor's interaction with a blue locker.");
+                    var viktor = (Viktor)evil;
+                    viktor.behaviorStateMachine.ChangeState(new Viktor_Locker(viktor, (Viktor_StateBase)viktor.behaviorStateMachine.currentState, viktor.SawPlayerInInteraction ? 1.1f : 4f, (HideableLockerBaldiInteraction)interaction));
+                    viktor.behaviorStateMachine.ChangeNavigationState(new NavigationState_DoNothing(viktor, 99));
+                });
+
             GeneratorManagement.Register(this, GenerationModType.Addend, EditGenerator);
         }
 
@@ -208,8 +218,11 @@ namespace TeacherExtension.Viktor
             {
                 foreach (var ld in floorObject.GetCustomLevelObjects())
                 {
-                    ld.AddPotentialTeacher(Viktor, ViktorConfiguration.Weight.Value);
-                    ld.AddPotentialAssistingTeacher(Viktor, ViktorConfiguration.Weight.Value);
+                    if (ld.type != LevelType.Maintenance)
+                    {
+                        ld.AddPotentialTeacher(Viktor, ViktorConfiguration.Weight.Value);
+                        ld.AddPotentialAssistingTeacher(Viktor, ViktorConfiguration.Weight.Value);
+                    }
                 }
                 print($"Added Viktor Strobovski to {floorName} (Floor {floorNumber})");
             }

@@ -64,6 +64,8 @@ namespace TeacherAPI
         /// <param name="weight">The weight of the teacher for the selection (as a reference, MoreTeachers default teachers have a weight of 100)</param>
         public static void AddPotentialTeacher(this CustomLevelObject levelObject, Teacher teacher, int weight)
         {
+            if (!TeacherPlugin.Instance.whoAreTeachers.ContainsValue(teacher))
+                MTM101BaldiDevAPI.CauseCrash(TeacherPlugin.Instance.Info, new Exception($"Attempted to add a Teacher that has not been registered yet!\n<color=white>Teacher: {teacher.gameObject.name}</color>"));
             var teacherlist = levelObject.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialTeachers") as List<WeightedSelection<Teacher>>;
                 teacherlist.Add(
                 new WeightedSelection<Teacher>() { selection = teacher, weight = weight }
@@ -79,6 +81,8 @@ namespace TeacherAPI
         /// <param name="weight">The weight of the teacher for the selection (as a reference, MoreTeachers default teachers have a weight of 100)</param>
         public static void AddPotentialAssistingTeacher(this CustomLevelObject levelObject, Teacher teacher, int weight)
         {
+            if (!TeacherPlugin.Instance.whoAreTeachers.ContainsValue(teacher))
+                MTM101BaldiDevAPI.CauseCrash(TeacherPlugin.Instance.Info, new Exception($"Attempted to add a Teacher that has not been registered yet!\n<color=white>Teacher: {teacher.gameObject.name}</color>"));
             var assistantList = levelObject.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialAssistants") as List<WeightedSelection<Teacher>>;
                 assistantList.Add(
                 new WeightedSelection<Teacher>() { selection = teacher, weight = weight }
@@ -89,6 +93,13 @@ namespace TeacherAPI
         public static Sprite ToSprite(this Texture2D tex, float pixelsPerUnit)
         {
             return AssetLoader.SpriteFromTexture2D(tex, pixelsPerUnit);
+        }
+
+        public static void AddNewBaldiInteraction<T>(this Teacher npc, Func<BaldiInteraction, Teacher, bool> check = null, Action<BaldiInteraction, Teacher> trigger = null, Action<BaldiInteraction, Teacher> payload = null) where T : BaldiInteraction
+        {
+            CustomBaldiInteraction.teacherCheck[npc.Character].Add(typeof(T), check);
+            CustomBaldiInteraction.teacherTriggers[npc.Character].Add(typeof(T), trigger);
+            CustomBaldiInteraction.teacherPayloads[npc.Character].Add(typeof(T), payload);
         }
     }
 }

@@ -93,9 +93,12 @@ namespace TeacherExtension.Baldimore
         public override void DestinationEmpty()
         {
             base.DestinationEmpty();
-            if (baldi.CurrentDestinationInteraction != null && baldi.CurrentDestinationInteraction.Check(baldi))
+            if (baldi.CurrentDestinationInteraction != null && (baldi.CurrentDestinationInteraction.Check(me: baldi) || baldi.CurrentDestinationInteraction.Check(baldi: baldi)))
             {
-                baldi.CurrentDestinationInteraction.Trigger(baldi);
+                if (baldi.CurrentDestinationInteraction.Check(me: baldi))
+                    baldi.CurrentDestinationInteraction.Trigger(me: baldi);
+                else
+                    baldi.CurrentDestinationInteraction.Trigger(baldi: baldi);
                 baldi.ClearDestinationInteraction();
             }
 

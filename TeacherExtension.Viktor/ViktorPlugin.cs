@@ -13,17 +13,20 @@ using MTM101BaldAPI.Reflection;
 
 namespace TeacherExtension.Viktor
 {
-    [BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
+    [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     [BepInDependency("alexbw145.baldiplus.teacherapi", BepInDependency.DependencyFlags.HardDependency)]
     public class ViktorPlugin : BaseUnityPlugin
     {
+        private const string PLUGIN_GUID = "alexbw145.baldiplus.teacherextension.viktor";
+        private const string PLUGIN_NAME = "Viktor Strobovski TeacherAPI Port (Continued)";
+        private const string PLUGIN_VERSION = "1.0.1.0";
         public static ViktorPlugin Instance { get; private set; } // Remove it if necessary
         internal static AssetManager viktorAssets = new AssetManager();
         internal Viktor Viktor;
 
         private void Awake()
         {
-            Harmony harmony = new Harmony(PluginInfo.PLUGIN_GUID);
+            Harmony harmony = new Harmony(PLUGIN_GUID);
             Instance = this;
             harmony.PatchAllConditionals();
             TeacherPlugin.RequiresAssetsFolder(this);
@@ -67,7 +70,7 @@ namespace TeacherExtension.Viktor
                         };
                 }
             });
-            LoadingEvents.RegisterOnAssetsLoaded(Info, PreLoad(), false);
+            LoadingEvents.RegisterOnAssetsLoaded(Info, PreLoad(), LoadingEventOrder.Pre);
 
             ModdedSaveGame.AddSaveHandler(Info);
         }
@@ -188,16 +191,16 @@ namespace TeacherExtension.Viktor
                 .IgnorePlayerOnSpawn()
                 .DisableNavigationPrecision()
                 .AddSpawnableRoomCategories(RoomCategory.Null)
-                .SetMetaTags(["teacher"])
+                .SetWanderEnterRooms()
+                .SetForcedSubtitleColor(ViktorSubtitleColor)
+                .SetMetaTags(["teacher", "faculty"])
                 .Build();
             Viktor.audMan = Viktor.GetComponent<AudioManager>();
-            Viktor.audMan.ReflectionSetVariable("subtitleColor", ViktorSubtitleColor);
-            Viktor.audMan.ReflectionSetVariable("overrideSubtitleColor", true);
-            Viktor.Navigator.SetRoomAvoidance(false);
+            Viktor.Navigator.accel = 0f;
             Viktor.spriteRenderer[0].sprite = viktorAssets.Get<Sprite>("ViktorSubsitute");
 
             TeacherPlugin.RegisterTeacher(Viktor);
-            Viktor.AddNewBaldiInteraction<HideableLockerBaldiInteraction>((interaction, evil) => interaction.GetComponent<HideableLockerBaldiInteraction>().Check(baldi: evil),
+            Viktor.AddNewBaldiInteraction<HideableLockerBaldiInteraction>((interaction, evil) => interaction.Check(baldi: evil),
                 (interaction, evil) =>
                 {
                     Debug.Log("Invoking Viktor's interaction with a blue locker.");
@@ -212,27 +215,22 @@ namespace TeacherExtension.Viktor
         // I had to rewrite the source code without the base, but it's still her own port.
         private void EditGenerator(string floorName, int floorNumber, SceneObject floorObject)
         {
-            // It is good practice to check if the level starts with F to make sure to not clash with other mods.
-            // INF stands for Infinite Floor
-            if (floorName.StartsWith("F") || floorName.StartsWith("END") || floorName.Equals("INF"))
+            var meta = floorObject.GetMeta();
+            if (meta == null) return; // Not a great example, but because I am not checking for the tags 'main' and 'found_on_main'.
+            bool flag = false;
+            foreach (var ld in floorObject.GetCustomLevelObjects())
             {
-                foreach (var ld in floorObject.GetCustomLevelObjects())
+                if (ld.IsModifiedByMod(Info)) continue;
+                if (ld.type != LevelType.Maintenance)
                 {
-                    if (ld.type != LevelType.Maintenance)
-                    {
-                        ld.AddPotentialTeacher(Viktor, ViktorConfiguration.Weight.Value);
-                        ld.AddPotentialAssistingTeacher(Viktor, ViktorConfiguration.Weight.Value);
-                    }
+                    ld.AddPotentialTeacher(Viktor, ViktorConfiguration.Weight.Value);
+                    ld.AddPotentialAssistingTeacher(Viktor, ViktorConfiguration.Weight.Value);
+                    flag = true;
                 }
-                print($"Added Viktor Strobovski to {floorName} (Floor {floorNumber})");
+                ld.MarkAsModifiedByMod(Info);
             }
+            if (flag)
+                print($"Added Viktor Strobovski to {floorName} (Floor {floorNumber})");
         }
-    }
-
-    public static class PluginInfo
-    {
-        public const string PLUGIN_GUID = "alexbw145.baldiplus.teacherextension.viktor";
-        public const string PLUGIN_NAME = "Viktor Strobovski TeacherAPI Port (Continued)";
-        public const string PLUGIN_VERSION = "1.0.0.0";
     }
 }

@@ -66,9 +66,9 @@ namespace TeacherAPI
         {
             if (!TeacherPlugin.Instance.whoAreTeachers.ContainsValue(teacher))
                 MTM101BaldiDevAPI.CauseCrash(TeacherPlugin.Instance.Info, new Exception($"Attempted to add a Teacher that has not been registered yet!\n<color=white>Teacher: {teacher.gameObject.name}</color>"));
-            var teacherlist = levelObject.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialTeachers") as List<WeightedSelection<Teacher>>;
+            var teacherlist = levelObject.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialTeachers") as List<WeightedTeacher>;
                 teacherlist.Add(
-                new WeightedSelection<Teacher>() { selection = teacher, weight = weight }
+                new WeightedTeacher() { selection = teacher, weight = weight }
             );
             levelObject.SetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialTeachers", teacherlist);
         }
@@ -83,9 +83,9 @@ namespace TeacherAPI
         {
             if (!TeacherPlugin.Instance.whoAreTeachers.ContainsValue(teacher))
                 MTM101BaldiDevAPI.CauseCrash(TeacherPlugin.Instance.Info, new Exception($"Attempted to add a Teacher that has not been registered yet!\n<color=white>Teacher: {teacher.gameObject.name}</color>"));
-            var assistantList = levelObject.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialAssistants") as List<WeightedSelection<Teacher>>;
+            var assistantList = levelObject.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialAssistants") as List<WeightedTeacher>;
                 assistantList.Add(
-                new WeightedSelection<Teacher>() { selection = teacher, weight = weight }
+                new WeightedTeacher() { selection = teacher, weight = weight }
             );
             levelObject.SetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialAssistants", assistantList);
         }
@@ -95,11 +95,11 @@ namespace TeacherAPI
             return AssetLoader.SpriteFromTexture2D(tex, pixelsPerUnit);
         }
 
-        public static void AddNewBaldiInteraction<T>(this Teacher npc, Func<BaldiInteraction, Teacher, bool> check = null, Action<BaldiInteraction, Teacher> trigger = null, Action<BaldiInteraction, Teacher> payload = null) where T : BaldiInteraction
+        public static void AddNewBaldiInteraction<BaldiInteractionT>(this Teacher npc, Func<BaldiInteraction, Teacher, bool> check = null, Action<BaldiInteraction, Teacher> trigger = null, Action<BaldiInteraction, Teacher> payload = null) where BaldiInteractionT : BaldiInteraction
         {
-            CustomBaldiInteraction.teacherCheck[npc.Character].Add(typeof(T), check);
-            CustomBaldiInteraction.teacherTriggers[npc.Character].Add(typeof(T), trigger);
-            CustomBaldiInteraction.teacherPayloads[npc.Character].Add(typeof(T), payload);
+            CustomBaldiInteraction.teacherCheck[npc.Character].Add(typeof(BaldiInteractionT), check);
+            CustomBaldiInteraction.teacherTriggers[npc.Character].Add(typeof(BaldiInteractionT), trigger);
+            CustomBaldiInteraction.teacherPayloads[npc.Character].Add(typeof(BaldiInteractionT), payload);
         }
     }
 }

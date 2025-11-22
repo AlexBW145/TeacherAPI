@@ -64,6 +64,9 @@
 		<Reference Include="MTM101BaldAPI">
 		  <HintPath>D:\SteamLibrary\steamapps\common\Baldi's Basics Plus\BepInEx\plugins\MTM101BaldAPI.dll</HintPath>
 		</Reference>
+		<Reference Include="PineDebug">
+		  <HintPath>..\..\PineDebug\bin\Release\netstandard2.0\PineDebug.dll</HintPath>
+		</Reference>
 		<Reference Include="Unity.TextMeshPro">
 			<HintPath>$(LibPath)Unity.TextMeshPro.dll</HintPath>
 		</Reference>

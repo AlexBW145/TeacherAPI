@@ -1,4 +1,5 @@
 ﻿using MTM101BaldAPI.Components;
+using MTM101BaldAPI.Components.Animation;
 using MTM101BaldAPI.Reflection;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +11,6 @@ namespace NullTeacher
 {
     public class NullTeacher : Teacher
     {
-        public CustomSpriteAnimator animator;
         public override AssistantPolicy GetAssistantPolicy() => new AssistantPolicy(PossibleAssistantAllowType.Allow).MaxAssistants(0);
 
         public HashSet<NullPhrase> saidPhrases = new HashSet<NullPhrase>();
@@ -61,9 +61,8 @@ namespace NullTeacher
             baseAnger = 0.05f;
             extraAngerDrain = 0.1f;
 
-            animator.animations.Add("Normal", new CustomAnimation<Sprite>(new Sprite[] { NullAssets.nullsprite }, 1f));
-            animator.animations.Add("Baldloon", new CustomAnimation<Sprite>(new Sprite[] { NullAssets.baldloon }, 1f));
-            animator.SetDefaultAnimation(NullConfiguration.ReplaceNullWithBaldloon.Value ? "Baldloon" : "Normal", 1f);
+            if (NullConfiguration.ReplaceNullWithBaldloon.Value)
+                spriteRenderer[0].sprite = NullAssets.baldloon;
             looker.ReflectionSetVariable("layerMask", (LayerMask)98305); // can see windows at this layer
 
             navigator.Entity.SetHeight(5f);
@@ -272,6 +271,14 @@ namespace NullTeacher
                 default: break;
             }
         }
+
+        protected override void OnRulerBroken()
+        {
+            base.OnRulerBroken();
+            saidPhrases.Remove(NullPhrase.Stop);
+            if (!AudMan.QueuedAudioIsPlaying)
+                PlayPhrase(NullPhrase.Stop);
+        }
     }
 
     public class Null_StateBase : TeacherState
@@ -380,9 +387,9 @@ namespace NullTeacher
             ohno.SpeechCheck(NullPhrase.Hide, 0.01f);
         }
 
-        public override void OnStateTriggerStay(Collider other)
+        public override void OnStateTriggerStay(Collider other, bool isValid)
         {
-            if (teacher.IsTouchingPlayer(other))
+            if (isValid && teacher.IsTouchingPlayer(other))
             {
                 // KILL
                 ohno.AudMan.audioDevice.ignoreListenerPause = true;

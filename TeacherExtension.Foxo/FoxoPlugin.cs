@@ -4,16 +4,22 @@ using MidiPlayerTK;
 using MTM101BaldAPI;
 using MTM101BaldAPI.AssetTools;
 using MTM101BaldAPI.Components;
+using MTM101BaldAPI.Components.Animation;
 using MTM101BaldAPI.ObjectCreation;
+using MTM101BaldAPI.PlusExtensions;
 using MTM101BaldAPI.Reflection;
 using MTM101BaldAPI.Registers;
 using MTM101BaldAPI.SaveSystem;
 using System;
+using System.Collections;
 using System.Linq;
+using System.Security.Policy;
 using TeacherAPI;
+using TeacherExtension.Foxo;
 using TeacherExtension.Foxo.Items;
 using UnityCipher;
 using UnityEngine;
+using UnityEngine.UI;
 using static BepInEx.BepInDependency;
 
 namespace TeacherExtension.Foxo
@@ -24,8 +30,8 @@ namespace TeacherExtension.Foxo
     public class FoxoPlugin : BaseUnityPlugin
     {
         public static FoxoPlugin Instance { get; private set; }
-        public Foxo Foxo { get; private set; }
-        public Foxo DarkFoxo { get; private set; }
+        public Foxo foxo { get; private set; }
+        public Foxo darkFoxo { get; private set; }
         public FoxoSave deathCounter = new FoxoSave();
         public static AssetManager ItemAssets = new AssetManager();
 
@@ -49,14 +55,17 @@ namespace TeacherExtension.Foxo
                 .AddLooker()
                 .AddTrigger()
                 .DisableNavigationPrecision()
+                .SetWanderEnterRooms()
                 .SetMetaTags(new string[] { "teacher", "faculty" })
                 .Build();
-            newFoxo.ReflectionSetVariable("audMan", newFoxo.GetComponent<AudioManager>());
+            newFoxo.Navigator.accel = 0f;
+            newFoxo.audMan = newFoxo.GetComponent<AudioManager>();
             newFoxo.Navigator.passableObstacles.Add(PassableObstacle.LockedDoor);
+            newFoxo.correctSounds = Foxo.foxoAssets.Get<WeightedSoundObject[]>("praise");
 
             // Adds a custom animator
-            CustomSpriteAnimator animator = newFoxo.gameObject.AddComponent<CustomSpriteAnimator>();
-            animator.spriteRenderer = newFoxo.spriteRenderer[0];
+            CustomSpriteRendererAnimator animator = newFoxo.gameObject.AddComponent<CustomSpriteRendererAnimator>();
+            animator.renderer = newFoxo.spriteRenderer[0];
             newFoxo.animator = animator;
             return newFoxo;
         }
@@ -70,16 +79,35 @@ namespace TeacherExtension.Foxo
 
             // Create and Register Foxo and DarkFoxo
             {
-                Foxo = NewFoxo("Foxo");
-                DarkFoxo = NewFoxo("WrathFoxo");
-                DarkFoxo.forceWrath = true;
+                foxo = NewFoxo("Foxo");
+                darkFoxo = NewFoxo("WrathFoxo");
+                darkFoxo.forceWrath = true;
+                foxo.slap = Foxo.foxoAssets.Get<SoundObject>("slap");
+                darkFoxo.slap = Foxo.foxoAssets.Get<SoundObject>("slap2");
 
-                TeacherPlugin.RegisterTeacher(Foxo);
-                TeacherPlugin.RegisterTeacher(DarkFoxo);
-                Foxo.AddNewBaldiInteraction<HideableLockerBaldiInteraction>(
+                var waveSprites = Foxo.foxoAssets.Get<Sprite[]>("Wave");
+                var slapSprites = Foxo.foxoAssets.Get<Sprite[]>("Slap");
+                var wrathSprites = Foxo.foxoAssets.Get<Sprite[]>("Wrath");
+                foxo.animator.AddAnimation("Wave", new SpriteAnimation(waveSprites, 3f));
+                foxo.animator.AddAnimation("Happy", new SpriteAnimation(new Sprite[] { waveSprites[waveSprites.Length - 1] }, 1f));
+
+                foxo.animator.AddAnimation("Slap", new SpriteAnimation(slapSprites, 1f));
+                foxo.animator.AddAnimation("SlapIdle", new SpriteAnimation(new Sprite[] { slapSprites[slapSprites.Length - 1] }, 1f));
+                foxo.animator.AddAnimation("Sprayed", new SpriteAnimation(Foxo.foxoAssets.Get<Sprite[]>("Sprayed"), 0.1f));
+                foxo.animator.AddAnimation("Jump", new SpriteAnimation(Foxo.foxoAssets.Get<Sprite[]>("Jump"), 0.2f));
+                //animator.animations.Add("JumpIdle", new CustomAnimation<Sprite>(new Sprite[] { Foxo.sprites.Get<Sprite[]>("Jump").Last() }, 1f));
+
+                foxo.animator.AddAnimation("WrathIdle", new SpriteAnimation(new Sprite[] { wrathSprites[0] }, 1f));
+                foxo.animator.AddAnimation("Wrath", new SpriteAnimation(wrathSprites.Reverse().ToArray(), 0.3f));
+                foxo.animator.AddAnimation("WrathSprayed", new SpriteAnimation(Foxo.foxoAssets.Get<Sprite[]>("WrathSprayed"), 0.02f));
+
+                TeacherPlugin.RegisterTeacher(foxo);
+                TeacherPlugin.RegisterTeacher(darkFoxo);
+                foxo.AddNewBaldiInteraction<HideableLockerBaldiInteraction>(
                 check: CustomFoxoInteractions.LockerCheck,
                 trigger: CustomFoxoInteractions.LockerInteract,
                 payload: CustomFoxoInteractions.LockerPayload);
+                BaldiTVExtensionHandler.AddCharacter("Foxo", new FoxoWrathTV());
             }
             // Also create and register some items specifically to combat against Foxo.
             {
@@ -89,7 +117,7 @@ namespace TeacherExtension.Foxo
                     .SetEnum(global::Items.Apple)
                     .SetGeneratorCost(ItemMetaStorage.Instance.FindByEnum(global::Items.Apple).value.value)
                     .SetShopPrice(ItemMetaStorage.Instance.FindByEnum(global::Items.Apple).value.price)
-                    .SetSprites(Foxo.sprites.Get<Sprite>("Items/FireExtinguisher_Small"), Foxo.sprites.Get<Sprite>("Items/FireExtinguisher_Large"))
+                    .SetSprites(Foxo.foxoAssets.Get<Sprite>("Items/FireExtinguisher_Small"), Foxo.foxoAssets.Get<Sprite>("Items/FireExtinguisher_Large"))
                     .SetMeta(ItemFlags.Persists, new string[] { "alternative" })
                     .Build();
                 ItemAssets.Add("FireExtinguisher", fireExtinguish);
@@ -125,23 +153,25 @@ namespace TeacherExtension.Foxo
 
         private void EditGenerator(string floorName, int floorNumber, SceneObject floorObject)
         {
-            // It is good practice to check if the level starts with F to make sure to not clash with other mods.
-            // INF stands for Infinite Floor
-            if (floorName.StartsWith("F") || floorName.StartsWith("END") || floorName.Equals("INF"))
+            var meta = floorObject.GetMeta();
+            if (meta == null) return; // Tried checking the tags, I think I checked the wrong way.
+            bool flag = false;
+            foreach (var ld in floorObject.GetCustomLevelObjects())
             {
-                foreach (var ld in floorObject.GetCustomLevelObjects())
-                {
-                    ld.AddPotentialTeacher(Foxo, FoxoConfiguration.Weight.Value);
-                    ld.AddPotentialAssistingTeacher(Foxo, FoxoConfiguration.Weight.Value);
-                    if (floorNumber >= 3)
-                        ld.potentialItems = ld.potentialItems.AddToArray(new WeightedItemObject()
-                        {
-                            selection = ItemAssets.Get<ItemObject>("FireExtinguisher"),
-                            weight = 20
-                        });
-                }
-                print($"Added Foxo to {floorName} (Floor {floorNumber})");
+                if (ld.IsModifiedByMod(Info)) continue;
+                ld.AddPotentialTeacher(foxo, FoxoConfiguration.Weight.Value);
+                ld.AddPotentialAssistingTeacher(foxo, FoxoConfiguration.Weight.Value);
+                if (floorNumber >= 3)
+                    ld.potentialItems = ld.potentialItems.AddToArray(new WeightedItemObject()
+                    {
+                        selection = ItemAssets.Get<ItemObject>("FireExtinguisher"),
+                        weight = 20
+                    });
+                ld.MarkAsModifiedByMod(Info);
+                flag = true;
             }
+            if (flag)
+                print($"Added Foxo to {floorName} (Floor {floorNumber})");
         }
     }
 
@@ -170,5 +200,23 @@ namespace TeacherExtension.Foxo
             if (!isFromSavedGame)
                 deaths = 0;
         }
+    }
+}
+
+internal class FoxoWrathTV : BaldiTVCharacter
+{
+    public override bool SoundBelongsToCharacter(SoundObject obj) => obj == Foxo.foxoAssets.Get<SoundObject>("WrathEventAud");
+
+    public override IEnumerator SpeakEnumerator(Image image, BaldiTV tv, AudioManager audMan, SoundObject sound)
+    {
+        var foxoSprites = Foxo.foxoAssets.GetAll<Sprite[]>().ToList().FindAll(x => x.ToList().Find(f => !f.name.ToLower().Contains("wrath") && !f.name.ToLower().Contains("notebook")));
+        audMan.QueueAudio(sound);
+        yield return null;
+        while (audMan.QueuedAudioIsPlaying)
+        {
+            image.sprite = foxoSprites[UnityEngine.Random.RandomRangeInt(0, foxoSprites.Count - 1)].First();
+            yield return null;
+        }
+        yield break;
     }
 }

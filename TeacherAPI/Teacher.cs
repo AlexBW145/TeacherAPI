@@ -1,10 +1,10 @@
 ﻿using HarmonyLib;
 using MTM101BaldAPI;
-using MTM101BaldAPI.Reflection;
 using System;
 using System.Collections;
-using System.Linq;
+using System.Collections.Generic;
 using System.Reflection;
+using TeacherAPI;
 using UnityEngine;
 
 namespace TeacherAPI
@@ -15,7 +15,7 @@ namespace TeacherAPI
         /// <summary>
         /// Small offset added to the camera during Jumpscare.
         /// </summary>
-        protected Vector3 caughtOffset = Vector3.zero;
+        [SerializeField] protected Vector3 caughtOffset = Vector3.zero;
 
         /// <summary>
         /// When enabled, doesn't spawns NPCs when spoopmode activates. Also removes NPC posters from office.
@@ -24,14 +24,80 @@ namespace TeacherAPI
 
         public virtual AssistantPolicy GetAssistantPolicy() => new AssistantPolicy(PossibleAssistantAllowType.Deny);
 
-        internal bool HasInitialized { get; set; }
+        internal bool HasInitialized;
         private TeacherManager teacherManager;
-        public TeacherManager TeacherManager { get => teacherManager; }
+        public TeacherManager TeacherManager => teacherManager;
 
-        FieldInfo _slapCurve = AccessTools.DeclaredField(typeof(Baldi), "slapCurve");
-        FieldInfo _speedCurve = AccessTools.DeclaredField(typeof(Baldi), "speedCurve");
-        FieldInfo _breakRuler = AccessTools.DeclaredField(typeof(Baldi), "breakRuler");
-        FieldInfo _restoreRuler = AccessTools.DeclaredField(typeof(Baldi), "restoreRuler");
+        private readonly static FieldInfo
+            _slapCurve = AccessTools.DeclaredField(typeof(Baldi), "slapCurve"),
+            _speedCurve = AccessTools.DeclaredField(typeof(Baldi), "speedCurve"),
+            _breakRuler = AccessTools.DeclaredField(typeof(Baldi), "breakRuler"),
+            _restoreRuler = AccessTools.DeclaredField(typeof(Baldi), "restoreRuler"),
+            _slap = AccessTools.DeclaredField(typeof(Baldi), "slap"),
+            _rulerBreak = AccessTools.DeclaredField(typeof(Baldi), "rulerBreak"),
+            _smoothMove = AccessTools.DeclaredField(typeof(Baldi), "smoothMove"),
+            _correctSounds = AccessTools.DeclaredField(typeof(Baldi), "correctSounds"),
+            _OnBaldiSlap = AccessTools.Field(typeof(Baldi), "OnBaldiSlap"),
+            _eventIntro = AccessTools.DeclaredField(typeof(RandomEvent), "eventIntro"),
+            _happyBaldiSpriteRenderer = AccessTools.DeclaredField(typeof(HappyBaldi), "sprite"),
+            _audMan = AccessTools.DeclaredField(typeof(Baldi), "audMan"),
+            _currentDestinationInteraction = AccessTools.DeclaredField(typeof(Baldi), "currentDestinationInteraction"),
+            _baldiInteractions = AccessTools.DeclaredField(typeof(Baldi), "baldiInteractions");
+
+        public BaldiInteraction currentDestinationInteraction { set => _currentDestinationInteraction.SetValue(this, value); }
+        /// <summary>
+        /// If true, the teacher will move regularly instead of using Baldi's slap movement.
+        /// </summary>
+        public bool smoothMove
+        {
+            get => (bool)_smoothMove.GetValue(this);
+            set => _smoothMove.SetValue(this, value);
+        }
+        public AudioManager audMan 
+        {
+            protected get => AudMan;
+            set => _audMan.SetValue(this, value); 
+        }
+        /// <summary>
+        /// The slap sound for the teacher, getter exists for purposes like mod compatability.
+        /// </summary>
+        public SoundObject slap
+        {
+            get => (SoundObject)_slap.GetValue(this);
+            set => _slap.SetValue(this, value);
+        }
+        /// <summary>
+        /// Used for the broken ruler random event.
+        /// </summary>
+        public SoundObject rulerBreak
+        {
+            get => (SoundObject)_rulerBreak.GetValue(this);
+            set => _rulerBreak.SetValue(this, value);
+        }
+        /// <summary>
+        /// The sounds that the teacher plays when appraising the player.
+        /// </summary>
+        public WeightedSoundObject[] correctSounds
+        {
+            get => (WeightedSoundObject[])_correctSounds.GetValue(this);
+            set => _correctSounds.SetValue(this, value);
+        }
+        /// <summary>
+        /// Set or check to see if the teacher has restored their ruler.
+        /// </summary>
+        public bool restoreRuler
+        {
+            get => (bool)_restoreRuler.GetValue(this);
+            protected set => _restoreRuler.SetValue(this, value);
+        }
+        /// <summary>
+        /// Set or check to see if the teacher has their ruler broken.
+        /// </summary>
+        public bool breakRuler
+        {
+            get => (bool)_breakRuler.GetValue(this);
+            protected set => _breakRuler.SetValue(this, value);
+        }
 
         // Overrides
         public override void Initialize()
@@ -50,14 +116,18 @@ namespace TeacherAPI
             var ld = BaseGameManager.Instance.levelObject as CustomLevelGenerationParameters;
             var baseBaldi = ld.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_OriginalBaldi") as Baldi;
             TeacherPlugin.Log.LogInfo($"Using {baseBaldi.gameObject.name} as base Baldi.");
-            _slapCurve.SetValue(this, baseBaldi.ReflectionGetVariable("slapCurve"));
-            _speedCurve.SetValue(this, baseBaldi.ReflectionGetVariable("speedCurve"));
+            _slapCurve.SetValue(this, _slapCurve.GetValue(baseBaldi));
+            _speedCurve.SetValue(this, _speedCurve.GetValue(baseBaldi));
+            if (rulerBreak == null)
+                rulerBreak = (SoundObject)_rulerBreak.GetValue(baseBaldi);
 
             baseSpeed = baseBaldi.baseSpeed;
             baseAnger = baseBaldi.baseAnger;
 
             speedMultiplier = baseBaldi.speedMultiplier;
+            slapSpeedScale = baseBaldi.slapSpeedScale;
             appleTime = baseBaldi.appleTime;
+            extraAngerDrain = baseBaldi.extraAngerDrain;
 
             teacherManager = TeacherManager.Instance;
             TeacherManager.Instance.spawnedTeachers.Add(this);
@@ -106,20 +176,21 @@ namespace TeacherAPI
         }
         public override void Slap()
         {
-            this.slapTotal = 0f;
-            this.slapDistance = this.nextSlapDistance;
-            this.nextSlapDistance = 0f;
-            this.navigator.SetSpeed(this.slapDistance / (this.Delay * this.MovementPortion));
-            if ((bool)_breakRuler.GetValue(this))
+            ((BaldiSlapDelegate)_OnBaldiSlap.GetValue(null)).Invoke(this);
+            slapTotal = 0f;
+            slapDistance = nextSlapDistance;
+            nextSlapDistance = 0f;
+            navigator.SetSpeed(slapDistance / (Delay * MovementPortion));
+            if (breakRuler)
             {
                 OnRulerBroken();
-                _breakRuler.SetValue(this, false);
+                breakRuler = false;
                 return;
             }
-            if ((bool)_restoreRuler.GetValue(this))
+            if (restoreRuler)
             {
                 OnRulerRestored();
-                _restoreRuler.SetValue(this, false);
+                restoreRuler = false;
                 return;
             }
         }
@@ -150,7 +221,7 @@ namespace TeacherAPI
             if (TeacherManager.MainTeacherPrefab.Character != Character) return;
             var events = ec.gameObject.GetComponentsInChildren<RandomEvent>();
             foreach (var randomEvent in events)
-                randomEvent.ReflectionSetVariable("eventIntro", aud);
+                _eventIntro.SetValue(randomEvent, aud);
         }
 
         /// <summary>
@@ -185,7 +256,7 @@ namespace TeacherAPI
         /// <param name="weight"></param>
         public void AddLoseSound(SoundObject snd, int weight)
         {
-            loseSounds = loseSounds.AddItem(new WeightedSoundObject() { selection = snd, weight = weight }).ToArray();
+            loseSounds = loseSounds.AddToArray(new WeightedSoundObject() { selection = snd, weight = weight });
         }
 
         /// <summary>
@@ -205,7 +276,7 @@ namespace TeacherAPI
             var happyBaldi = ec.GetComponentInChildren<HappyBaldi>();
             if (happyBaldi != null)
             {
-                var spr = happyBaldi.ReflectionGetVariable("sprite") as SpriteRenderer;
+                var spr = _happyBaldiSpriteRenderer.GetValue(happyBaldi) as SpriteRenderer;
                 spr.enabled = false;
             }
 
@@ -213,10 +284,8 @@ namespace TeacherAPI
             MusicManager.Instance.StopMidi();
             CoreGameManager.Instance.musicMan.FlushQueue(true);
             BaseGameManager.Instance.BeginSpoopMode();
-            if (!disableNpcs)
-            {
+            if (!teacherManager.SpawnedMainTeacher.disableNpcs)
                 ec.SpawnNPCs();
-            }
             if (CoreGameManager.Instance.currentMode == Mode.Main)
             {
                 // Teacher is already in HappyBaldi position, do nothing.
@@ -226,14 +295,14 @@ namespace TeacherAPI
                 Despawn();
             }
             ec.StartEventTimers();
-            foreach (var notebook in ec.notebooks)
+            /*foreach (var notebook in ec.notebooks)
             {
                 var teacherNotebook = notebook.gameObject.GetComponent<TeacherNotebook>();
                 if (TeacherManager.MainTeacherPrefab.Character != teacherNotebook.character)
                 {
                     notebook.Hide(false);
                 }
-            }
+            }*/
         }
 
         /// <summary>
@@ -243,13 +312,10 @@ namespace TeacherAPI
         /// <returns>The text that shows up on the top left of the screen</returns>
         public virtual string GetNotebooksText(string amount) => $"{amount} {name.Replace("(Clone)", "")} Notebooks";
         public virtual WeightedTeacherNotebook GetTeacherNotebookWeight() => new WeightedTeacherNotebook(this);
-        public bool IsHelping()
-        {
-            return TeacherManager.MainTeacherPrefab.Character != this.Character;
-        }
+        public bool IsHelping() => TeacherManager.MainTeacherPrefab.Character != Character;
 
         /// <summary>
-        /// If set to string, then that selected MIDI music will play or not (if string is set to "mute"). If set to SoundObject, then that audio clip will play. Leave null for schoolhouse music to play.
+        /// If set to <see cref="string"/>, then that selected MIDI music will play or not (if string is set to "mute"). If set to <see cref="SoundObject"/>, then that audio clip will play. Leave null for schoolhouse music to play.
         /// </summary>
         public object ReplacementMusic;
 
@@ -282,5 +348,20 @@ namespace TeacherAPI
             MusicManager.Instance.MidiPlayer.MPTK_Volume = 1;
             yield break;
         }
+    }
+}
+
+[Serializable]
+public class WeightedTeacher : WeightedSelection<Teacher>
+{
+    public static List<WeightedSelection<Teacher>> Convert(List<WeightedTeacher> list)
+    {
+        List<WeightedSelection<Teacher>> list2 = new List<WeightedSelection<Teacher>>();
+        foreach (WeightedTeacher item in list)
+        {
+            list2.Add(item);
+        }
+
+        return list2;
     }
 }

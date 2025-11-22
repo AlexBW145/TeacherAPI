@@ -1,13 +1,16 @@
 ﻿using HarmonyLib;
 using MTM101BaldAPI;
 using MTM101BaldAPI.Components;
+using MTM101BaldAPI.Components.Animation;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using TeacherAPI;
 using UnityEngine;
+using static MidiPlayerTK.SFFile;
 
 namespace TeacherExtension.Viktor
 {
@@ -19,7 +22,6 @@ namespace TeacherExtension.Viktor
         internal ViktorTilePollutionManager PollutionManager { get; private set; }
         private bool FirstJacketDirty;
 
-        public AudioManager audMan;
         public override TeacherState GetAngryState() => new Viktor_Chase(this);
 
         public override TeacherState GetHappyState() => new Viktor_Subsitute(this);
@@ -37,28 +39,26 @@ namespace TeacherExtension.Viktor
             AllNotebooksPrank = ec.notebookTotal < 9;
             base.Initialize();
             Viktorcator = CustomBaldicator.CreateBaldicator();
-            Viktorcator.SetHearingAnimation(new CustomAnimation<Sprite>([ViktorPlugin.viktorAssets.Get<Sprite>("ViktorSubsitute")], 0.1f));
-            Viktorcator.AddAnimation("Coming", new CustomAnimation<Sprite>([ViktorPlugin.viktorAssets.Get<Sprite>("ViktorEvil")], 0.3f));
-            Viktorcator.AddAnimation("ForLater", new CustomAnimation<Sprite>([ViktorPlugin.viktorAssets.Get<Sprite>("ViktorSubsitute")], 0.3f));
+            Viktorcator.SetHearingAnimation(new SpriteAnimation([ViktorPlugin.viktorAssets.Get<Sprite>("ViktorSubsitute")], 0.1f));
+            Viktorcator.AddAnimation("Coming", new SpriteAnimation([ViktorPlugin.viktorAssets.Get<Sprite>("ViktorEvil")], 0.3f));
+            Viktorcator.AddAnimation("ForLater", new SpriteAnimation([ViktorPlugin.viktorAssets.Get<Sprite>("ViktorSubsitute")], 0.3f));
             PollutionManager = ec.gameObject.GetOrAddComponent<ViktorTilePollutionManager>();
             Navigator.SetSpeed(0f);
             Navigator.maxSpeed = 0f;
             caughtOffset += Vector3.up;
-            audMan.volumeModifier = 2f;
+            AudMan.volumeModifier = 2f;
             AddLoseSound(ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/Jumpscare"), 9);
         }
 
         public override void Slap()
         {
-            //StopCoroutine("StopDelay");
             if (isQuiet)
-                audMan.volumeModifier = 0.5f;
+                AudMan.volumeModifier = 0.5f;
             slapTotal = 0f;
             slapDistance = nextSlapDistance;
             nextSlapDistance = 0f;
-            audMan.PlaySingle(ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/Walk"));
+            AudMan.PlaySingle(ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/Walk"));
             Navigator.SetSpeed(slapDistance / (Delay * (MovementPortion * 3f)));
-            //StartCoroutine(StopDelay());
         }
 
         public void ClearDestinationInteraction(bool interactionUnsee)
@@ -68,20 +68,25 @@ namespace TeacherExtension.Viktor
                 SawPlayerInInteraction = !interactionUnsee;
         }
 
+        private static readonly FieldInfo _currentSoundval = AccessTools.Field(typeof(Baldi), "currentSoundVal");
         public new void Hear(GameObject source, Vector3 position, int value, bool indicator)
         {
-            var currentSoundVal = (int)AccessTools.Field(typeof(Baldi), "currentSoundVal").GetValue(this);
+            var currentSoundVal = (int)_currentSoundval.GetValue(this);
+            bool saw = false;
             if (value >= currentSoundVal && indicator)
                 for (int i = 0; i < CoreGameManager.Instance.setPlayers; i++)
                     Viktorcator.ActivateBaldicator("Coming");
             else if (indicator)
                 for (int j = 0; j < CoreGameManager.Instance.setPlayers; j++)
                     Viktorcator.ActivateBaldicator("ForLater");
+            if (value == 127 && indicator == false && CurrentDestinationInteraction != null)
+                saw = true;
             base.Hear(source, position, value, false);
-            if (value == 127 && indicator == false)
-                SawPlayerInInteraction = true;
-            else if (source != null && source.GetComponent<HideableLockerBaldiInteraction>() == null && CurrentDestinationInteraction == null)
+            currentSoundVal = (int)_currentSoundval.GetValue(this);
+            if (!saw && CurrentDestinationInteraction == null && currentSoundVal != 127)
                 SawPlayerInInteraction = false;
+            else if (saw || (source != null && currentSoundVal == 127))
+                SawPlayerInInteraction = true;
         }
 
         [Obsolete("Part of the old version", true)]
@@ -107,11 +112,11 @@ namespace TeacherExtension.Viktor
 
         internal void GetJacketDirty()
         {
-            audMan.volumeModifier = 2f;
+            AudMan.volumeModifier = 2f;
             if (!FirstJacketDirty)
             {
                 FirstJacketDirty = true;
-                audMan.PlaySingle(ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/DirtyJacketFirst"));
+                AudMan.PlaySingle(ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/DirtyJacketFirst"));
             }
             else
             {
@@ -122,7 +127,7 @@ namespace TeacherExtension.Viktor
                     ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/DirtyJacket3"),
                     ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/DirtyJacket4")
                 };
-                audMan.PlayRandomAudio(randomselect);
+                AudMan.PlayRandomAudio(randomselect);
             }
         }
     }
@@ -204,15 +209,15 @@ namespace TeacherExtension.Viktor
             base.Enter();
             viktor.spriteRenderer[0].sprite = ViktorPlugin.viktorAssets.Get<Sprite>("ViktorSubsitute");
             viktor.ReplacementMusic = ViktorPlugin.viktorAssets.Get<SoundObject>("Music/MathLevel");
-            viktor.audMan.PlaySingle(!veryHappy ? ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/Intro") : ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/Praise"));
+            viktor.AudMan.PlaySingle(!veryHappy ? ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/Intro") : ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/Praise"));
         }
 
         public override void NotebookCollected(int currentNotebooks, int maxNotebooks)
         {
             base.NotebookCollected(currentNotebooks, maxNotebooks);
             if (veryHappy) return;
-            viktor.audMan.FlushQueue(true);
-            viktor.audMan.PlaySingle(ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/Triggered"));
+            viktor.AudMan.FlushQueue(true);
+            viktor.AudMan.PlaySingle(ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/Triggered"));
             viktor.ActivateSpoopMode();
             viktor.behaviorStateMachine.ChangeState(new Viktor_Chase(viktor));
         }
@@ -232,9 +237,9 @@ namespace TeacherExtension.Viktor
     {
         protected float delayTimer;
         public Viktor_Chase(Viktor viktor) : base(viktor) { }
-        public override void OnStateTriggerStay(Collider other)
+        public override void OnStateTriggerStay(Collider other, bool isValid)
         {
-            if (viktor.IsTouchingPlayer(other))
+            if (isValid && viktor.IsTouchingPlayer(other))
                 viktor.CaughtPlayer(other.GetComponent<PlayerManager>());
         }
         public override void Update()
@@ -250,11 +255,8 @@ namespace TeacherExtension.Viktor
                 delayTimer -= Time.deltaTime * viktor.ec.NpcTimeScale;
             IntVector2 gridPosition = IntVector2.GetGridPosition(viktor.transform.position);
             Cell cell = this.viktor.ec.CellFromPosition(gridPosition);
-            if (cell != null && this.viktor.PollutionManager.IsCellPolluted(cell))
-            {
-                this.viktor.StopCoroutine("StopDelay");
-                this.viktor.behaviorStateMachine.ChangeState(new Viktor_Jacket(viktor, this));
-            }
+            if (cell != null && viktor.PollutionManager.IsCellPolluted(cell))
+                viktor.behaviorStateMachine.ChangeState(new Viktor_Jacket(viktor, this));
         }
         /*public override void GoodMathMachineAnswer()
         {
@@ -313,7 +315,7 @@ namespace TeacherExtension.Viktor
 
         public override void Update()
         {
-            if (!viktor.audMan.AnyAudioIsPlaying)
+            if (!viktor.AudMan.AnyAudioIsPlaying)
             {
                 viktor.Navigator.SetSpeed(20f); viktor.Navigator.maxSpeed = 20f;
             }

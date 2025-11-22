@@ -1,9 +1,12 @@
-﻿using MTM101BaldAPI.Components;
+﻿using HarmonyLib;
+using MTM101BaldAPI.Components;
+using MTM101BaldAPI.Components.Animation;
 using MTM101BaldAPI.Reflection;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using TeacherAPI;
 using UnityEngine;
@@ -19,33 +22,35 @@ namespace TeacherExtension.Baldimore
         public override WeightedTeacherNotebook GetTeacherNotebookWeight() => new WeightedTeacherNotebook(this)
             .Weight(150);
 
-        public AudioManager audMan;
         [SerializeField] internal SoundObject[] audCountdown;
         [SerializeField] internal SoundObject audHere;
-        //[SerializeField] internal SoundObject slap;
-        //[SerializeField] internal SoundObject rulerBreak;
-        [SerializeField] internal Animator animator;
-        [SerializeField] internal VolumeAnimator volumeAnimator;
+        internal Animator animator
+        {
+            get => (Animator)_animator.GetValue(this);
+            set => _animator.SetValue(this, value);
+        }
+        internal VolumeAnimator volumeAnimator
+        {
+            get => (VolumeAnimator)_volumeAnimator.GetValue(this);
+            set => _volumeAnimator.SetValue(this, value);
+        }
         [SerializeField] internal RuntimeAnimatorController spoopAnimController;
-        [SerializeField] internal CustomSpriteAnimator animatorForIntro;
-        [SerializeField] internal Sprite[] spritesofIntro;
-        [SerializeField] internal Sprite count;
-        [SerializeField] internal Sprite countpeek;
-        [SerializeField] internal Sprite countidle;
-        private bool brokeRuler; // I don't know why I didn't make it a public getter...
+        [SerializeField] internal CustomSpriteRendererAnimator animatorForIntro;
+        [SerializeField] internal Sprite introSpr, count, countpeek, countidle;
+
+        internal static readonly FieldInfo
+            _animator = AccessTools.DeclaredField(typeof(Baldi), "animator"),
+            _volumeAnimator = AccessTools.DeclaredField(typeof(Baldi), "volumeAnimator");
 
         public override void Initialize()
         {
             base.Initialize();
-            animatorForIntro = gameObject.AddComponent<CustomSpriteAnimator>();
-            animatorForIntro.spriteRenderer = spriteRenderer[0];
-            animatorForIntro.useUnscaledTime = false;
-            animatorForIntro.animations.Add("Wavee", new CustomAnimation<Sprite>(spritesofIntro, 2.5f)); //1.6833f
+            animatorForIntro.ec = ec;
             navigator.Entity.SetHeight(5.5f);
             volumeAnimator.enabled = false;
             animator.enabled = false;
             behaviorStateMachine.ChangeState(GetHappyState());
-            behaviorStateMachine.ChangeNavigationState(new NavigationState_DoNothing(this, 0));
+            behaviorStateMachine.ChangeNavigationState(new NavigationState_DoNothing(this, 127));
         }
 
         public override void Slap()
@@ -132,7 +137,7 @@ namespace TeacherExtension.Baldimore
 
         public override void Enter()
         {
-            baldi.spriteRenderer[0].sprite = baldi.spritesofIntro.First();
+            baldi.spriteRenderer[0].sprite = baldi.introSpr;
             base.Enter();
         }
 
@@ -140,12 +145,12 @@ namespace TeacherExtension.Baldimore
         {
             base.Initialize();
             if (baldi.IsHelping()) return;
-            baldi.animatorForIntro.Play("Wavee", 1f);
+            baldi.animatorForIntro.Play("Wavee", 0.5f);
         }
 
         public override void Update()
         {
-            if (baldi.animatorForIntro.enabled && !baldi.IsHelping() && baldi.animatorForIntro.currentFrameIndex == 12 && !baldi.audMan.QueuedAudioIsPlaying)
+            if (baldi.animatorForIntro.enabled && !baldi.IsHelping() && baldi.animatorForIntro.AnimationFrame == 14 && !baldi.AudMan.QueuedAudioIsPlaying)
             {
                 SoundObject hello = Resources.FindObjectsOfTypeAll<SoundObject>().Last(snd => snd.name == "BAL_IntroKL2");
                 if (BaseGameManager.Instance is MainGameManager)
@@ -160,9 +165,9 @@ namespace TeacherExtension.Baldimore
                     var happb = endless.ReflectionGetVariable("happyBaldiPre") as HappyBaldi;
                     hello = happb.ReflectionGetVariable("audIntro") as SoundObject;
                 }
-                baldi.audMan.PlaySingle(hello);
+                baldi.AudMan.PlaySingle(hello);
             }
-            if (!baldi.IsHelping() && !baldi.audMan.QueuedAudioIsPlaying && Vector3.Distance(teacher.transform.position, teacher.ec.Players[0].transform.position) >= 25f && !activated)
+            if (!baldi.IsHelping() && !baldi.AudMan.QueuedAudioIsPlaying && Vector3.Distance(teacher.transform.position, teacher.ec.Players[0].transform.position) >= 25f && !activated)
             {
                 activated = true;
                 teacher.StartCoroutine(SpawnWait());
@@ -173,7 +178,7 @@ namespace TeacherExtension.Baldimore
         {
             if (baldi.IsHelping())
             {
-                baldi.audMan.QueueAudio(baldi.audHere);
+                baldi.AudMan.QueueAudio(baldi.audHere);
                 GoHunt();
             }
         }
@@ -194,13 +199,13 @@ namespace TeacherExtension.Baldimore
             yield return null;
             float time = 1f;
             int count = 9;
-            while (baldi.audMan.QueuedAudioIsPlaying || CoreGameManager.Instance.Paused)
+            while (baldi.AudMan.QueuedAudioIsPlaying || CoreGameManager.Instance.Paused)
                 yield return null;
             baldi.animatorForIntro.enabled = false;
 
             while (count >= 0)
             {
-                baldi.audMan.QueueAudio(baldi.audCountdown[count]);
+                baldi.AudMan.QueueAudio(baldi.audCountdown[count]);
                 baldi.spriteRenderer[0].sprite = baldi.count;
                 while (time > 0f)
                 {
@@ -219,10 +224,10 @@ namespace TeacherExtension.Baldimore
                 time = 1f;
             }
 
-            baldi.audMan.QueueAudio(baldi.audHere);
+            baldi.AudMan.QueueAudio(baldi.audHere);
             baldi.spriteRenderer[0].sprite = baldi.countidle;
             yield return null;
-            while (baldi.audMan.QueuedAudioIsPlaying || CoreGameManager.Instance.Paused)
+            while (baldi.AudMan.QueuedAudioIsPlaying || CoreGameManager.Instance.Paused)
                 yield return null;
             GoHunt();
         }
@@ -240,10 +245,10 @@ namespace TeacherExtension.Baldimore
             baldi.ResetSlapDistance();
         }
 
-        public override void OnStateTriggerStay(Collider other)
+        public override void OnStateTriggerStay(Collider other, bool isValid)
         {
-            base.OnStateTriggerStay(other);
-            if (!baldi.IsTouchingPlayer(other))
+            base.OnStateTriggerStay(other, isValid);
+            if (!baldi.IsTouchingPlayer(other) || !isValid)
                 return;
 
             PlayerManager component = other.GetComponent<PlayerManager>();
@@ -278,7 +283,7 @@ namespace TeacherExtension.Baldimore
     {
         private bool broken;
         public TeacherBaldi_ChaseBroken(TeacherBaldi baldi) : base(baldi) { }
-        public override void OnStateTriggerStay(Collider other)
+        public override void OnStateTriggerStay(Collider other, bool isValid)
         {
         }
         protected override void ActivateSlapAnimation()

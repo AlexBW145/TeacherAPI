@@ -5,28 +5,26 @@ using HarmonyLib;
 using MTM101BaldAPI;
 using MTM101BaldAPI.AssetTools;
 using MTM101BaldAPI.OptionsAPI;
-using MTM101BaldAPI.Reflection;
 using MTM101BaldAPI.Registers;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using TeacherAPI.patches;
+using System.Reflection;
 using TeacherAPI.utils;
 using UnityEngine;
-using UnityEngine.SceneManagement;
-using static BepInEx.BepInDependency;
 
 namespace TeacherAPI
 {
     [BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
     [BepInDependency("mtm101.rulerp.bbplus.baldidevapi", MTM101BaldiDevAPI.VersionNumber)]
-    [BepInDependency("alexbw145.baldiplus.arcadeendlessforever", DependencyFlags.SoftDependency)]
+    [BepInDependency("alexbw145.baldiplus.arcadeendlessforever", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("alexbw145.baldiplus.pinedebug", BepInDependency.DependencyFlags.SoftDependency)]
     public class TeacherPlugin : BaseUnityPlugin
     {
         public static TeacherPlugin Instance { get; private set; }
 
-        internal Dictionary<Character, NPC> whoAreTeachers = new Dictionary<Character, NPC>(); // Mostly used to differenciate who are teachers and who are not.
+        internal readonly Dictionary<Character, NPC> whoAreTeachers = new Dictionary<Character, NPC>(); // Mostly used to differenciate who are teachers and who are not.
         //internal Dictionary<LevelObject, Baldi> originalBaldiPerFloor = new Dictionary<LevelObject, Baldi>();
         public Baldi CurrentBaldi { get; internal set; }
 
@@ -57,8 +55,9 @@ If you encounter an error, send me the Logs!", false);
         {
             foreach (var levelObject in sceneObject.GetCustomLevelObjects())
             {
+                if (levelObject.IsModifiedByMod(Info)) continue;
                 if (levelObject.potentialBaldis.Length != 1) {
-                    MTM101BaldiDevAPI.CauseCrash(Info, new Exception("There is no exactly one PotentialBaldi for this level. What mod did you have installed ?"));
+                    Log.LogWarning($"There is no exactly one PotentialBaldi, skipping {levelObject.name}!");
                     break;
                 }
 
@@ -66,8 +65,8 @@ If you encounter an error, send me the Logs!", false);
                 potentialTeachers[floorObject.levelObject] = new List<WeightedSelection<Teacher>>();
                 floorNumbers[floorObject.levelObject] = floorNumber;*/
 
-                levelObject.SetCustomModValue(Info, "TeacherAPI_PotentialTeachers", new List<WeightedSelection<Teacher>>());
-                levelObject.SetCustomModValue(Info, "TeacherAPI_PotentialAssistants", new List<WeightedSelection<Teacher>>());
+                levelObject.SetCustomModValue(Info, "TeacherAPI_PotentialTeachers", new List<WeightedTeacher>());
+                levelObject.SetCustomModValue(Info, "TeacherAPI_PotentialAssistants", new List<WeightedTeacher>());
 
                 if (!TeacherAPIConfiguration.EnableBaldi.Value)
                 {
@@ -78,12 +77,12 @@ If you encounter an error, send me the Logs!", false);
 
                 if (floorName == "INF")
                 {
-                    // MTM, do you eat clowns at breakfast ? 
                     foreach (var baldi in levelObject.potentialBaldis)
                         baldi.weight = TeacherAPIConfiguration.EnableBaldi.Value ? 100 : 0;
                 }
 
                 levelObject.SetCustomModValue(Info, "TeacherAPI_OriginalBaldi", GetPotentialBaldi(levelObject));
+                levelObject.MarkAsModifiedByMod(Info);
             }
         }
 
@@ -127,13 +126,15 @@ If you encounter an error, send me the Logs!", false);
             return baldis.First();
         }
 
+        private static FieldInfo _ignorePlayerOnSpawn = AccessTools.DeclaredField(typeof(NPC), "ignorePlayerOnSpawn");
+
         /// <summary>
         /// Make your teacher known to TeacherAPI
         /// </summary>
         /// <param name="teacher"></param>
         public static void RegisterTeacher(Teacher teacher)
         {
-            teacher.ReflectionSetVariable("ignorePlayerOnSpawn", true); // Or else the teacher won't spawn instantly.
+            _ignorePlayerOnSpawn.SetValue(teacher, true); // Or else the teacher won't spawn instantly.
             Instance.whoAreTeachers.Add(teacher.Character, teacher);
             CustomBaldiInteraction.teacherCheck.Add(teacher.Character, new Dictionary<Type, Func<BaldiInteraction, Teacher, bool>>());
             CustomBaldiInteraction.teacherTriggers.Add(teacher.Character, new Dictionary<Type, Action<BaldiInteraction, Teacher>>());
@@ -192,6 +193,6 @@ The name of the assets folder must be <color=red>{1}</color>.", Path.GetFileName
     {
         public const string PLUGIN_GUID = "alexbw145.baldiplus.teacherapi";
         public const string PLUGIN_NAME = "Teacher API";
-        public const string PLUGIN_VERSION = "0.1.8";
+        public const string PLUGIN_VERSION = "0.1.9";
     }
 }

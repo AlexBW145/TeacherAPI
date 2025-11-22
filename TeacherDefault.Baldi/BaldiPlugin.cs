@@ -1,32 +1,36 @@
 ﻿using BepInEx;
+using BepInEx.Bootstrap;
+using BepInEx.Configuration;
 using HarmonyLib;
 using MTM101BaldAPI;
 using MTM101BaldAPI.AssetTools;
+using MTM101BaldAPI.Components.Animation;
 using MTM101BaldAPI.ObjectCreation;
 using MTM101BaldAPI.Reflection;
 using MTM101BaldAPI.Registers;
 using MTM101BaldAPI.SaveSystem;
 using System.Collections;
-using System.Linq;
-using UnityEngine;
-using TeacherAPI;
 using System.Collections.Generic;
-using BepInEx.Configuration;
-using BepInEx.Bootstrap;
+using System.Linq;
+using TeacherAPI;
+using UnityEngine;
 
 namespace TeacherExtension.Baldimore;
 
-[BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
+[BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
 [BepInDependency("alexbw145.baldiplus.teacherapi", "0.1.5")]
 [BepInDependency("pixelguy.pixelmodding.baldiplus.balditvannouncer", BepInDependency.DependencyFlags.SoftDependency)]
 public class BaldiPlugin : BaseUnityPlugin
 {
+    private const string PLUGIN_GUID = "alexbw145.baldiplus.teacherextension.baldi";
+    private const string PLUGIN_NAME = "Baldi TeacherAPI Port";
+    private const string PLUGIN_VERSION = "1.3";
     internal static ConfigEntry<int> BaldiWeight;
     internal static ConfigEntry<bool> EveryAssistantIsHere;
 
     private void Awake()
     {
-        Harmony harmony = new Harmony(PluginInfo.PLUGIN_GUID);
+        Harmony harmony = new Harmony(PLUGIN_GUID);
         BaldiWeight = Config.Bind(
                 "Baldi",
                 "Weight",
@@ -51,43 +55,47 @@ public class BaldiPlugin : BaseUnityPlugin
         yield return "Welcome to Baldi's Basics!";
         var baldiMeta = NPCMetaStorage.Instance.Get(Character.Baldi);
         var theBald = baldiMeta.prefabs.First().Value as Baldi;
-        var Baldi = new NPCBuilder<TeacherBaldi>(Info)
+        var baldi = new NPCBuilder<TeacherBaldi>(Info)
             .SetName("Baldi_TeacherAPI")
             .SetEnum(Character.Baldi)
             .AddLooker()
             .AddTrigger()
             .AddSpawnableRoomCategories(RoomCategory.Null)
+            .SetWanderEnterRooms()
             .SetPoster(theBald.Poster)
             .SetMinMaxAudioDistance(10f, 300f)
             .SetForcedSubtitleColor((Color)theBald.gameObject.GetComponent<AudioManager>().ReflectionGetVariable("subtitleColor"))
             .SetMetaTags(["teacher", "faculty"])
             .Build();
-        TeacherPlugin.RegisterTeacher(Baldi);
-        Baldi.audMan = Baldi.gameObject.GetComponent<AudioManager>();
-        Baldi.animator = Baldi.gameObject.AddComponent<Animator>();
-        Baldi.Navigator.passableObstacles.Add(PassableObstacle.LockedDoor);
-        Baldi.audCountdown = Resources.FindObjectsOfTypeAll<HappyBaldi>().Last().ReflectionGetVariable("audCountdown") as SoundObject[];
-        Baldi.audHere = Resources.FindObjectsOfTypeAll<HappyBaldi>().Last().ReflectionGetVariable("audHere") as SoundObject;
-        Baldi.animator.runtimeAnimatorController = Resources.FindObjectsOfTypeAll<HappyBaldi>().Last().gameObject.GetComponent<Animator>().runtimeAnimatorController;
-        Baldi.spoopAnimController = theBald.gameObject.GetComponent<Animator>().runtimeAnimatorController;
-        Baldi.animator.updateMode = AnimatorUpdateMode.Normal;
-        Baldi.animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-        Baldi.volumeAnimator = Baldi.gameObject.AddComponent<VolumeAnimator>();
-        Baldi.volumeAnimator.ReflectionSetVariable("animator", Baldi.animator as Animator);
-        Baldi.volumeAnimator.ReflectionSetVariable("fallbackAudioManager", Baldi.audMan as AudioManager);
-        Baldi.volumeAnimator.ReflectionSetVariable("audioSource", Baldi.audMan.audioDevice as AudioSource);
+        TeacherPlugin.RegisterTeacher(baldi);
+        baldi.Navigator.maxSpeed = 0f;
+        baldi.Navigator.speed = 0f;
+        baldi.Navigator.accel = 0f;
+        baldi.audMan = baldi.gameObject.GetComponent<AudioManager>();
+        baldi.animator = baldi.gameObject.AddComponent<Animator>();
+        baldi.Navigator.passableObstacles.Add(PassableObstacle.LockedDoor);
+        baldi.audCountdown = Resources.FindObjectsOfTypeAll<HappyBaldi>().Last().ReflectionGetVariable("audCountdown") as SoundObject[];
+        baldi.audHere = Resources.FindObjectsOfTypeAll<HappyBaldi>().Last().ReflectionGetVariable("audHere") as SoundObject;
+        baldi.animator.runtimeAnimatorController = Resources.FindObjectsOfTypeAll<HappyBaldi>().Last().gameObject.GetComponent<Animator>().runtimeAnimatorController;
+        baldi.spoopAnimController = theBald.gameObject.GetComponent<Animator>().runtimeAnimatorController;
+        baldi.animator.updateMode = AnimatorUpdateMode.Normal;
+        baldi.animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+        baldi.volumeAnimator = baldi.gameObject.AddComponent<VolumeAnimator>();
+        baldi.volumeAnimator.enabled = false;
+        baldi.volumeAnimator.ReflectionSetVariable("animator", baldi.animator as Animator);
+        baldi.volumeAnimator.ReflectionSetVariable("fallbackAudioManager", baldi.AudMan as AudioManager);
+        baldi.volumeAnimator.ReflectionSetVariable("audioSource", baldi.AudMan.audioDevice as AudioSource);
+        baldi.volumeAnimator.sensitivity = ((VolumeAnimator)TeacherBaldi._volumeAnimator.GetValue(theBald)).sensitivity;
+        baldi.volumeAnimator.animationName = "BAL_Smile";
+        baldi.volumeAnimator.bufferTime = 0.1f;
         //Baldi.slap = theBald.ReflectionGetVariable("slap") as SoundObject;
-        AccessTools.Field(typeof(Baldi), "slap").SetValue(Baldi, theBald.ReflectionGetVariable("slap") as SoundObject);
+        baldi.slap = AccessTools.Field(typeof(Baldi), "slap").GetValue(theBald) as SoundObject;
         //Baldi.rulerBreak = theBald.ReflectionGetVariable("rulerBreak") as SoundObject;
-        AccessTools.Field(typeof(Baldi), "rulerBreak").SetValue(Baldi, theBald.ReflectionGetVariable("rulerBreak") as SoundObject);
-        Baldi.ReflectionSetVariable("audAppleThanks", theBald.ReflectionGetVariable("audAppleThanks") as SoundObject);
-        Baldi.ReflectionSetVariable("audAppleThanks", theBald.ReflectionGetVariable("audAppleThanks") as SoundObject);
-        Baldi.ReflectionSetVariable("correctSounds", theBald.ReflectionGetVariable("correctSounds") as WeightedSoundObject[]);
-        Baldi.loseSounds = theBald.loseSounds;
-        Baldi.ReflectionSetVariable("eatSounds", theBald.ReflectionGetVariable("eatSounds") as WeightedSoundObject[]);
-        AccessTools.Field(typeof(Baldi), "animator").SetValue(Baldi, Baldi.animator as Animator);
-        AccessTools.Field(typeof(Baldi), "volumeAnimator").SetValue(Baldi, Baldi.volumeAnimator as VolumeAnimator);
-        AccessTools.Field(typeof(Baldi), "audMan").SetValue(Baldi, Baldi.audMan as AudioManager);
+        baldi.rulerBreak = AccessTools.Field(typeof(Baldi), "rulerBreak").GetValue(theBald) as SoundObject;
+        baldi.ReflectionSetVariable("audAppleThanks", theBald.ReflectionGetVariable("audAppleThanks") as SoundObject);
+        baldi.correctSounds = theBald.ReflectionGetVariable("correctSounds") as WeightedSoundObject[];
+        baldi.loseSounds = theBald.loseSounds;
+        baldi.ReflectionSetVariable("eatSounds", theBald.ReflectionGetVariable("eatSounds") as WeightedSoundObject[]);
         List<Sprite> manual = new List<Sprite>();
         for (int i = 0; i <= 99; i++)
         {
@@ -96,28 +104,30 @@ public class BaldiPlugin : BaseUnityPlugin
             if (itexists != null)
                 manual.Add(itexists);
         }
-        Baldi.spritesofIntro = manual.ToArray();
-        Baldi.count = Resources.FindObjectsOfTypeAll<Sprite>().Last(spr => spr.name == "BAL_Countdown_Sheet_1");
-        Baldi.countpeek = Resources.FindObjectsOfTypeAll<Sprite>().Last(spr => spr.name == "BAL_Countdown_Sheet_2");
-        Baldi.countidle = Resources.FindObjectsOfTypeAll<Sprite>().Last(spr => spr.name == "BAL_Countdown_Sheet_0");
+        baldi.animatorForIntro = baldi.gameObject.AddComponent<CustomSpriteRendererAnimator>();
+        baldi.animatorForIntro.renderer = baldi.spriteRenderer[0];
+        baldi.animatorForIntro.useScaledTime = true;
+        baldi.animatorForIntro.timeScale = TimeScaleType.Npc;
+        baldi.animatorForIntro.AddAnimation("Wavee", new SpriteAnimation(manual.ToArray(), 1.683f));
+        baldi.count = Resources.FindObjectsOfTypeAll<Sprite>().Last(spr => spr.name == "BAL_Countdown_Sheet_1");
+        baldi.countpeek = Resources.FindObjectsOfTypeAll<Sprite>().Last(spr => spr.name == "BAL_Countdown_Sheet_2");
+        baldi.countidle = Resources.FindObjectsOfTypeAll<Sprite>().Last(spr => spr.name == "BAL_Countdown_Sheet_0");
+        baldi.introSpr = manual[0];
 
         if (Chainloader.PluginInfos.ContainsKey("pixelguy.pixelmodding.baldiplus.balditvannouncer"))
-            AnnouncerTVFixer.BugfixForBaldiTVAnnouncement(Baldi, theBald);
+            AnnouncerTVFixer.BugfixForBaldiTVAnnouncement(baldi, theBald);
 
         GeneratorManagement.Register(this, GenerationModType.Addend, (title, num, scene) =>
         {
+            var meta = scene.GetMeta();
+            if (meta == null) return;
             foreach (var levelObject in scene.GetCustomLevelObjects())
             {
-                levelObject.AddPotentialTeacher(Baldi, BaldiWeight.Value);
-                levelObject.AddPotentialAssistingTeacher(Baldi, BaldiWeight.Value);
+                if (levelObject.IsModifiedByMod(Info)) continue;
+                levelObject.AddPotentialTeacher(baldi, BaldiWeight.Value);
+                levelObject.AddPotentialAssistingTeacher(baldi, BaldiWeight.Value);
+                levelObject.MarkAsModifiedByMod(Info);
             }
         });
     }
-}
-
-public static class PluginInfo
-{
-    public const string PLUGIN_GUID = "alexbw145.baldiplus.teacherextension.baldi";
-    public const string PLUGIN_NAME = "Baldi TeacherAPI Port";
-    public const string PLUGIN_VERSION = "1.1";
 }

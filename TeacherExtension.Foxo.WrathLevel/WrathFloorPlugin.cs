@@ -90,7 +90,7 @@ namespace TeacherExtension.Foxo
             {
                 baldi.weight = 0;
             }
-            ld.AddPotentialTeacher(FoxoPlugin.Instance.DarkFoxo, 1000000);
+            ld.AddPotentialTeacher(FoxoPlugin.Instance.darkFoxo, 1000000);
         }
 
         private void RegisterGenerator(string floorName, int floorNumber, LevelObject ld)

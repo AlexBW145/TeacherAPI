@@ -13,7 +13,7 @@ using static BepInEx.BepInDependency;
 
 namespace NullTeacher
 {
-    [BepInPlugin("alexbw145.baldiplus.teacherextension.null", "Null Teacher for MoreTeachers", "1.0.5.0")]
+    [BepInPlugin("alexbw145.baldiplus.teacherextension.null", "Null Teacher for MoreTeachers", "1.0.5.1")]
     [BepInDependency("alexbw145.baldiplus.teacherapi", DependencyFlags.HardDependency)]
     [BepInDependency("mtm101.rulerp.bbplus.baldidevapi", DependencyFlags.HardDependency)]
     public class NullTeacherPlugin : BaseUnityPlugin
@@ -40,34 +40,40 @@ namespace NullTeacher
                 .SetPoster(ObjectCreators.CreatePosterObject(new UnityEngine.Texture2D[] { NullAssets.poster }))
                 .AddLooker()
                 .AddTrigger()
+                .SetWanderEnterRooms()
                 .AddMetaFlag(NPCFlags.CanHear)
                 .SetMinMaxAudioDistance(0, 1000)
                 .SetMetaTags(new string[] { "teacher", "faculty" })
                 .Build();
-            teacher.ReflectionSetVariable("audMan", teacher.GetComponent<AudioManager>());
+            teacher.audMan = teacher.GetComponent<AudioManager>();
+            teacher.Navigator.accel = 0f;
+            teacher.Navigator.speed = 0f;
+            teacher.Navigator.maxSpeed = 0f;
             teacher.Navigator.passableObstacles.Add(PassableObstacle.LockedDoor);
-
-            CustomSpriteAnimator animator = teacher.gameObject.AddComponent<CustomSpriteAnimator>();
-            animator.spriteRenderer = teacher.spriteRenderer[0];
-            teacher.animator = animator;
+            teacher.spriteRenderer[0].sprite = NullAssets.nullsprite;
 
             TeacherPlugin.RegisterTeacher(teacher);
             NullTeacher = teacher;
             teacher.AddNewBaldiInteraction<HideableLockerBaldiInteraction>(
-                (interaction, feacher) => interaction.GetComponent<HideableLockerBaldiInteraction>().Check(baldi: feacher),
-                (interaction, feacher) => interaction.GetComponent<HideableLockerBaldiInteraction>().Payload(baldi: feacher));
+                (interaction, feacher) => interaction.Check(baldi: feacher),
+                (interaction, feacher) => interaction.Payload(baldi: feacher));
 
             GeneratorManagement.Register(this, GenerationModType.Addend, EditGenerator);
         }
 
         private void EditGenerator(string floorname, int floornumber, SceneObject ld)
         {
-            if (floorname.StartsWith("F") || floorname.StartsWith("END") || floorname.Equals("INF"))
+            var meta = ld.GetMeta();
+            if (meta == null) return;
+            bool flag = false;
+            foreach (var customlevel in ld.GetCustomLevelObjects())
             {
-                foreach (var customlevel in ld.GetCustomLevelObjects())
-                    customlevel.AddPotentialTeacher(NullTeacher, NullConfiguration.SpawnWeight.Value);
-                print($"Added Null to {floorname} (Floor {floornumber})");
+                if (customlevel.IsModifiedByMod(Info)) continue;
+                customlevel.AddPotentialTeacher(NullTeacher, NullConfiguration.SpawnWeight.Value);
+                customlevel.MarkAsModifiedByMod(Info);
             }
+            if (flag)
+                print($"Added Null to {floorname} (Floor {floornumber})");
         }
     }
 }

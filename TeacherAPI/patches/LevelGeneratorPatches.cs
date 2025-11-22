@@ -24,13 +24,14 @@ namespace TeacherAPI.patches
             man.Initialize(__instance);
             TeacherPlugin.Instance.CurrentBaldi = TeacherPlugin.Instance.GetPotentialBaldi(ld);
 
-            TeacherManager.DefaultBaldiEnabled = TeacherPlugin.Instance.CurrentBaldi == null || TeacherAPIConfiguration.EnableBaldi.Value;
+            TeacherManager.DefaultBaldiEnabled = TeacherPlugin.Instance.CurrentBaldi == null || TeacherAPIConfiguration.EnableBaldi.Value ||
+                ld.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialTeachers") == null || ld.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialAssistants") == null;
             if (TeacherManager.DefaultBaldiEnabled) return;
 
             var rng = new System.Random(seed + __instance.scene.levelNo);
 
-            List<WeightedSelection<Teacher>> potentialTeachers = ld.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialTeachers") as List<WeightedSelection<Teacher>>;
-            List<WeightedSelection<Teacher>> potentialAssistants = ld.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialAssistants") as List<WeightedSelection<Teacher>>;
+            List<WeightedSelection<Teacher>> potentialTeachers = WeightedTeacher.Convert(ld.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialTeachers") as List<WeightedTeacher>);
+            List<WeightedSelection<Teacher>> potentialAssistants = WeightedTeacher.Convert(ld.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialAssistants") as List<WeightedTeacher>);
             var mainTeacher = WeightedSelection<Teacher>.ControlledRandomSelectionList(potentialTeachers, rng);
             man.MainTeacherPrefab = mainTeacher;
             potentialTeachers.PrintWeights("Potential Teachers", TeacherPlugin.Log);
@@ -58,6 +59,8 @@ namespace TeacherAPI.patches
 
             ld.potentialBaldis = new WeightedNPC[] { }; // Don't put anything in EC.NPCS, only secondary teachers can be there.
         }
+        [HarmonyPatch(typeof(CharacterPostersRoomFunction), nameof(CharacterPostersRoomFunction.Build)), HarmonyPrefix]
+        static bool JustNotAddInNPCs() => TeacherManager.DefaultBaldiEnabled || !TeacherManager.Instance.MainTeacherPrefab.disableNpcs;
         [HarmonyPatch(typeof(CharacterPostersRoomFunction), nameof(CharacterPostersRoomFunction.Build)), HarmonyPostfix]
         static void JustAddinEmPosters(LevelBuilder builder, System.Random rng, CharacterPostersRoomFunction __instance)
         {

@@ -91,7 +91,7 @@ namespace TeacherExtension.Foxo.Patches
             Image image = new GameObject("Image", typeof(RectTransform), typeof(Image)).GetComponent<Image>();
             image.rectTransform.SetParent(canv.transform);
             image.gameObject.layer = LayerMask.NameToLayer("UI");
-            image.sprite = Foxo.sprites.Get<Sprite>("Graduated");
+            image.sprite = Foxo.foxoAssets.Get<Sprite>("Graduated");
             image.material = Resources.FindObjectsOfTypeAll<Material>().ToList().Find(x => x.name == "UI_AsSprite");
             image.rectTransform.anchorMin = Vector2.zero;
             image.rectTransform.anchorMax = Vector2.one;
@@ -103,7 +103,7 @@ namespace TeacherExtension.Foxo.Patches
             text.rectTransform.SetParent(canv.transform);
             text.gameObject.layer = LayerMask.NameToLayer("UI");
             text.text = PlayerFileManager.Instance.fileName;
-            text.font = Foxo.fonts.Get<TMP_FontAsset>("Cooper24");
+            text.font = Foxo.foxoAssets.Get<TMP_FontAsset>("Cooper24");
             text.fontSize = 24f;
             text.alignment = TextAlignmentOptions.Center;
             text.richText = false;
@@ -142,10 +142,10 @@ namespace TeacherExtension.Foxo.Patches
             IEnumerator ThisIsFoxoSaying()
             {
                 yield return new WaitForSecondsRealtime(5.580f);
-                CoreGameManager.Instance?.audMan?.PlaySingle(Foxo.audios.Get<SoundObject>("graduations"));
+                CoreGameManager.Instance?.audMan?.PlaySingle(Foxo.foxoAssets.Get<SoundObject>("graduations"));
                 yield break;
             }
-            CoreGameManager.Instance.audMan.PlaySingle(Foxo.audios.Get<SoundObject>("graduated"));
+            CoreGameManager.Instance.audMan.PlaySingle(Foxo.foxoAssets.Get<SoundObject>("graduated"));
             CoreGameManager.Instance.StartCoroutine(ThisIsFoxoSaying());
             initat.currentCursor.transform.SetSiblingIndex(but.transform.GetSiblingIndex() + 1);
         }
@@ -215,7 +215,8 @@ namespace TeacherExtension.Foxo.Patches
                 ___currentPickup.AssignItem(FoxoPlugin.ItemAssets.Get<ItemObject>("FireExtinguisher"));
         }*/
 
-        static FieldInfo ___baldiImage = AccessTools.DeclaredField(typeof(BaldiTV), "baldiImage");
+        // Obsoleted by Dev API v9.0
+        /*static FieldInfo ___baldiImage = AccessTools.DeclaredField(typeof(BaldiTV), "baldiImage");
         static FieldInfo ___baldiTvAudioManager = AccessTools.DeclaredField(typeof(BaldiTV), "baldiTvAudioManager");
 
         [HarmonyPatch(typeof(BaldiTV), "BaldiSpeaks", MethodType.Enumerator), HarmonyTranspiler]
@@ -256,7 +257,7 @@ namespace TeacherExtension.Foxo.Patches
                     __instance.StartCoroutine(FreakOut());
                 }
             }))
-            .InstructionEnumeration();
+            .InstructionEnumeration();*/
 
         [HarmonyPatch(typeof(TimeOut), nameof(TimeOut.Begin)), HarmonyPostfix, HarmonyPriority(Priority.Last)]
         static void WrathOut()
@@ -315,8 +316,8 @@ namespace TeacherExtension.Foxo.Patches
     {
         static void Postfix(SubtitleController __instance)
         {
-            if (Foxo.audios.GetAll<SoundObject>().Contains(__instance.soundObject) || Foxo.audios.GetAll<SoundObject[]>().ToList().Exists(snd => snd.Contains(__instance.soundObject)))
-                __instance.text.font = Foxo.fonts.Get<TMP_FontAsset>("Cooper24");
+            if (Foxo.foxoAssets.GetAll<SoundObject>().Contains(__instance.soundObject) || Foxo.foxoAssets.GetAll<SoundObject[]>().ToList().Exists(snd => snd.Contains(__instance.soundObject)))
+                __instance.text.font = Foxo.foxoAssets.Get<TMP_FontAsset>("Cooper24");
         }
     }
 }

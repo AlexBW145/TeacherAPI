@@ -50,6 +50,7 @@ namespace TeacherAPI
 
         internal void Initialize(EnvironmentController ec)
         {
+            if (teacherMan != null) return;
             teacherMan = ec.gameObject.GetComponent<TeacherManager>();
             this.ec = ec;
 
@@ -100,14 +101,11 @@ namespace TeacherAPI
             teacherMan.MaxTeachersNotebooks.TryGetValue(character, out int maxNotebooks);
 
             // Oh my god, am I drunk ?
-            teacherMan.spawnedTeachers
-                .Where(t => t.Character == character)
-                .ToList()
-                .ForEach(t =>
-                {
-                    t.behaviorStateMachine.CurrentState.AsTeacherState(e => e.NotebookCollected(currentNotebooks + 1, maxNotebooks));
-                    t.GetAngry(BaseGameManager.Instance.NotebookAngerVal);
-                });
+            teacherMan.spawnedTeachers.DoIf(t => t.Character == character, t =>
+            {
+                t.behaviorStateMachine.CurrentState.AsTeacherState(e => e.NotebookCollected(currentNotebooks + 1, maxNotebooks));
+                t.GetAngry(BaseGameManager.Instance.NotebookAngerVal);
+            });
         }
 
         internal static void RefreshNotebookText()
@@ -143,7 +141,7 @@ namespace TeacherAPI
         {
             if (TeacherManager.DefaultBaldiEnabled || TeacherManager.Instance == null) return;
             if (__instance.gameObject.GetComponent<TeacherNotebook>() != null) return;
-            var teacherNotebook = __instance.gameObject.AddComponent<TeacherNotebook>();
+            var teacherNotebook = __instance.gameObject.GetOrAddComponent<TeacherNotebook>();
             teacherNotebook.Initialize(BaseGameManager.Instance.Ec);
         }
     }
@@ -154,12 +152,12 @@ namespace TeacherAPI
         internal static void Postfix(Activity __instance, Notebook val)
         {
             if (TeacherManager.DefaultBaldiEnabled || TeacherManager.Instance == null) return;
-            var teacherNotebook = val.gameObject.AddComponent<TeacherNotebook>();
+            var teacherNotebook = val.gameObject.GetOrAddComponent<TeacherNotebook>();
             teacherNotebook.Initialize(BaseGameManager.Instance.Ec);
         }
     }
 
-    [HarmonyPatch(typeof(MathMachine), nameof(MathMachine.NumberClicked))]
+    /*[HarmonyPatch(typeof(MathMachine), nameof(MathMachine.NumberClicked))]
     internal static class PreventMathMachinesFromBeingSolved
     {
         internal static bool Prefix(MathMachine __instance, ref Notebook ___notebook, ref AudioManager ___audMan, ref SoundObject ___audLose)
@@ -173,7 +171,7 @@ namespace TeacherAPI
             }
             return true;
         }
-    }
+    }*/
 
     // Fixes the texture of the notebook being overwritten by defaults when spawning from math machine
     [HarmonyPatch(typeof(Notebook), "Start")]

@@ -3,8 +3,10 @@ using HarmonyLib;
 using MTM101BaldAPI;
 using MTM101BaldAPI.Reflection;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 
 namespace TeacherAPI.patches
@@ -35,9 +37,24 @@ namespace TeacherAPI.patches
     }
 
     [HarmonyPatch(typeof(BaseGameManager), nameof(BaseGameManager.AngerBaldi))]
-    internal class NoSharedOrSameEnumAnger
+    class NoSharedOrSameEnumAnger
     {
         internal static bool Prefix() => TeacherManager.Instance == null;
+    }
+
+    [HarmonyPatch(typeof(Activity), nameof(Activity.Completed), new Type[] { typeof(int), typeof(bool) })]
+    class AngeredTeacherByBadSkill
+    {
+        static void Postfix(int player, bool correct, Activity __instance, Notebook ___notebook)
+        {
+            if (TeacherManager.DefaultBaldiEnabled || TeacherManager.Instance == null) return;
+            var component = ___notebook.GetComponent<TeacherNotebook>();
+            if (!correct && component != null)
+            {
+                var teacher = TeacherManager.Instance.spawnedTeachers.Find(x => x.Character == component.character);
+                teacher?.GetAngry(1f);
+            }
+        }
     }
 
     [HarmonyPatch(typeof(EnvironmentController), nameof(EnvironmentController.SpawnNPC))]
@@ -64,6 +81,7 @@ namespace TeacherAPI.patches
 
     internal class ReplaceHappyBaldiWithTeacherPatch
     {
+        private static FieldInfo _activity = AccessTools.DeclaredField(typeof(RoomController), "activity");
         internal static void ReplaceHappyBaldi(BaseGameManager __instance)
         {
             if (TeacherManager.DefaultBaldiEnabled || TeacherManager.Instance == null) return;
@@ -80,14 +98,38 @@ namespace TeacherAPI.patches
                 GameObject.Destroy(happyBaldi.gameObject);
             }
 
-            
             foreach (var prefab in teacherManager.assistingTeachersPrefabs)
             {
                 var cells = __instance.Ec.notebooks
                     .Where(n => n.gameObject.GetComponent<TeacherNotebook>().character == prefab.Character)
-                    .Select(n => n.activity.room.RandomEntitySafeCellNoGarbage())
-                    .ToArray();
-                var i = teacherManager.controlledRng.Next(cells.Count());
+                    .SelectMany(n => n.activity.room.AllEntitySafeCellsNoGarbage()).ToList();
+                var doors = new List<Door>(cells.SelectMany(x => x.room.doors));
+                var notebooks = __instance.Ec.notebooks
+                    .Where(n => n.gameObject.GetComponent<TeacherNotebook>().character == prefab.Character).ToList();
+                for (int cell = cells.Count - 1; cell >= 0; cell--)
+                {
+                    var notebookPos = __instance.Ec.CellFromPosition(notebooks.Find(notebook => (Activity)_activity.GetValue(cells[cell].room) == notebook.activity).transform.position);
+                    if (cells[cell].shape == TileShapeMask.Open // But why??
+                        || cells[cell].room.size.x <= 4
+                        || cells[cell].room.size.z <= 4
+                        || __instance.Ec.GetDistance(notebookPos, cells[cell]) <= 24)
+                    {
+                        cells.RemoveAt(cell);
+                        continue;
+                    }
+                    for (int j = 0; j < doors.Count; j++)
+                    {
+                        if (cells[cell].room.doors.Contains(doors[j]) && 
+                            (__instance.Ec.GetDistance(doors[j].aTile, cells[cell]) <= 30 || cells[cell].HasWallInDirection(doors[j].direction)))
+                        {
+                            cells.RemoveAt(cell);
+                            break;
+                        }
+                    }
+                }
+                if (cells.Count == 0) // Failsafe
+                    cells.AddRange(__instance.Ec.rooms.Where(x => x.category == RoomCategory.Faculty).SelectMany(x => x.AllEntitySafeCellsNoGarbage()));
+                var i = teacherManager.controlledRng.Next(cells.Count);
                 try
                 {
                     __instance.Ec.SpawnNPC(prefab, cells[i].position);
@@ -99,12 +141,14 @@ namespace TeacherAPI.patches
                 }
             }
 
-            foreach (var notebook in __instance.Ec.notebooks)
+            /*foreach (var notebook in __instance.Ec.notebooks)
             {
                 var teacherNotebook = notebook.gameObject.GetComponent<TeacherNotebook>();
                 if (teacherNotebook.character != teacherManager.MainTeacherPrefab.Character) 
                     notebook.Hide(true);
-            }
+            }*/
+
+            CustomBaldicator.RearrangeBaldicators();
         }
 
         [HarmonyPatch]

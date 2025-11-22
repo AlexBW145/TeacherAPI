@@ -1,39 +1,34 @@
 ﻿using BepInEx;
 using HarmonyLib;
-using MidiPlayerTK;
 using MTM101BaldAPI;
 using MTM101BaldAPI.AssetTools;
-using MTM101BaldAPI.Components;
 using MTM101BaldAPI.Components.Animation;
 using MTM101BaldAPI.ObjectCreation;
 using MTM101BaldAPI.PlusExtensions;
-using MTM101BaldAPI.Reflection;
 using MTM101BaldAPI.Registers;
 using MTM101BaldAPI.SaveSystem;
 using System;
 using System.Collections;
 using System.Linq;
-using System.Security.Policy;
 using TeacherAPI;
 using TeacherExtension.Foxo;
 using TeacherExtension.Foxo.Items;
 using UnityCipher;
 using UnityEngine;
 using UnityEngine.UI;
-using static BepInEx.BepInDependency;
 
 namespace TeacherExtension.Foxo
 {
     [BepInPlugin("alexbw145.baldiplus.teacherextension.foxo", "Foxo Teacher for MoreTeachers", "1.1.0.0")]
-    [BepInDependency("alexbw145.baldiplus.teacherapi", DependencyFlags.HardDependency)]
-    [BepInDependency("mtm101.rulerp.bbplus.baldidevapi", DependencyFlags.HardDependency)]
+    [BepInDependency("alexbw145.baldiplus.teacherapi", BepInDependency.DependencyFlags.HardDependency)]
+    [BepInDependency("mtm101.rulerp.bbplus.baldidevapi", BepInDependency.DependencyFlags.HardDependency)]
     public class FoxoPlugin : BaseUnityPlugin
     {
         public static FoxoPlugin Instance { get; private set; }
         public Foxo foxo { get; private set; }
         public Foxo darkFoxo { get; private set; }
         public FoxoSave deathCounter = new FoxoSave();
-        public static AssetManager ItemAssets = new AssetManager();
+        internal static PassableObstacle waterbucketofwaterPassable;
 
         internal void Awake()
         {
@@ -42,7 +37,17 @@ namespace TeacherExtension.Foxo
             FoxoConfiguration.Setup();
             AssetLoader.LocalizationFromMod(this);
             TeacherPlugin.RequiresAssetsFolder(this); // Critical!!!
+            waterbucketofwaterPassable = EnumExtensions.ExtendEnum<PassableObstacle>("WaterBucketOfWater");
             LoadingEvents.RegisterOnAssetsLoaded(Info, OnAssetsLoaded, LoadingEventOrder.Pre);
+            LoadingEvents.RegisterOnAssetsLoaded(Info, () =>
+            {
+                foreach (var npc in NPCMetaStorage.Instance.FindAll(x => x.value.GetType().Equals(typeof(ArtsAndCrafters)) || x.value.GetType().Equals(typeof(GottaSweep)) || x.value.Character == Character.DrReflex || x.character.ToStringExtended() == "ViktorStrobovski"
+                || x.tags.Contains("foxoteacherapi_hateswater")))
+                {
+                    foreach (var prefab in npc.prefabs)
+                        prefab.Value.Navigator.passableObstacles.Add(waterbucketofwaterPassable);
+                }
+            }, LoadingEventOrder.Final);
             ModdedSaveGame.AddSaveHandler(deathCounter);
         }
 
@@ -60,7 +65,7 @@ namespace TeacherExtension.Foxo
                 .Build();
             newFoxo.Navigator.accel = 0f;
             newFoxo.audMan = newFoxo.GetComponent<AudioManager>();
-            newFoxo.Navigator.passableObstacles.Add(PassableObstacle.LockedDoor);
+            newFoxo.Navigator.passableObstacles.AddRange(new PassableObstacle[] { PassableObstacle.LockedDoor, waterbucketofwaterPassable });
             newFoxo.correctSounds = Foxo.foxoAssets.Get<WeightedSoundObject[]>("praise");
 
             // Adds a custom animator
@@ -111,18 +116,22 @@ namespace TeacherExtension.Foxo
             }
             // Also create and register some items specifically to combat against Foxo.
             {
+                var appleMeta = ItemMetaStorage.Instance.FindByEnum(global::Items.Apple);
                 var fireExtinguish = new ItemBuilder(Info)
                     .SetNameAndDescription("Itm_FireExtinguisher", "Desc_FireExtinguisher")
                     .SetItemComponent<FireExtinguisher>()
-                    .SetEnum(global::Items.Apple)
-                    .SetGeneratorCost(ItemMetaStorage.Instance.FindByEnum(global::Items.Apple).value.value)
-                    .SetShopPrice(ItemMetaStorage.Instance.FindByEnum(global::Items.Apple).value.price)
+                    .SetEnum("FireExtinguisher")
+                    .SetGeneratorCost(appleMeta.value.value)
+                    .SetShopPrice(appleMeta.value.price)
                     .SetSprites(Foxo.foxoAssets.Get<Sprite>("Items/FireExtinguisher_Small"), Foxo.foxoAssets.Get<Sprite>("Items/FireExtinguisher_Large"))
                     .SetMeta(ItemFlags.Persists, new string[] { "alternative" })
                     .Build();
-                ItemAssets.Add("FireExtinguisher", fireExtinguish);
+                fireExtinguish.itemType = global::Items.Apple;
+                var appleItems = appleMeta.itemObjects.ToList();
+                appleItems.Insert(0, fireExtinguish);
+                appleMeta.itemObjects = appleItems.ToArray();
+                Foxo.foxoAssets.Add("FireExtinguisher", fireExtinguish);
             }
-#if DEBUG
             {
                 var bucketofwater = new ItemBuilder(Info)
                     .SetNameAndDescription("Itm_WaterBucketOfWater", "Desc_WaterBucketOfWater")
@@ -130,8 +139,8 @@ namespace TeacherExtension.Foxo
                     .SetEnum("WaterBucketOfWater")
                     .SetGeneratorCost(ItemMetaStorage.Instance.FindByEnum(global::Items.Wd40).value.value + 30)
                     .SetShopPrice(ItemMetaStorage.Instance.FindByEnum(global::Items.Wd40).value.price)
-                    .SetSprites(Foxo.sprites.Get<Sprite>("Items/WaterBucketOfWater_Small"), Foxo.sprites.Get<Sprite>("Items/WaterBucketOfWater_Large"))
-                    .SetMeta(ItemFlags.Persists, new string[] { "alternative", "crmp_contraband" })
+                    .SetSprites(Foxo.foxoAssets.Get<Sprite>("Items/WaterBucketOfWater_Small"), Foxo.foxoAssets.Get<Sprite>("Items/WaterBucketOfWater_Large"))
+                    .SetMeta(ItemFlags.Persists, new string[] { "alternative", "crmp_contraband" }) // Too much liquids contained, must be contraband.
                     .Build();
                 GameObject quad = Instantiate(Resources.FindObjectsOfTypeAll<Chalkboard>().ToList().First(), bucketofwater.item.transform, false).gameObject;
                 quad.transform.Find("Chalkbaord").Find("Quad").SetParent(bucketofwater.item.transform, false);
@@ -144,9 +153,9 @@ namespace TeacherExtension.Foxo
                 spillmat.SetMainTexture(AssetLoader.TextureFromMod(this, "items", "WaterBucketWater_Splash.png"));
                 bucketofwater.item.transform.Find("Quad").GetComponent<MeshRenderer>().SetMaterial(spillmat);
                 bucketofwater.item.gameObject.GetComponent<WaterBucketOfWater>().wrongPlacement = Resources.FindObjectsOfTypeAll<SoundObject>().ToList().Find(x => x.name == "ErrorMaybe");
-                ItemAssets.Add("WaterBucketOfWater", bucketofwater);
+                bucketofwater.item.gameObject.GetComponent<WaterBucketOfWater>().spill = ObjectCreators.CreateSoundObject(AssetLoader.AudioClipFromMod(this, "audio", "WaterSplash.wav"), "Sfx_WaterBucketOfWater_Spill", SoundType.Effect, Color.white, 1f);
+                Foxo.foxoAssets.Add("WaterBucketOfWater", bucketofwater);
             }
-#endif
 
             GeneratorManagement.Register(this, GenerationModType.Addend, EditGenerator);
         }
@@ -161,12 +170,17 @@ namespace TeacherExtension.Foxo
                 if (ld.IsModifiedByMod(Info)) continue;
                 ld.AddPotentialTeacher(foxo, FoxoConfiguration.Weight.Value);
                 ld.AddPotentialAssistingTeacher(foxo, FoxoConfiguration.Weight.Value);
-                if (floorNumber >= 3)
+                if (floorNumber >= 2)
                     ld.potentialItems = ld.potentialItems.AddToArray(new WeightedItemObject()
                     {
-                        selection = ItemAssets.Get<ItemObject>("FireExtinguisher"),
+                        selection = Foxo.foxoAssets.Get<ItemObject>("FireExtinguisher"),
                         weight = 20
                     });
+                ld.potentialItems = ld.potentialItems.AddToArray(new WeightedItemObject()
+                {
+                    selection = Foxo.foxoAssets.Get<ItemObject>("WaterBucketOfWater"),
+                    weight = 35
+                });
                 ld.MarkAsModifiedByMod(Info);
                 flag = true;
             }

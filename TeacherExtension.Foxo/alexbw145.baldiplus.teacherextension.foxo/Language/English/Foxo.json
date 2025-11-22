@@ -14,5 +14,6 @@
     {"key":"Itm_FireExtinguisher","value":"Fire Extinguisher"},
     {"key":"Desc_FireExtinguisher","value":"Fire Extinguisher\nA somewhat powerful extinguisher\nthat can make Foxo frustrated, and also mad!"},
     {"key":"Itm_WaterBucketOfWater","value":"Water Bucket Of Water"},
-    {"key":"Desc_WaterBucketOfWater","value":"Water Bucket Of Water\nIt's a bucket that contains water,\nspilling it will cause vulnerable people to not walk into that path.\nThe spill lasts 10 seconds so use it wisely!"}
-]}
+    {"key":"Desc_WaterBucketOfWater","value":"Water Bucket Of Water\nIt's a bucket that contains water,\nspilling it will cause vulnerable people to not walk into that path.\nThe spill lasts 10 seconds so use it wisely!"},
+    {"key":"Sfx_WaterBucketOfWater_Spill","value":"SPLOASH!" }
+ ]}

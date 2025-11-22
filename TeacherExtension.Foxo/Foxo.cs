@@ -120,18 +120,14 @@ namespace TeacherExtension.Foxo
             {
                 AssetLoader.SpriteFromMod(FoxoPlugin.Instance, Vector2.one / 2f, 50f, "items", "FireExtinguisher_Large.png"),
                 AssetLoader.SpriteFromMod(FoxoPlugin.Instance, Vector2.one / 2f, 1f, "items", "FireExtinguisher_Small.png"),
-#if DEBUG
                 AssetLoader.SpriteFromMod(FoxoPlugin.Instance, Vector2.one / 2f, 50f, "items", "BucketWaterBucket_Large.png"),
                 AssetLoader.SpriteFromMod(FoxoPlugin.Instance, Vector2.one / 2f, 1f, "items", "BucketWaterBucket_Small.png")
-#endif
             }, new string[]
             {
                 "Items/FireExtinguisher_Large",
                 "Items/FireExtinguisher_Small",
-#if DEBUG
                 "Items/WaterBucketOfWater_Large",
                 "Items/WaterBucketOfWater_Small"
-#endif
             });
             foxoAssets.Add("Graduated",
                 AssetLoader.SpriteFromMod(FoxoPlugin.Instance, Vector2.one / 2f, 1f, "endings", "GraduationScreen.png"));

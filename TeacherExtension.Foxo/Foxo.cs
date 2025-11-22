@@ -70,37 +70,37 @@ namespace TeacherExtension.Foxo
             var PIXELS_PER_UNIT = 30f;
             foxoAssets.Add(
                 "Wave",
-                TeacherPlugin
-                    .TexturesFromMod(FoxoPlugin.Instance, "wave/Foxo_Wave{0:0000}.png", (0, 49))
+                AssetLoader
+                    .TexturesFromMod(FoxoPlugin.Instance, "Foxo_Wave****.png", "wave")
                     .ToSprites(PIXELS_PER_UNIT)
             );
             foxoAssets.Add(
                 "Slap",
-                TeacherPlugin
-                    .TexturesFromMod(FoxoPlugin.Instance, "slap{0}.png", (1, 4))
+                AssetLoader
+                    .TexturesFromMod(FoxoPlugin.Instance, "slap*.png")
                     .ToSprites(PIXELS_PER_UNIT)
             );
             foxoAssets.Add(
                 "Sprayed",
-                TeacherPlugin
-                    .TexturesFromMod(FoxoPlugin.Instance, "spray{0}.png", (1, 2))
+                AssetLoader
+                    .TexturesFromMod(FoxoPlugin.Instance, "spray*.png")
                     .ToSprites(PIXELS_PER_UNIT)
             );
             foxoAssets.Add(
                 "Jump",
-                TeacherPlugin
-                    .TexturesFromMod(FoxoPlugin.Instance, "jump{0}.png", (1, 2))
+                AssetLoader
+                    .TexturesFromMod(FoxoPlugin.Instance, "jump*.png")
                     .ToSprites(PIXELS_PER_UNIT));
             foxoAssets.Add(
                 "Wrath",
-                TeacherPlugin
-                    .TexturesFromMod(FoxoPlugin.Instance, "wrath{0}.png", (1, 3))
+                AssetLoader
+                    .TexturesFromMod(FoxoPlugin.Instance, "wrath*.png")
                     .ToSprites(PIXELS_PER_UNIT)
             );
             foxoAssets.Add(
                 "WrathSprayed",
-                TeacherPlugin
-                    .TexturesFromMod(FoxoPlugin.Instance, "wrath_sprayed{0}.png", (1, 2))
+                AssetLoader
+                    .TexturesFromMod(FoxoPlugin.Instance, "wrath_sprayed*.png")
                     .ToSprites(PIXELS_PER_UNIT)
             );
             foxoAssets.Add(
@@ -113,8 +113,8 @@ namespace TeacherExtension.Foxo
             );
             foxoAssets.Add(
                 "floor2Intro",
-                TeacherPlugin
-                    .TexturesFromMod(FoxoPlugin.Instance, "floor2Intro{0}.png", (1, 2))
+                AssetLoader
+                    .TexturesFromMod(FoxoPlugin.Instance, "floor2Intro*.png")
                     .ToSprites(PIXELS_PER_UNIT));
             foxoAssets.AddRange(new Sprite[]
             {

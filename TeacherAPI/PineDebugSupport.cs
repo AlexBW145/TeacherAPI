@@ -17,7 +17,9 @@ namespace TeacherAPI.PineDebug
     [ConditionalPatchMod("alexbw145.baldiplus.pinedebug"), HarmonyPatch]
     class PineDebugPatches
     {
-        [HarmonyPatch(typeof(Teacher), nameof(Teacher.IsTouchingPlayer)), HarmonyPrefix]
+        [HarmonyPatch(typeof(Teacher), nameof(Teacher.IsTouchingPlayer))]
+        [HarmonyPatch(typeof(Teacher), nameof(Teacher.CaughtPlayer))]
+        [HarmonyPrefix]
         static bool NoKills() => !PineDebugManager.BaldiDeathDisabled;
     }
 }

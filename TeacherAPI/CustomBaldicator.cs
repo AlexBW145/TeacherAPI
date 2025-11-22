@@ -101,12 +101,12 @@ namespace TeacherAPI
 				yield return null;
             }
 			transform.anchoredPosition = EndingPosition;
-            while (animator.name == "Hearing")
+            while (animator.AnimationId == "Hearing")
                 yield return null;
             yield return new WaitForSeconds(framedelay);
             animator.SetDefaultAnimation(animationToPlay + "_Static", 1);
             animator.Play(animationToPlay, 1);
-            while (animator.name == animationToPlay)
+            while (animator.AnimationId == animationToPlay)
                 yield return null;
             yield return new WaitForSeconds(framedelay);
             for (float i = 0; i < 1; i += posspeed * Time.deltaTime)

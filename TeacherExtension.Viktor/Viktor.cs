@@ -1,16 +1,12 @@
 ﻿using HarmonyLib;
 using MTM101BaldAPI;
-using MTM101BaldAPI.Components;
 using MTM101BaldAPI.Components.Animation;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using TeacherAPI;
 using UnityEngine;
-using static MidiPlayerTK.SFFile;
 
 namespace TeacherExtension.Viktor
 {

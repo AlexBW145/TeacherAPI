@@ -34,7 +34,7 @@ namespace TeacherExtension.Foxo.Items
             ec.MaxRaycast = 25f;
             StartCoroutine(FadeOnFog());
             CoreGameManager.Instance.audMan.PlaySingle(Foxo.foxoAssets.Get<SoundObject>("fireextinguisher"));
-            foreach (Foxo fox in FindObjectsOfType<Foxo>(false))
+            foreach (Foxo fox in pm.ec.Npcs.FindAll(x => x is Foxo))
                 fox.Sprayed();
             return true;
         }

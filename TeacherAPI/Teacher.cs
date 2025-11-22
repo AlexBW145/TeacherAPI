@@ -44,7 +44,11 @@ namespace TeacherAPI
             _currentDestinationInteraction = AccessTools.DeclaredField(typeof(Baldi), "currentDestinationInteraction"),
             _baldiInteractions = AccessTools.DeclaredField(typeof(Baldi), "baldiInteractions");
 
-        public BaldiInteraction currentDestinationInteraction { set => _currentDestinationInteraction.SetValue(this, value); }
+        public BaldiInteraction currentDestinationInteraction 
+        {
+            protected get => CurrentDestinationInteraction;
+            set => _currentDestinationInteraction.SetValue(this, value); 
+        }
         /// <summary>
         /// If true, the teacher will move regularly instead of using Baldi's slap movement.
         /// </summary>
@@ -83,7 +87,7 @@ namespace TeacherAPI
             set => _correctSounds.SetValue(this, value);
         }
         /// <summary>
-        /// Set or check to see if the teacher has restored their ruler.
+        /// Set or check to see if the teacher is about to restore their ruler.
         /// </summary>
         public bool restoreRuler
         {
@@ -91,7 +95,7 @@ namespace TeacherAPI
             protected set => _restoreRuler.SetValue(this, value);
         }
         /// <summary>
-        /// Set or check to see if the teacher has their ruler broken.
+        /// Set or check to see if the teacher has their ruler about to be broken.
         /// </summary>
         public bool breakRuler
         {

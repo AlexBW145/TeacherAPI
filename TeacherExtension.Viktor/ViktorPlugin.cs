@@ -8,8 +8,6 @@ using System.Collections;
 using UnityEngine;
 using TeacherAPI;
 using MTM101BaldAPI.ObjectCreation;
-using System.IO;
-using MTM101BaldAPI.Reflection;
 
 namespace TeacherExtension.Viktor
 {

@@ -129,16 +129,18 @@ namespace TeacherAPI.patches
                 }
                 if (cells.Count == 0) // Failsafe
                     cells.AddRange(__instance.Ec.rooms.Where(x => x.category == RoomCategory.Faculty).SelectMany(x => x.AllEntitySafeCellsNoGarbage()));
-                var i = teacherManager.controlledRng.Next(cells.Count);
-                try
+                if (notebooks.Count > 0)
                 {
-                    __instance.Ec.SpawnNPC(prefab, cells[i].position);
-                } catch
-                {
-                    TeacherPlugin.Log.LogError($"Can't spawn {EnumExtensions.GetExtendedName<Character>((int)prefab.Character)} because no notebooks have been assigned.");
-                    __instance.Ec.Npcs.DoIf(x => x.GetType().Equals(prefab), (npc) => npc.Despawn());
-                    continue;
+                    if (cells.Count != 0)
+                    {
+                        var i = teacherManager.controlledRng.Next(cells.Count);
+                        __instance.Ec.SpawnNPC(prefab, cells[i].position);
+                    }
+                    else
+                        TeacherPlugin.Log.LogWarning($"Can't spawn {EnumExtensions.GetExtendedName<Character>((int)prefab.Character)} because there are no cells that are not near the classroom doors and activities and also the lack of faculty rooms.");
                 }
+                else
+                    TeacherPlugin.Log.LogWarning($"Can't spawn {EnumExtensions.GetExtendedName<Character>((int)prefab.Character)} because no notebooks have been assigned.");
             }
 
             /*foreach (var notebook in __instance.Ec.notebooks)

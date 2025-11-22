@@ -1,6 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using HarmonyLib;
+using System.Reflection;
 using UnityEngine;
 
 namespace TeacherExtension.Foxo.Items
@@ -14,6 +13,7 @@ namespace TeacherExtension.Foxo.Items
         internal static EnvironmentController.TempObstacleManagement unaccessibleMang, accessibleMang;
         public override bool Use(PlayerManager pm)
         {
+            transform.position = Vector3.zero;
             ec = pm.ec;
             cell = pm.ec.CellFromPosition(pm.transform.position);
             if (cell.HardCoverageFits(CellCoverage.Down))
@@ -32,7 +32,7 @@ namespace TeacherExtension.Foxo.Items
 
         private void Update()
         {
-            if (cell == null) return;
+            if (cell == null || transform.position == Vector3.zero) return;
             timer -= Time.deltaTime * ec.EnvironmentTimeScale;
             if (timer <= 0f)
                 Destroy(gameObject);
@@ -61,8 +61,20 @@ namespace TeacherExtension.Foxo.Items
             }
         }
 
+        private static readonly FieldInfo
+            _hardCoverage = AccessTools.DeclaredField(typeof(Cell), "hardCoverage"),
+            _softCoverage = AccessTools.DeclaredField(typeof(Cell), "softCoverage");
         private void OnDestroy()
         {
+            if (transform.position != Vector3.zero && cell != null && !cell.HardCoverageFits(CellCoverage.Down))
+            {
+                CellCoverage hard = (CellCoverage)_hardCoverage.GetValue(cell);
+                CellCoverage soft = (CellCoverage)_softCoverage.GetValue(cell);
+                hard &= ~CellCoverage.Down;
+                soft &= ~CellCoverage.Down;
+                _hardCoverage.SetValue(cell, hard);
+                _softCoverage.SetValue(cell, soft);
+            }
             unaccessibleMang -= TempClose;
             accessibleMang -= TempOpen;
         }

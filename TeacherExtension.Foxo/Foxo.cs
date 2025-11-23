@@ -1,11 +1,12 @@
 ﻿using BepInEx.Bootstrap;
+using HarmonyLib;
 using MTM101BaldAPI;
 using MTM101BaldAPI.AssetTools;
 using MTM101BaldAPI.Components.Animation;
-using MTM101BaldAPI.Reflection;
 using System.Collections;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using TeacherAPI;
 using TMPro;
 using UnityEngine;
@@ -244,6 +245,7 @@ namespace TeacherExtension.Foxo
         }
         public override TeacherState GetAngryState() => forceWrath ? (Foxo_StateBase)(new Foxo_Wrath(this)) : new Foxo_Chase(this);
         public override TeacherState GetHappyState() => forceWrath ? (Foxo_StateBase)(new Foxo_WrathHappy(this)) : new Foxo_Happy(this);
+        public override TeacherState GetPraiseState(float time) => (forceWrath || behaviorStateMachine.currentState.GetType().Equals(typeof(Foxo_Wrath)) || behaviorStateMachine.currentState.GetType().Equals(typeof(Foxo_WrathHappy))) ? (Foxo_StateBase)((Baldi_Praise)behaviorStateMachine.currentState).GetPreviousBaldiState() : new Foxo_Praise(this, (Foxo_StateBase)((Baldi_Praise)behaviorStateMachine.currentState).GetPreviousBaldiState(), time);
         public override string GetNotebooksText(string amount) => $"{amount} Foxo Comics";
         public override WeightedTeacherNotebook GetTeacherNotebookWeight()
             => new WeightedTeacherNotebook(this).Weight(100).Sprite(foxoAssets.Get<Sprite[]>("Notebook"));
@@ -344,6 +346,7 @@ namespace TeacherExtension.Foxo
         }
         public void Sprayed()
         {
+            if (behaviorStateMachine.currentState.GetType().Equals(GetHappyState().GetType())) return;
             behaviorStateMachine.ChangeState(new Foxo_Extinguished(this, behaviorStateMachine.currentState as TeacherState));
         }
         public void Jump()
@@ -366,6 +369,7 @@ namespace TeacherExtension.Foxo
     }
     public class Foxo_StateBase : TeacherState
     {
+        protected static FieldInfo _audMan = AccessTools.DeclaredField(typeof(EnvironmentController), "audMan");
         public Foxo_StateBase(Foxo foxo) : base(foxo)
         {
             this.foxo = foxo;
@@ -404,6 +408,7 @@ namespace TeacherExtension.Foxo
             else if ((foxo.IsBadPhase2 || infmessed)
                 && !(foxo.IsBadPhase3 || infwrath))
             {
+                foxo.animator.SetDefaultAnimation("Stare", 1f, true);
                 foreach (var light in BaseGameManager.Instance.Ec.lights)
                     light.SetLight(!(light.room.category != RoomCategory.Special));
                 Cell cell = foxo.ec.RandomCell(false, false, true);
@@ -415,17 +420,17 @@ namespace TeacherExtension.Foxo
             else if ((foxo.IsBadPhase1 || infbad)
                 && !(foxo.IsBadPhase2 && infmessed))
             {
-                foxo.animator.Play("Stare", 1f);
-                foxo.animator.SetDefaultAnimation("Stare", 1f);
+                foxo.animator.SetDefaultAnimation("Stare", 1f, true);
                 foxo.AudMan.PlaySingle(Foxo.foxoAssets.Get<SoundObject>("bettergrades"));
                 foxo.StartCoroutine(cutsceneFloor2());
             }
             else if (!TeacherPlugin.IsEndlessFloorsLoaded() && PlayerFileManager.Instance.lifeMode == LifeMode.Intense && BaseGameManager.Instance.CurrentLevel == 1 && !foxo.IsBadPhase1)
             {
+                foxo.animator.SetDefaultAnimation("Happy", 1f);
                 foxo.spriteBase.transform.localPosition += Vector3.down * 10f;
             }
             foxo.Navigator.SetSpeed(0f);
-            ChangeNavigationState(new NavigationState_DoNothing(foxo, 32));
+            ChangeNavigationState(new NavigationState_DoNothing(foxo, 127));
 
             if (!(foxo.IsBadPhase1 || foxo.IsBadPhase2 || foxo.IsBadPhase3 || infbad || infmessed || infwrath || (!TeacherPlugin.IsEndlessFloorsLoaded() && PlayerFileManager.Instance.lifeMode == LifeMode.Intense && BaseGameManager.Instance.CurrentLevel > 0)))
                 if (Chainloader.PluginInfos.ContainsKey("alexbw145.baldiplus.seasons"))
@@ -471,17 +476,34 @@ namespace TeacherExtension.Foxo
             foxo.spriteBase.transform.localPosition = ogPos;
         }
 
+        private bool scaryTime = false;
         public override void NotebookCollected(int currentNotebooks, int maxNotebooks)
         {
             base.NotebookCollected(currentNotebooks, maxNotebooks);
-            if (foxo.IsHelping() || TeacherManager.Instance.SpoopModeActivated)
+            scaryTime = true;
+            bool isBad = foxo.IsBadPhase1 || foxo.IsBadEndlessFloor(Mathf.RoundToInt(BaseGameManager.Instance.CurrentLevel + 1 / 2f), 3) ||
+                (!TeacherPlugin.IsEndlessFloorsLoaded() && PlayerFileManager.Instance.lifeMode == LifeMode.Intense && BaseGameManager.Instance.CurrentLevel == 1);
+            if (foxo.IsHelping() || (TeacherManager.Instance.SpoopModeActivated && !isBad))
             {
                 foxo.ActivateSpoopMode();
                 foxo.behaviorStateMachine.ChangeState(new Foxo_Chase(foxo));
                 CoreGameManager.Instance.audMan.PlaySingle(Foxo.foxoAssets.Get<SoundObject>("ding"));
-                return;
             }
-            foxo.behaviorStateMachine.ChangeState(new Foxo_Scary(foxo));
+            else if (isBad)
+                foxo.behaviorStateMachine.ChangeState(new Foxo_Scary(foxo));
+            else
+                foxo.TeleportToNearestDoor();
+        }
+
+        public override void PlayerSighted(PlayerManager player)
+        {
+            if (!foxo.IsHelping() && scaryTime)
+                foxo.behaviorStateMachine.ChangeState(new Foxo_Scary(foxo));
+        }
+        public override void OnRoomExit(RoomController room)
+        {
+            if (!foxo.IsHelping() && scaryTime)
+                foxo.behaviorStateMachine.ChangeState(new Foxo_Scary(foxo));
         }
     }
     public class Foxo_Scary : Foxo_StateBase
@@ -497,8 +519,7 @@ namespace TeacherExtension.Foxo
             bool intenseMode = (!TeacherPlugin.IsEndlessFloorsLoaded() && PlayerFileManager.Instance.lifeMode == LifeMode.Intense && BaseGameManager.Instance.CurrentLevel == 1);
             if (!(intenseMode || foxo.IsBadPhase1 || foxo.IsBadPhase2 || foxo.IsBadPhase3 || infbad || infmessed || infwrath))
             {
-                foxo.animator.SetDefaultAnimation("Stare", 1f);
-                foxo.animator.Play("Stare", 1f);
+                foxo.animator.SetDefaultAnimation("Stare", 1f, true);
 
                 // Stop playing songs and be scary for once!!
                 MusicManager.Instance.StopMidi();
@@ -507,7 +528,6 @@ namespace TeacherExtension.Foxo
                 CoreGameManager.Instance.musicMan.FlushQueue(true);
                 CoreGameManager.Instance.musicMan.PlaySingle(Foxo.foxoAssets.Get<SoundObject>("fear"));
                 foxo.ec.FlickerLights(true);
-                foxo.TeleportToNearestDoor();
 
                 foxo.StartCoroutine(GetMad());
             }
@@ -533,9 +553,9 @@ namespace TeacherExtension.Foxo
         }
         private IEnumerator GetMad()
         {
-            yield return new WaitForSeconds(13f);
+            yield return new WaitForSecondsNPCTimescale(foxo, 13f);
             foxo.ec.FlickerLights(false);
-            AudioManager aud = foxo.ec.ReflectionGetVariable("audMan") as AudioManager;
+            AudioManager aud = _audMan.GetValue(foxo.ec) as AudioManager;
             aud.PlaySingle(Foxo.foxoAssets.Get<SoundObject>("ding"));
             foxo.ActivateSpoopMode();
             foxo.behaviorStateMachine.ChangeState(new Foxo_Chase(foxo));
@@ -565,6 +585,7 @@ namespace TeacherExtension.Foxo
             delayTimer = foxo.Delay;
             foxo.ResetSlapDistance();
         }
+        private static FieldInfo _extraAnger = AccessTools.DeclaredField(typeof(Baldi), "extraAnger");
         public override void Update()
         {
             base.Update();
@@ -580,8 +601,9 @@ namespace TeacherExtension.Foxo
             if (delayTimer <= 0f)
             {
                 // Progressive restoration after wrath
-                if ((float)foxo.ReflectionGetVariable("extraAnger") > 0 && GetType().Equals(typeof(Foxo_Chase)))
-                    foxo.ReflectionSetVariable("extraAnger", (float)foxo.ReflectionGetVariable("extraAnger") - 1);
+                var extraAnger = (float)_extraAnger.GetValue(foxo);
+                if (extraAnger > 0 && GetType().Equals(typeof(Foxo_Chase)))
+                    _extraAnger.SetValue(foxo, extraAnger - 1f);
 
                 //foxo.ec.FindPath(foxo.ec.CellFromPosition(foxo.transform.position), foxo.ec.CellFromPosition(foxo.Navigator.CurrentDestination), PathType.Nav, out List<Cell> paths, out bool suc);
                 // This is not fun...
@@ -733,12 +755,13 @@ namespace TeacherExtension.Foxo
     public class Foxo_WrathHappy : Foxo_StateBase
     {
         public Foxo_WrathHappy(Foxo foxo) : base(foxo) { }
+        private static readonly FieldInfo _ec = AccessTools.DeclaredField(typeof(LanternMode), "ec");
 
         public override void Initialize()
         {
             base.Initialize();
             var lanternmode = foxo.ec.gameObject.GetOrAddComponent<LanternMode>();
-            if ((EnvironmentController)lanternmode.ReflectionGetVariable("ec") == null) lanternmode.Initialize(foxo.ec);
+            if ((EnvironmentController)_ec.GetValue(lanternmode) == null) lanternmode.Initialize(foxo.ec);
             lanternmode.AddSource(foxo.ec.Players[0].transform, 5.5f, Color.white);
         }
 
@@ -806,7 +829,7 @@ namespace TeacherExtension.Foxo
                 CoreGameManager.Instance.musicMan.SetLoop(true);
                 return;
             }
-            AudioManager aud = foxo.ec.ReflectionGetVariable("audMan") as AudioManager;
+            AudioManager aud = _audMan.GetValue(foxo.ec) as AudioManager;
             aud.PlaySingle(Foxo.foxoAssets.Get<SoundObject>("wrath"));
         }
         public override void Enter()

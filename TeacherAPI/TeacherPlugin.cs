@@ -24,7 +24,7 @@ namespace TeacherAPI
     {
         public const string PLUGIN_GUID = "alexbw145.baldiplus.teacherapi";
         private const string PLUGIN_NAME = "Teacher API";
-        private const string PLUGIN_VERSION = "0.1.10";
+        private const string PLUGIN_VERSION = "0.1.11";
         public static TeacherPlugin Instance { get; private set; }
 
         internal readonly Dictionary<Character, NPC> whoAreTeachers = new Dictionary<Character, NPC>(); // Mostly used to differenciate who are teachers and who are not.
@@ -164,7 +164,7 @@ The name of the assets folder must be <color=red>{1}</color>.", Path.GetFileName
         /// Returns true if Infinite Floors/Endless Floors is loaded.
         /// </summary>
         /// <returns></returns>
-        public static bool IsEndlessFloorsLoaded() => Chainloader.PluginInfos.ContainsKey("alexbw145.baldiplus.arcadeendlessforever");
+        public static bool IsEndlessFloorsLoaded() => CoreGameManager.Instance?.sceneObject?.levelTitle == "INF";
 
         /// <summary>
         /// Load textures from a pattern, used to easily load animations.

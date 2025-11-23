@@ -15,13 +15,15 @@ namespace TeacherAPI.patches
     [HarmonyPriority(Priority.First)]
     internal class GetBaldiPatch
     {
-        public static void Postfix(ref Baldi __result)
+        public static bool Prefix(ref Baldi __result)
         {
-            if (TeacherManager.Instance == null) return;
-            if (__result == null && TeacherManager.Instance.SpawnedMainTeacher != null)
+            if (TeacherManager.Instance == null) return true;
+            if (TeacherManager.Instance.SpawnedMainTeacher != null)
             {
-                __result = (Baldi)TeacherManager.Instance.SpawnedMainTeacher;
+                __result = TeacherManager.Instance.SpawnedMainTeacher;
+                return false;
             }
+            return true;
         }
     }
 
@@ -169,7 +171,7 @@ namespace TeacherAPI.patches
             [HarmonyPostfix]
             static void ReplaceMusic()
             {
-                if (TeacherManager.Instance == null) return;
+                if (TeacherManager.Instance == null || TeacherManager.Instance.SpawnedMainTeacher == null) return;
                 var replacement = TeacherManager.Instance.SpawnedMainTeacher.ReplacementMusic;
                 if (replacement == null) return;
                 if (replacement.GetType().Equals(typeof(string)))
@@ -216,6 +218,55 @@ namespace TeacherAPI.patches
         public static void Postfix()
         {
             TeacherManager.Instance?.DoIfMainTeacher(t => t.RestoreRuler());
+        }
+    }
+
+    [HarmonyPatch]
+    internal class RedirectNPCStatesPatch
+    {
+        [HarmonyPatch(typeof(Baldi_Chase), nameof(Baldi_Chase.Enter))]
+        [HarmonyPatch(typeof(Baldi_Chase_Broken), nameof(Baldi_Chase_Broken.Enter))]
+        [HarmonyPrefix]
+        static bool RedirectChase(Baldi_Chase __instance)
+        {
+            if (__instance.Npc.GetType().IsSubclassOf(typeof(Teacher)))
+            {
+                var teacher = __instance.Npc as Teacher;
+                teacher.behaviorStateMachine.ChangeState(teacher.GetAngryState());
+                return false;
+            }
+            return true;
+        }
+        [HarmonyPatch(typeof(Baldi_Praise), nameof(Baldi_Praise.Enter))]
+        [HarmonyPrefix]
+        static bool RedirectPraise(Baldi_Praise __instance, float ___time)
+        {
+            if (__instance.GetType().IsSubclassOf(typeof(Baldi_Praise))) return true; // Do not the locker interaction.
+            if (__instance.Npc.GetType().IsSubclassOf(typeof(Teacher)))
+            {
+                var teacher = __instance.Npc as Teacher;
+                teacher.behaviorStateMachine.ChangeState(teacher.GetPraiseState(___time));
+                return false;
+            }
+            return true;
+        }
+        [HarmonyPatch(typeof(Baldi), nameof(Baldi.Praise)), HarmonyPrefix]
+        static bool UseThatPraise(float time, bool rewardSticker, Baldi __instance)
+        {
+            if (__instance.GetType().IsSubclassOf(typeof(Teacher)))
+            {
+                var teacher = __instance as Teacher;
+                if (teacher.behaviorStateMachine.currentState.GetType().Equals(teacher.GetHappyState().GetType()))
+                    return false;
+                __instance.AudMan?.FlushQueue(true);
+                float num = 0f;
+                if (rewardSticker)
+                    num = 3 * StickerManager.Instance.StickerValue(Sticker.BaldiPraise);
+
+                __instance.behaviorStateMachine.ChangeState(new Baldi_Praise(__instance, __instance, __instance.behaviorStateMachine.currentState, time + num));
+                return false;
+            }
+            return true;
         }
     }
 

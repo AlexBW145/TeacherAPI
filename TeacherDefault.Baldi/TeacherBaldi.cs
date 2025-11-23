@@ -17,6 +17,7 @@ namespace TeacherExtension.Baldimore
     {
         public override TeacherState GetAngryState() => new TeacherBaldi_Chase(this);
         public override TeacherState GetHappyState() => new TeacherBaldi_Happy(this);
+        public override TeacherState GetPraiseState(float time) => new TeacherBaldi_Praise(this, ((Baldi_Praise)behaviorStateMachine.currentState).GetPreviousBaldiState(), time);
         public override AssistantPolicy GetAssistantPolicy() => new AssistantPolicy(PossibleAssistantAllowType.Deny)
             .MaxAssistants(BaldiPlugin.EveryAssistantIsHere.Value ? (int)BaseGameManager.Instance?.levelObject?.roomGroup.ToList()?.Find(rm => rm.name == "Class").maxRooms : Mathf.Max(BaseGameManager.Instance.CurrentLevel, CoreGameManager.Instance.sceneObject.levelNo));
         public override WeightedTeacherNotebook GetTeacherNotebookWeight() => new WeightedTeacherNotebook(this)
@@ -261,7 +262,11 @@ namespace TeacherExtension.Baldimore
                     baldi.TakeApple();
                 }
                 else
-                    baldi.CaughtPlayer(component);
+                {
+                    var baldiActualState = new Baldi_Chase(baldi, baldi);
+                    baldiActualState.OnStateTriggerStay(other, isValid);
+                    //baldi.CaughtPlayer(component);
+                }
             }
         }
 
@@ -275,6 +280,36 @@ namespace TeacherExtension.Baldimore
                 baldi.Slap();
                 ActivateSlapAnimation();
                 delayTimer = baldi.Delay;
+            }
+        }
+    }
+
+    public class TeacherBaldi_Praise : TeacherBaldi_StateBase
+    {
+        private float time;
+        protected NpcState previousState;
+
+        public TeacherBaldi_Praise(TeacherBaldi baldi, NpcState previousState, float time)
+            : base(baldi)
+        {
+            this.previousState = previousState;
+            this.time = time;
+        }
+
+        public override void Enter()
+        {
+            baldi.AudMan.QueueAudio(WeightedSelection<SoundObject>.RandomSelection(baldi.correctSounds));
+            baldi.volumeAnimator.enabled = true;
+            baldi.PraiseAnimation();
+        }
+
+        public override void Update()
+        {
+            base.Update();
+            time -= Time.deltaTime * npc.TimeScale;
+            if (time <= 0f)
+            {
+                npc.behaviorStateMachine.ChangeState(previousState);
             }
         }
     }

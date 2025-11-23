@@ -13,7 +13,7 @@ using static BepInEx.BepInDependency;
 
 namespace NullTeacher
 {
-    [BepInPlugin("alexbw145.baldiplus.teacherextension.null", "Null Teacher for MoreTeachers", "1.0.5.1")]
+    [BepInPlugin("alexbw145.baldiplus.teacherextension.null", "Null Teacher for MoreTeachers", "1.0.5.2")]
     [BepInDependency("alexbw145.baldiplus.teacherapi", DependencyFlags.HardDependency)]
     [BepInDependency("mtm101.rulerp.bbplus.baldidevapi", DependencyFlags.HardDependency)]
     public class NullTeacherPlugin : BaseUnityPlugin

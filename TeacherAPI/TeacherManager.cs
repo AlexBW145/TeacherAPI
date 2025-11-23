@@ -34,6 +34,12 @@ namespace TeacherAPI
             controlledRng = lb.controlledRNG;
 		}
 
+		private void OnDestroy()
+		{
+			if (Instance == this)
+				Instance = null;
+        }
+
 		public T[] GetTeachersOfType<T>() where T : Teacher
 		{
 			return (from teacher in spawnedTeachers

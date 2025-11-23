@@ -168,6 +168,12 @@ namespace TeacherAPI
         /// </summary>
         /// <returns></returns>
         public abstract TeacherState GetHappyState();
+        /// <summary>
+        /// The state of your teacher when an activity gets completed without any answers wrong.
+        /// Used for a patch towards other things that may will praise the teacher in any way.
+        /// </summary>
+        /// <returns></returns>
+        public abstract TeacherState GetPraiseState(float time);
 
         // Ruler related stuff
         protected virtual void OnRulerBroken()

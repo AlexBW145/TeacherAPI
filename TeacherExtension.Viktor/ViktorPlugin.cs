@@ -17,10 +17,10 @@ namespace TeacherExtension.Viktor
     {
         private const string PLUGIN_GUID = "alexbw145.baldiplus.teacherextension.viktor";
         private const string PLUGIN_NAME = "Viktor Strobovski TeacherAPI Port (Continued)";
-        private const string PLUGIN_VERSION = "1.0.1.0";
-        public static ViktorPlugin Instance { get; private set; } // Remove it if necessary
-        internal static AssetManager viktorAssets = new AssetManager();
-        internal Viktor Viktor;
+        private const string PLUGIN_VERSION = "1.0.1.1";
+        public static ViktorPlugin Instance { get; private set; }
+        internal static readonly AssetManager viktorAssets = new AssetManager();
+        internal Viktor viktor;
 
         private void Awake()
         {
@@ -180,7 +180,7 @@ namespace TeacherExtension.Viktor
             viktorAssets.Add("ViktorSubsitute", AssetLoader.SpriteFromMod(this, Vector2.one / 2f, 16f, "Texture2D", "Viktor_Subsitute.png"));
             viktorAssets.Add("ViktorEvil", AssetLoader.SpriteFromMod(this, Vector2.one / 2f, 16f, "Texture2D", "Viktor_Evil.png"));
 
-            Viktor = new NPCBuilder<Viktor>(Info)
+            viktor = new NPCBuilder<Viktor>(Info)
                 .SetName("Viktor Strobovski")
                 .SetEnum("ViktorStrobovski")
                 .SetPoster(viktorAssets.Get<Texture2D>("PrincipalPoster"), "PRI_ViktorStrobovski1", "PRI_ViktorStrobovski2")
@@ -193,12 +193,19 @@ namespace TeacherExtension.Viktor
                 .SetForcedSubtitleColor(ViktorSubtitleColor)
                 .SetMetaTags(["teacher", "faculty"])
                 .Build();
-            Viktor.audMan = Viktor.GetComponent<AudioManager>();
-            Viktor.Navigator.accel = 0f;
-            Viktor.spriteRenderer[0].sprite = viktorAssets.Get<Sprite>("ViktorSubsitute");
+            viktor.audMan = viktor.GetComponent<AudioManager>();
+            viktor.Navigator.accel = 0f;
+            viktor.spriteRenderer[0].sprite = viktorAssets.Get<Sprite>("ViktorSubsitute");
+            viktor.jacketDirtyRandom = new SoundObject[]
+                {
+                    ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/DirtyJacket1"),
+                    ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/DirtyJacket2"),
+                    ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/DirtyJacket3"),
+                    ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/DirtyJacket4")
+                };
 
-            TeacherPlugin.RegisterTeacher(Viktor);
-            Viktor.AddNewBaldiInteraction<HideableLockerBaldiInteraction>((interaction, evil) => interaction.Check(baldi: evil),
+            TeacherPlugin.RegisterTeacher(viktor);
+            viktor.AddNewBaldiInteraction<HideableLockerBaldiInteraction>((interaction, evil) => interaction.Check(baldi: evil),
                 (interaction, evil) =>
                 {
                     Debug.Log("Invoking Viktor's interaction with a blue locker.");
@@ -221,8 +228,8 @@ namespace TeacherExtension.Viktor
                 if (ld.IsModifiedByMod(Info)) continue;
                 if (ld.type != LevelType.Maintenance)
                 {
-                    ld.AddPotentialTeacher(Viktor, ViktorConfiguration.Weight.Value);
-                    ld.AddPotentialAssistingTeacher(Viktor, ViktorConfiguration.Weight.Value);
+                    ld.AddPotentialTeacher(viktor, ViktorConfiguration.Weight.Value);
+                    ld.AddPotentialAssistingTeacher(viktor, ViktorConfiguration.Weight.Value);
                     flag = true;
                 }
                 ld.MarkAsModifiedByMod(Info);

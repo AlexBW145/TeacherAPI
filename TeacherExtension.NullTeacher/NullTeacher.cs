@@ -109,6 +109,11 @@ namespace NullTeacher
         }
         public override TeacherState GetAngryState() => new Null_Chase(this);
         public override TeacherState GetHappyState() => new Null_Happy(this);
+        public override TeacherState GetPraiseState(float time)
+        {
+            PlayPhrase(NullPhrase.Haha);
+            return (TeacherState)((Baldi_Praise)behaviorStateMachine.currentState).GetPreviousBaldiState();
+        }
         public override string GetNotebooksText(string amount) => $"{amount} Noteboos";
         public override WeightedTeacherNotebook GetTeacherNotebookWeight() => new WeightedTeacherNotebook(this).Weight(100);
         protected override void VirtualUpdate()

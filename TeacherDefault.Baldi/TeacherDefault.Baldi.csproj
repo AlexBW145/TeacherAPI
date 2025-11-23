@@ -35,7 +35,7 @@
     <Reference Include="Assembly-CSharp">
       <HintPath>D:\SteamLibrary\steamapps\common\Baldi's Basics Plus\BALDI_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
-    <Reference Include="BaldiTVAnnouncer">
+    <Reference Include="BaldiTVAnnouncer" Publicize="true">
       <HintPath>..\Dependencies\BaldiTVAnnouncer.dll</HintPath>
     </Reference>
     <Reference Include="MTM101BaldAPI">

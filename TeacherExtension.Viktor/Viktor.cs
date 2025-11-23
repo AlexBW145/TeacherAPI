@@ -19,8 +19,8 @@ namespace TeacherExtension.Viktor
         private bool FirstJacketDirty;
 
         public override TeacherState GetAngryState() => new Viktor_Chase(this);
-
         public override TeacherState GetHappyState() => new Viktor_Subsitute(this);
+        public override TeacherState GetPraiseState(float time) => new Viktor_Praise(this, (Viktor_StateBase)((Baldi_Praise)behaviorStateMachine.currentState).GetPreviousBaldiState(), time);
 
         public override string GetNotebooksText(string amount) => $"{amount} Viktor's Math Notebooks";
         public override WeightedTeacherNotebook GetTeacherNotebookWeight() => new WeightedTeacherNotebook(this)
@@ -106,6 +106,7 @@ namespace TeacherExtension.Viktor
             return base.DistanceCheck(val);
         }
 
+        [SerializeField] internal SoundObject[] jacketDirtyRandom;
         internal void GetJacketDirty()
         {
             AudMan.volumeModifier = 2f;
@@ -116,14 +117,7 @@ namespace TeacherExtension.Viktor
             }
             else
             {
-                SoundObject[] randomselect = new SoundObject[]
-                {
-                    ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/DirtyJacket1"),
-                    ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/DirtyJacket2"),
-                    ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/DirtyJacket3"),
-                    ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/DirtyJacket4")
-                };
-                AudMan.PlayRandomAudio(randomselect);
+                AudMan.PlayRandomAudio(jacketDirtyRandom);
             }
         }
     }
@@ -272,7 +266,7 @@ namespace TeacherExtension.Viktor
             base.Initialize();
             viktor.ClearSoundLocations();
             foreach (var player in viktor.ec.Players)
-                if (player.plm.Entity?.CurrentRoom?.category == RoomCategory.Class)
+                if (player?.plm?.Entity?.CurrentRoom?.category == RoomCategory.Class)
                 {
                     viktor.Hear(null, player.transform.position, 127, false);
                     return;
@@ -367,6 +361,26 @@ namespace TeacherExtension.Viktor
 
         public override void DestinationEmpty()
         {
+        }
+    }
+
+    public class Viktor_Praise : Viktor_SubState
+    {
+        private float timer;
+        public Viktor_Praise(Viktor viktor, Viktor_StateBase state, float time) : base(viktor, state) { timer = time; }
+
+        public override void Initialize()
+        {
+            base.Initialize();
+            viktor.spriteRenderer[0].sprite = ViktorPlugin.viktorAssets.Get<Sprite>("ViktorSubsitute");
+            viktor.AudMan.PlaySingle(ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/Praise"));
+        }
+
+        public override void Update()
+        {
+            timer -= Time.deltaTime * npc.TimeScale;
+            if (timer <= 0f)
+                npc.behaviorStateMachine.ChangeState(prevState);
         }
     }
 }

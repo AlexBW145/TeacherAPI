@@ -4,6 +4,7 @@ using MTM101BaldAPI.AssetTools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using TeacherAPI.utils;
 using UnityEngine;
 
@@ -90,10 +91,8 @@ namespace TeacherAPI
             levelObject.SetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialAssistants", assistantList);
         }
 
-        public static Sprite ToSprite(this Texture2D tex, float pixelsPerUnit)
-        {
-            return AssetLoader.SpriteFromTexture2D(tex, pixelsPerUnit);
-        }
+        [Obsolete("Dev API function `AssetLoader.ToSprites` exists.", true)]
+        public static Sprite ToSprite(this Texture2D tex, float pixelsPerUnit) => AssetLoader.ToSprites(new Texture2D[] { tex }, pixelsPerUnit)[0];
 
         public static void AddNewBaldiInteraction<BaldiInteractionT>(this Teacher npc, Func<BaldiInteraction, Teacher, bool> check = null, Action<BaldiInteraction, Teacher> trigger = null, Action<BaldiInteraction, Teacher> payload = null) where BaldiInteractionT : BaldiInteraction
         {
@@ -101,5 +100,13 @@ namespace TeacherAPI
             CustomBaldiInteraction.teacherTriggers[npc.Character].Add(typeof(BaldiInteractionT), trigger);
             CustomBaldiInteraction.teacherPayloads[npc.Character].Add(typeof(BaldiInteractionT), payload);
         }
+
+        private static FieldInfo _previousState = AccessTools.DeclaredField(typeof(Baldi_SubState), "previousState");
+        /// <summary>
+        /// A faster way to get Baldi's previous substate, mainly for <see cref="Teacher.GetPraiseState(float)"/> when it comes to reverting back to the Teacher's default state.
+        /// </summary>
+        /// <param name="state">Baldi's or any teacher's current <see cref="Baldi_SubState"/></param>
+        /// <returns></returns>
+        public static NpcState GetPreviousBaldiState(this Baldi_SubState state) => (NpcState)_previousState.GetValue(state);
     }
 }

@@ -18,13 +18,13 @@ using UnityEngine;
 namespace TeacherExtension.Baldimore;
 
 [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
-[BepInDependency("alexbw145.baldiplus.teacherapi", "0.1.5")]
+[BepInDependency("alexbw145.baldiplus.teacherapi", "0.1.6")]
 [BepInDependency("pixelguy.pixelmodding.baldiplus.balditvannouncer", BepInDependency.DependencyFlags.SoftDependency)]
 public class BaldiPlugin : BaseUnityPlugin
 {
     private const string PLUGIN_GUID = "alexbw145.baldiplus.teacherextension.baldi";
     private const string PLUGIN_NAME = "Baldi TeacherAPI Port";
-    private const string PLUGIN_VERSION = "1.3";
+    private const string PLUGIN_VERSION = "1.4";
     internal static ConfigEntry<int> BaldiWeight;
     internal static ConfigEntry<bool> EveryAssistantIsHere;
 
@@ -47,6 +47,9 @@ public class BaldiPlugin : BaseUnityPlugin
         LoadingEvents.RegisterOnAssetsLoaded(Info, PreLoad(), LoadingEventOrder.Pre);
 
         ModdedSaveGame.AddSaveHandler(Info);
+        if (Chainloader.PluginInfos.ContainsKey("pixelguy.pixelmodding.baldiplus.balditvannouncer"))
+            AnnouncerTVFixer.UnpatchBaldiTVAnnouncements(harmony);
+
     }
 
     IEnumerator PreLoad()
@@ -113,9 +116,6 @@ public class BaldiPlugin : BaseUnityPlugin
         baldi.countpeek = Resources.FindObjectsOfTypeAll<Sprite>().Last(spr => spr.name == "BAL_Countdown_Sheet_2");
         baldi.countidle = Resources.FindObjectsOfTypeAll<Sprite>().Last(spr => spr.name == "BAL_Countdown_Sheet_0");
         baldi.introSpr = manual[0];
-
-        if (Chainloader.PluginInfos.ContainsKey("pixelguy.pixelmodding.baldiplus.balditvannouncer"))
-            AnnouncerTVFixer.BugfixForBaldiTVAnnouncement(baldi, theBald);
 
         GeneratorManagement.Register(this, GenerationModType.Addend, (title, num, scene) =>
         {

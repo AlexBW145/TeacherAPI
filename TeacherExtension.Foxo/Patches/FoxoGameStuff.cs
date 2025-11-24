@@ -1,17 +1,10 @@
 ﻿using HarmonyLib;
 using MTM101BaldAPI.AssetTools;
-using MTM101BaldAPI.Components;
-using MTM101BaldAPI.Reflection;
-using MTM101BaldAPI.Registers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Reflection.Emit;
-using System.Runtime.CompilerServices;
-using System.Text;
 using TeacherAPI;
 using TeacherExtension.Foxo.Items;
 using TMPro;

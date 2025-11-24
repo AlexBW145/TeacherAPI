@@ -1,13 +1,8 @@
 ﻿using HarmonyLib;
-using MTM101BaldAPI.Components;
 using MTM101BaldAPI.Components.Animation;
-using MTM101BaldAPI.Reflection;
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using TeacherAPI;
 using UnityEngine;
 
@@ -41,7 +36,10 @@ namespace TeacherExtension.Baldimore
 
         internal static readonly FieldInfo
             _animator = AccessTools.DeclaredField(typeof(Baldi), "animator"),
-            _volumeAnimator = AccessTools.DeclaredField(typeof(Baldi), "volumeAnimator");
+            _volumeAnimator = AccessTools.DeclaredField(typeof(Baldi), "volumeAnimator"),
+            _happyBaldiPreMain = AccessTools.DeclaredField(typeof(MainGameManager), "happyBaldiPre"),
+            _happyBaldiPreEND = AccessTools.DeclaredField(typeof(EndlessGameManager), "happyBaldiPre"),
+            _audIntro = AccessTools.DeclaredField(typeof(HappyBaldi), "audIntro");
 
         public override void Initialize()
         {
@@ -50,8 +48,6 @@ namespace TeacherExtension.Baldimore
             navigator.Entity.SetHeight(5.5f);
             volumeAnimator.enabled = false;
             animator.enabled = false;
-            behaviorStateMachine.ChangeState(GetHappyState());
-            behaviorStateMachine.ChangeNavigationState(new NavigationState_DoNothing(this, 127));
         }
 
         public override void Slap()
@@ -140,6 +136,7 @@ namespace TeacherExtension.Baldimore
         {
             baldi.spriteRenderer[0].sprite = baldi.introSpr;
             base.Enter();
+            baldi.behaviorStateMachine.ChangeNavigationState(new NavigationState_DoNothing(baldi, 127));
         }
 
         public override void Initialize()
@@ -154,18 +151,19 @@ namespace TeacherExtension.Baldimore
             if (baldi.animatorForIntro.enabled && !baldi.IsHelping() && baldi.animatorForIntro.AnimationFrame == 14 && !baldi.AudMan.QueuedAudioIsPlaying)
             {
                 SoundObject hello = Resources.FindObjectsOfTypeAll<SoundObject>().Last(snd => snd.name == "BAL_IntroKL2");
+                HappyBaldi happb = null;
                 if (BaseGameManager.Instance is MainGameManager)
                 {
                     var maingame = BaseGameManager.Instance as MainGameManager;
-                    var happb = maingame.ReflectionGetVariable("happyBaldiPre") as HappyBaldi;
-                    hello = happb.ReflectionGetVariable("audIntro") as SoundObject;
+                    happb = TeacherBaldi._happyBaldiPreMain.GetValue(maingame) as HappyBaldi;
                 }
                 else if (BaseGameManager.Instance is EndlessGameManager)
                 {
                     var endless = BaseGameManager.Instance as EndlessGameManager;
-                    var happb = endless.ReflectionGetVariable("happyBaldiPre") as HappyBaldi;
-                    hello = happb.ReflectionGetVariable("audIntro") as SoundObject;
+                    happb = TeacherBaldi._happyBaldiPreEND.GetValue(endless) as HappyBaldi;
                 }
+                if (happb != null)
+                    hello = TeacherBaldi._audIntro.GetValue(happb) as SoundObject;
                 baldi.AudMan.PlaySingle(hello);
             }
             if (!baldi.IsHelping() && !baldi.AudMan.QueuedAudioIsPlaying && Vector3.Distance(teacher.transform.position, teacher.ec.Players[0].transform.position) >= 25f && !activated)
@@ -239,6 +237,13 @@ namespace TeacherExtension.Baldimore
         protected float delayTimer;
         public TeacherBaldi_Chase(TeacherBaldi baldi) : base(baldi) { }
 
+        public override void Initialize()
+        {
+            base.Initialize();
+            baldi.animator.enabled = true;
+            baldi.animatorForIntro.enabled = false;
+            baldi.animator.runtimeAnimatorController = baldi.spoopAnimController;
+        }
         public override void Enter()
         {
             base.Enter();
@@ -296,10 +301,17 @@ namespace TeacherExtension.Baldimore
             this.time = time;
         }
 
-        public override void Enter()
+        public override void Initialize()
         {
+            base.Initialize();
             baldi.AudMan.QueueAudio(WeightedSelection<SoundObject>.RandomSelection(baldi.correctSounds));
             baldi.volumeAnimator.enabled = true;
+        }
+
+        public override void Enter()
+        {
+            if (!initialized)
+                Initialize();
             baldi.PraiseAnimation();
         }
 

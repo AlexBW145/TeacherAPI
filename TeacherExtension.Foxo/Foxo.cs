@@ -68,6 +68,7 @@ namespace TeacherExtension.Foxo
                 MTM101BaldiDevAPI.CauseCrash(FoxoPlugin.Instance.Info, new System.Exception("Video files does not exist!"));
                 return;
             }
+            foxoAssets.Add("PosterBase", AssetLoader.TextureFromMod(FoxoPlugin.Instance, "poster.png"));
             var PIXELS_PER_UNIT = 30f;
             foxoAssets.Add(
                 "Wave",
@@ -477,6 +478,7 @@ namespace TeacherExtension.Foxo
         }
 
         private bool scaryTime = false;
+        private RoomController playerCurrentRoom;
         public override void NotebookCollected(int currentNotebooks, int maxNotebooks)
         {
             base.NotebookCollected(currentNotebooks, maxNotebooks);
@@ -492,7 +494,11 @@ namespace TeacherExtension.Foxo
             else if (isBad)
                 foxo.behaviorStateMachine.ChangeState(new Foxo_Scary(foxo));
             else
+            {
                 foxo.TeleportToNearestDoor();
+                playerCurrentRoom = foxo.ec.Players[0].plm.Entity.CurrentRoom;
+                foxo.animator.SetDefaultAnimation("Stare", 1f, true);
+            }
         }
 
         public override void PlayerSighted(PlayerManager player)
@@ -500,9 +506,11 @@ namespace TeacherExtension.Foxo
             if (!foxo.IsHelping() && scaryTime)
                 foxo.behaviorStateMachine.ChangeState(new Foxo_Scary(foxo));
         }
-        public override void OnRoomExit(RoomController room)
+
+        public override void Update()
         {
-            if (!foxo.IsHelping() && scaryTime)
+            base.Update();
+            if (playerCurrentRoom != null && !foxo.IsHelping() && scaryTime && foxo.ec.Players[0].plm.Entity.CurrentRoom != playerCurrentRoom)
                 foxo.behaviorStateMachine.ChangeState(new Foxo_Scary(foxo));
         }
     }
@@ -678,12 +686,17 @@ namespace TeacherExtension.Foxo
             this.previousState = previousState;
             this.time = time;
         }
+        public override void Initialize()
+        {
+            base.Initialize();
+            if (!GetType().IsSubclassOf(typeof(Foxo_Praise)))
+                foxo.AudMan.QueueAudio(WeightedSelection<SoundObject>.RandomSelection(foxo.correctSounds), true);
+        }
         public override void Enter()
         {
             base.Enter();
             if (!GetType().IsSubclassOf(typeof(Foxo_Praise)))
             {
-                foxo.AudMan.QueueAudio(WeightedSelection<SoundObject>.RandomSelection(foxo.correctSounds), true);
                 foxo.animator.SetDefaultAnimation("Happy", 1f);
                 foxo.animator.Play("Happy", 1f);
             }

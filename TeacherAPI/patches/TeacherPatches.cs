@@ -62,22 +62,21 @@ namespace TeacherAPI.patches
     [HarmonyPatch(typeof(EnvironmentController), nameof(EnvironmentController.SpawnNPC))]
     internal class ChangeStateAfterTeacherSpawn
     {
-        internal static void Postfix()
+        internal static void Postfix(NPC npc, IntVector2 position, EnvironmentController __instance, ref NPC __result)
         {
-            if (TeacherManager.Instance == null) return;
-            foreach (var teacher in TeacherManager.Instance.spawnedTeachers.Where(x => !x.HasInitialized))
+            if (TeacherManager.Instance == null || !npc.GetType().IsSubclassOf(typeof(Teacher))) return;
+            var teacher = __result as Teacher;
+            var mainTeacherPrefab = TeacherManager.Instance.MainTeacherPrefab;
+            if (mainTeacherPrefab != null && TeacherManager.Instance.SpawnedMainTeacher == null)
             {
-                var mainTeacherPrefab = TeacherManager.Instance.MainTeacherPrefab;
-                if (mainTeacherPrefab != null && TeacherManager.Instance.SpawnedMainTeacher == null)
-                {
-                    if (mainTeacherPrefab.GetType().Equals(teacher.GetType()))
-                    {
-                        TeacherManager.Instance.SpawnedMainTeacher = teacher;
-                    }
-                }
-                teacher.behaviorStateMachine.ChangeState(TeacherManager.Instance.SpoopModeActivated ? teacher.GetAngryState() :  teacher.GetHappyState());
-                teacher.HasInitialized = true;
+                if (npc == mainTeacherPrefab)
+                    TeacherManager.Instance.SpawnedMainTeacher = teacher;
             }
+            teacher.behaviorStateMachine.ChangeState(__instance.Active ? teacher.GetAngryState() : teacher.GetHappyState());
+            if (__instance.Active)
+                teacher.Navigator.Entity.SetInteractionState(true);
+            teacher.HasInitialized = true;
+            CustomBaldicator.RearrangeBaldicators();
         }
     }
 
@@ -89,11 +88,14 @@ namespace TeacherAPI.patches
             if (TeacherManager.DefaultBaldiEnabled || TeacherManager.Instance == null) return;
             var happyBaldi = __instance.Ec.gameObject.GetComponentInChildren<HappyBaldi>();
             var teacherManager = __instance.Ec.gameObject.GetComponent<TeacherManager>();
+            var tileSpawns = __instance.Ec.npcSpawnTile.ToList();
 
             // The main teacher
             if (teacherManager.MainTeacherPrefab)
             {
                 var happyBaldiPos = __instance.Ec.CellFromPosition(happyBaldi.transform.position).position;
+                tileSpawns.RemoveAt(__instance.Ec.npcsToSpawn.IndexOf(teacherManager.MainTeacherPrefab));
+                __instance.Ec.npcsToSpawn.Remove(teacherManager.MainTeacherPrefab);
                 __instance.Ec.SpawnNPC(teacherManager.MainTeacherPrefab, happyBaldiPos);
                 TeacherNotebook.RefreshNotebookText();
 
@@ -102,6 +104,8 @@ namespace TeacherAPI.patches
 
             foreach (var prefab in teacherManager.assistingTeachersPrefabs)
             {
+                tileSpawns.RemoveAt(__instance.Ec.npcsToSpawn.IndexOf(prefab));
+                __instance.Ec.npcsToSpawn.Remove(prefab);
                 var cells = __instance.Ec.notebooks
                     .Where(n => n.gameObject.GetComponent<TeacherNotebook>().character == prefab.Character)
                     .SelectMany(n => n.activity.room.AllEntitySafeCellsNoGarbage()).ToList();
@@ -152,6 +156,7 @@ namespace TeacherAPI.patches
                     notebook.Hide(true);
             }*/
 
+            __instance.Ec.npcSpawnTile = tileSpawns.ToArray();
             CustomBaldicator.RearrangeBaldicators();
         }
 
@@ -200,7 +205,20 @@ namespace TeacherAPI.patches
             }
         }
 
-        
+        [HarmonyPatch(typeof(BaseGameManager), nameof(BaseGameManager.Initialize)), HarmonyPostfix]
+        static void PostcheckInstant(BaseGameManager __instance)
+        {
+            if (TeacherManager.Instance == null || TeacherManager.DefaultBaldiEnabled) return;
+            if (__instance.spawnNpcsOnInit)
+                TeacherManager.Instance.SpoopModeActivated = true;
+        }
+        [HarmonyPatch(typeof(BaseGameManager), "ExitedSpawn"), HarmonyPostfix]
+        static void PostcheckWait(BaseGameManager __instance)
+        {
+            if (TeacherManager.Instance == null || TeacherManager.DefaultBaldiEnabled) return;
+            if (__instance.spawnImmediately)
+                TeacherManager.Instance.SpoopModeActivated = true;
+        }
     }
 
     [HarmonyPatch(typeof(RulerEvent), nameof(RulerEvent.Begin))]

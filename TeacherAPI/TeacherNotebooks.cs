@@ -134,7 +134,7 @@ namespace TeacherAPI
         }
     }
 
-    [HarmonyPatch(typeof(Notebook), "Start")]
+    /*[HarmonyPatch(typeof(Notebook), "Start")]
     internal static class AttachTeacherNotebook
     {
         internal static void Postfix(Notebook __instance)
@@ -144,7 +144,7 @@ namespace TeacherAPI
             var teacherNotebook = __instance.gameObject.GetOrAddComponent<TeacherNotebook>();
             teacherNotebook.Initialize(BaseGameManager.Instance.Ec);
         }
-    }
+    }*/
 
     [HarmonyPatch(typeof(Activity), nameof(Activity.SetNotebook))]
     internal static class AttachTeacherNotebookToActivity
@@ -152,8 +152,9 @@ namespace TeacherAPI
         internal static void Postfix(Activity __instance, Notebook val)
         {
             if (TeacherManager.DefaultBaldiEnabled || TeacherManager.Instance == null) return;
+            if (__instance.gameObject.GetComponent<TeacherNotebook>() != null) return;
             var teacherNotebook = val.gameObject.GetOrAddComponent<TeacherNotebook>();
-            teacherNotebook.Initialize(BaseGameManager.Instance.Ec);
+            teacherNotebook.Initialize(__instance.room.ec);
         }
     }
 
@@ -181,7 +182,7 @@ namespace TeacherAPI
         {
             if (TeacherManager.DefaultBaldiEnabled || TeacherManager.Instance == null) return;
             var teacherNotebook = __instance.gameObject.GetComponent<TeacherNotebook>();
-            teacherNotebook.SetNotebookTexture();
+            teacherNotebook?.SetNotebookTexture();
         }
     }
 

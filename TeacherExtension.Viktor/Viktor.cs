@@ -372,8 +372,13 @@ namespace TeacherExtension.Viktor
         public override void Initialize()
         {
             base.Initialize();
-            viktor.spriteRenderer[0].sprite = ViktorPlugin.viktorAssets.Get<Sprite>("ViktorSubsitute");
             viktor.AudMan.PlaySingle(ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/Praise"));
+        }
+
+        public override void Enter()
+        {
+            base.Enter();
+            viktor.spriteRenderer[0].sprite = ViktorPlugin.viktorAssets.Get<Sprite>("ViktorSubsitute");
         }
 
         public override void Update()

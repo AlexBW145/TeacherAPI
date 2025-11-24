@@ -5,8 +5,10 @@ using MTM101BaldAPI.AssetTools;
 using MTM101BaldAPI.Components.Animation;
 using MTM101BaldAPI.ObjectCreation;
 using MTM101BaldAPI.PlusExtensions;
+using MTM101BaldAPI.Reflection;
 using MTM101BaldAPI.Registers;
 using MTM101BaldAPI.SaveSystem;
+using MTM101BaldAPI.UI;
 using System;
 using System.Collections;
 using System.Linq;
@@ -56,7 +58,7 @@ namespace TeacherExtension.Foxo
             var newFoxo = new NPCBuilder<Foxo>(Info)
                 .SetName(name)
                 .SetEnum(name)
-                .SetPoster(ObjectCreators.CreatePosterObject(new Texture2D[] { AssetLoader.TextureFromMod(this, "poster.png") }))
+                .SetPoster(Foxo.foxoAssets.Get<Texture2D>("PosterBase"), "PRI_Foxo1", "PRI_Foxo2")
                 .AddLooker()
                 .AddTrigger()
                 .DisableNavigationPrecision()
@@ -86,6 +88,9 @@ namespace TeacherExtension.Foxo
             {
                 foxo = NewFoxo("Foxo");
                 darkFoxo = NewFoxo("WrathFoxo");
+                var meta = foxo.GetMeta();
+                if (meta.value != foxo) // Playable Chars FDLC1 conflict begone.
+                    meta.ReflectionSetVariable("defaultKey", foxo.name);
                 darkFoxo.forceWrath = true;
                 foxo.slap = Foxo.foxoAssets.Get<SoundObject>("slap");
                 darkFoxo.slap = Foxo.foxoAssets.Get<SoundObject>("slap2");

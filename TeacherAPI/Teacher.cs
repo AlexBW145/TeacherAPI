@@ -116,9 +116,16 @@ namespace TeacherAPI
             // Cancel state machine of bladder
             behaviorStateMachine.ChangeState(new TeacherState(this));
             behaviorStateMachine.ChangeNavigationState(new NavigationState_DoNothing(this, 0));
+            navigator.Entity.SetInteractionState(false);
 
             var ld = BaseGameManager.Instance.levelObject as CustomLevelGenerationParameters;
             var baseBaldi = ld.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_OriginalBaldi") as Baldi;
+            if (baseBaldi == null)
+            {
+                TeacherPlugin.Log.LogWarning($"Base Baldi does not exist in {CoreGameManager.Instance.sceneObject.levelTitle}! Despawning {gameObject.name}!");
+                Despawn();
+                return;
+            }
             TeacherPlugin.Log.LogInfo($"Using {baseBaldi.gameObject.name} as base Baldi.");
             _slapCurve.SetValue(this, _slapCurve.GetValue(baseBaldi));
             _speedCurve.SetValue(this, _speedCurve.GetValue(baseBaldi));
@@ -275,6 +282,7 @@ namespace TeacherAPI
         /// </summary>
         public void ActivateSpoopMode()
         {
+            navigator.Entity.SetInteractionState(true);
             if (TeacherManager.Instance.SpoopModeActivated)
             {
                 if (CoreGameManager.Instance.currentMode == Mode.Free)
@@ -329,17 +337,17 @@ namespace TeacherAPI
         /// </summary>
         public object ReplacementMusic;
 
-        [Obsolete("Please use Teacher.ReplacementMusic instead.", true)]
+        [Obsolete("Please use `Teacher.ReplacementMusic` instead.", true)]
         public void ReplaceMusic(SoundObject snd)
         {
             StartCoroutine(ReplaceMusicDelay(snd));
         }
-        [Obsolete("Please use Teacher.ReplacementMusic instead.", true)]
+        [Obsolete("Please use `Teacher.ReplacementMusic` instead.", true)]
         public void ReplaceMusic()
         {
             StartCoroutine(ReplaceMusicDelay());
         }
-        [Obsolete("Please use Teacher.ReplacementMusic instead.", true)]
+        [Obsolete("Please use `Teacher.ReplacementMusic` instead.", true)]
         private IEnumerator ReplaceMusicDelay(SoundObject snd = null)
         {
             if (IsHelping())

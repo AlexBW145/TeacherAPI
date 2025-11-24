@@ -1,8 +1,6 @@
 ﻿using HarmonyLib;
-using MTM101BaldAPI.Reflection;
 using System.Collections;
-using System.Linq;
-using TeacherAPI;
+using System.Reflection;
 using UnityEngine;
 
 namespace NullTeacher.Patches
@@ -10,9 +8,12 @@ namespace NullTeacher.Patches
     [HarmonyPatch(typeof(CoreGameManager), nameof(CoreGameManager.EndGame))]
     internal class EndSequencePatch
     {
+        internal static readonly FieldInfo
+            _lives = AccessTools.DeclaredField(typeof(CoreGameManager), "lives"),
+            _extraLives = AccessTools.DeclaredField(typeof(CoreGameManager), "extraLives");
         static bool Prefix(Transform player, Baldi baldi, CoreGameManager __instance)
         {
-            if (baldi.GetType().Equals(typeof(NullTeacher)))
+            if (baldi is NullTeacher)
             {
                 Time.timeScale = 0f;
                 __instance.musicMan.FlushQueue(true);
@@ -36,10 +37,9 @@ namespace NullTeacher.Patches
 
         private static IEnumerator DeathCutscene(CoreGameManager __instance)
         {
-
             // Copy pasted from CoreGameManager lmao --Her, not me.
-            int lif = (int)__instance.ReflectionGetVariable("lives");
-            int exlif = (int)__instance.ReflectionGetVariable("extraLives");
+            int lif = (int)_lives.GetValue(__instance);
+            int exlif = (int)_extraLives.GetValue(__instance);
             bool nolives = lif < 1 && exlif < 1;
             float time = 0f;
             float glitchRate = 0.5f;
@@ -84,15 +84,15 @@ namespace NullTeacher.Patches
             yield return null;
             __instance.GetCamera(0).camCom.farClipPlane = 1000f;
             __instance.GetCamera(0).billboardCam.farClipPlane = 1000f;
-            __instance.GetCamera(0).StopRendering(val: true);
+            __instance.GetCamera(0).StopRendering(true);
             if (nolives)
                 Application.Quit();
             else
             {
                 if (lif > 0)
-                    __instance.ReflectionSetVariable("lives", lif--);
+                    _lives.SetValue(__instance, lif--);
                 else
-                    __instance.ReflectionSetVariable("extraLives", exlif--);
+                    _extraLives.SetValue(__instance, exlif--);
                 BaseGameManager.Instance.RestartLevel();
             }
             yield break;

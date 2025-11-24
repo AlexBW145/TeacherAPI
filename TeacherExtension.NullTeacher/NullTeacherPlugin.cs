@@ -1,21 +1,17 @@
 ﻿using BepInEx;
 using HarmonyLib;
 using MTM101BaldAPI;
-using MTM101BaldAPI.AssetTools;
-using MTM101BaldAPI.Components;
 using MTM101BaldAPI.ObjectCreation;
 using MTM101BaldAPI.Reflection;
 using MTM101BaldAPI.Registers;
 using MTM101BaldAPI.SaveSystem;
 using TeacherAPI;
-using UnityEngine;
-using static BepInEx.BepInDependency;
 
 namespace NullTeacher
 {
     [BepInPlugin("alexbw145.baldiplus.teacherextension.null", "Null Teacher for MoreTeachers", "1.0.5.2")]
-    [BepInDependency("alexbw145.baldiplus.teacherapi", DependencyFlags.HardDependency)]
-    [BepInDependency("mtm101.rulerp.bbplus.baldidevapi", DependencyFlags.HardDependency)]
+    [BepInDependency("alexbw145.baldiplus.teacherapi", BepInDependency.DependencyFlags.HardDependency)]
+    [BepInDependency("mtm101.rulerp.bbplus.baldidevapi", BepInDependency.DependencyFlags.HardDependency)]
     public class NullTeacherPlugin : BaseUnityPlugin
     {
         public static NullTeacherPlugin Instance { get; private set; }
@@ -51,6 +47,7 @@ namespace NullTeacher
             teacher.Navigator.maxSpeed = 0f;
             teacher.Navigator.passableObstacles.Add(PassableObstacle.LockedDoor);
             teacher.spriteRenderer[0].sprite = NullAssets.nullsprite;
+            teacher.meBalloons = RandomEventMetaStorage.Instance.Get(RandomEventType.Party).value.ReflectionGetVariable("balloon") as Balloon[];
 
             TeacherPlugin.RegisterTeacher(teacher);
             NullTeacher = teacher;

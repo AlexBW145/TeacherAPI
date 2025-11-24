@@ -1,65 +1,76 @@
 ﻿using HarmonyLib;
 using MTM101BaldAPI;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 using TeacherAPI.utils;
-using UnityEngine;
 
 namespace TeacherAPI.patches
 {
     [HarmonyPatch(typeof(LevelGenerator))]
     class LevelGeneratorPatch
     {
-        [HarmonyPatch(nameof(LevelGenerator.StartGenerate)), HarmonyPostfix]
-        static void TeacherManagerInitalize(LevelGenerator __instance)
-        {
-            var ld = __instance.ld as CustomLevelGenerationParameters;
-            var seed = CoreGameManager.Instance.Seed();
-            var man = __instance.Ec.gameObject.AddComponent<TeacherManager>();
-            man.Initialize(__instance);
-            TeacherPlugin.Instance.CurrentBaldi = TeacherPlugin.Instance.GetPotentialBaldi(ld);
-
-            TeacherManager.DefaultBaldiEnabled = TeacherPlugin.Instance.CurrentBaldi == null || TeacherAPIConfiguration.EnableBaldi.Value ||
-                ld.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialTeachers") == null || ld.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialAssistants") == null;
-            if (TeacherManager.DefaultBaldiEnabled) return;
-
-            var rng = new System.Random(seed + __instance.scene.levelNo);
-
-            List<WeightedSelection<Teacher>> potentialTeachers = WeightedTeacher.Convert(ld.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialTeachers") as List<WeightedTeacher>);
-            List<WeightedSelection<Teacher>> potentialAssistants = WeightedTeacher.Convert(ld.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialAssistants") as List<WeightedTeacher>);
-            var mainTeacher = WeightedSelection<Teacher>.ControlledRandomSelectionList(potentialTeachers, rng);
-            man.MainTeacherPrefab = mainTeacher;
-            potentialTeachers.PrintWeights("Potential Teachers", TeacherPlugin.Log);
-            TeacherPlugin.Log.LogInfo($"Selected Main Teacher {EnumExtensions.GetExtendedName<Character>((int)mainTeacher.Character)}");
-
-            // Assistants setup
-            var policy = mainTeacher.GetAssistantPolicy();
-            var assistants = potentialAssistants
-                .Where(t => t.selection != man.MainTeacherPrefab)
-                .Where(t => policy.CheckAssistant(t.selection))
-                .ToList();
-
-            assistants.PrintWeights("Potential Assistants", TeacherPlugin.Log);
-
-            for (var x = 0; x < policy.maxAssistants; x++)
+        [HarmonyPatch(nameof(LevelGenerator.StartGenerate), MethodType.Normal), HarmonyTranspiler]
+        static IEnumerable<CodeInstruction> TeacherManagerInitalize(IEnumerable<CodeInstruction> instructions) => new CodeMatcher(instructions)
+            .Start()
+            .MatchForward(true,
+            new CodeMatch(OpCodes.Ldarg_0),
+            new CodeMatch(CodeInstruction.Call(typeof(LevelBuilder), nameof(LevelBuilder.StartGenerate)))
+            ).ThrowIfInvalid($"TeacherAPI failed to patch {nameof(LevelGenerator.StartGenerate)} due to invalid opcode matching, did something go wrong now??").Advance(1)
+            .InsertAndAdvance(new CodeInstruction(OpCodes.Ldarg_0),
+            Transpilers.EmitDelegate<Action<LevelGenerator>>((__instance) =>
             {
-                if (assistants.Count > 0 && rng.NextDouble() <= policy.probability && !TeacherAPIConfiguration.DisableAssistingTeachers.Value)
-                {
-                    var i = WeightedSelection<Teacher>.ControlledRandomIndex(assistants.ToArray(), rng);
-                    TeacherPlugin.Log.LogInfo($"Selected Teacher {EnumExtensions.GetExtendedName<Character>((int)assistants[i].selection.Character)}");
-                    man.assistingTeachersPrefabs.Add(assistants[i].selection);
-                    assistants.Remove(assistants[i]);
-                }
-            }
+                var ld = __instance.ld as CustomLevelGenerationParameters;
+                var seed = CoreGameManager.Instance.Seed();
+                var man = __instance.Ec.gameObject.AddComponent<TeacherManager>();
+                __instance.controlledRNG = new System.Random(CoreGameManager.Instance.Seed() + __instance.scene.levelNo);
+                man.Initialize(__instance);
+                TeacherPlugin.Instance.CurrentBaldi = TeacherPlugin.Instance.GetPotentialBaldi(ld);
 
-            ld.potentialBaldis = new WeightedNPC[] { }; // Don't put anything in EC.NPCS, only secondary teachers can be there.
-        }
-        [HarmonyPatch(typeof(CharacterPostersRoomFunction), nameof(CharacterPostersRoomFunction.Build)), HarmonyPrefix]
+                TeacherManager.DefaultBaldiEnabled = TeacherPlugin.Instance.CurrentBaldi == null || TeacherAPIConfiguration.EnableBaldi.Value ||
+                    ld.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialTeachers") == null || ld.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialAssistants") == null ||
+                    ((List<WeightedTeacher>)ld.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialTeachers")).Count == 0;
+                if (TeacherManager.DefaultBaldiEnabled) return;
+
+                List<WeightedSelection<Teacher>> potentialTeachers = WeightedTeacher.Convert(ld.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialTeachers") as List<WeightedTeacher>);
+                List<WeightedSelection<Teacher>> potentialAssistants = WeightedTeacher.Convert(ld.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialAssistants") as List<WeightedTeacher>);
+                var mainTeacher = WeightedSelection<Teacher>.ControlledRandomSelectionList(potentialTeachers, __instance.controlledRNG);
+                man.MainTeacherPrefab = mainTeacher;
+                potentialTeachers.PrintWeights("Potential Teachers", TeacherPlugin.Log);
+                TeacherPlugin.Log.LogInfo($"Selected Main Teacher {EnumExtensions.GetExtendedName<Character>((int)mainTeacher.Character)}");
+
+                // Assistants setup
+                var policy = mainTeacher.GetAssistantPolicy();
+                var assistants = potentialAssistants
+                    .Where(t => t.selection != man.MainTeacherPrefab)
+                    .Where(t => policy.CheckAssistant(t.selection))
+                    .ToList();
+
+                assistants.PrintWeights("Potential Assistants", TeacherPlugin.Log);
+
+                for (var x = 0; x < policy.maxAssistants; x++)
+                {
+                    if (assistants.Count > 0 && __instance.controlledRNG.NextDouble() < (double)policy.probability && !TeacherAPIConfiguration.DisableAssistingTeachers.Value)
+                    {
+                        var i = WeightedSelection<Teacher>.ControlledRandomIndex(assistants.ToArray(), __instance.controlledRNG);
+                        TeacherPlugin.Log.LogInfo($"Selected Teacher {EnumExtensions.GetExtendedName<Character>((int)assistants[i].selection.Character)}");
+                        man.assistingTeachersPrefabs.Add(assistants[i].selection);
+                        assistants.Remove(assistants[i]);
+                    }
+                }
+
+                ld.potentialBaldis = new WeightedNPC[] { }; // Don't put anything in EC.NPCS, only secondary teachers can be there.
+                                                            
+                ld.forcedNpcs = ld.forcedNpcs.AddToArray(man.MainTeacherPrefab); // Because the new level generator parameters exists.
+                ld.forcedNpcs = ld.forcedNpcs.AddRangeToArray(man.assistingTeachersPrefabs.ToArray()); // Their posters will generate regardless if we are patching the character posters room function.
+            }))
+            .InstructionEnumeration();
+        // See above, useless.
+        /*[HarmonyPatch(typeof(CharacterPostersRoomFunction), nameof(CharacterPostersRoomFunction.Build)), HarmonyPrefix]
         static bool JustNotAddInNPCs() => TeacherManager.DefaultBaldiEnabled || !TeacherManager.Instance.MainTeacherPrefab.disableNpcs;
         [HarmonyPatch(typeof(CharacterPostersRoomFunction), nameof(CharacterPostersRoomFunction.Build)), HarmonyPostfix]
         static void JustAddinEmPosters(LevelBuilder builder, System.Random rng, CharacterPostersRoomFunction __instance)
@@ -90,7 +101,32 @@ namespace TeacherAPI.patches
                     tilesOfShape.RemoveAt(num);
                 }
             }
-        }
+        }*/
+        /*[HarmonyPatch(nameof(LevelGenerator.Generate), MethodType.Enumerator), HarmonyTranspiler]
+        static IEnumerable<CodeInstruction> ClearTeachersFromForcedIf(IEnumerable<CodeInstruction> instructions) => new CodeMatcher(instructions)
+            .End()
+            .MatchBack(false,
+            new CodeMatch(OpCodes.Ldloc_2),
+            new CodeMatch(OpCodes.Ldc_I4_0),
+            new CodeMatch(CodeInstruction.StoreField(typeof(LevelBuilder), nameof(LevelBuilder.levelInProgress))),
+            new CodeMatch(OpCodes.Ldloc_2),
+            new CodeMatch(OpCodes.Ldc_I4_1),
+            new CodeMatch(CodeInstruction.StoreField(typeof(LevelBuilder), nameof(LevelBuilder.levelCreated)))
+            ).ThrowIfInvalid($"TeacherAPI failed to patch {nameof(LevelGenerator.Generate)} due to invalid opcode matching, did something go wrong now??")
+            .InsertAndAdvance(new CodeInstruction(OpCodes.Ldarg_0),
+            Transpilers.EmitDelegate<Action<LevelGenerator>>((__instance) =>
+            {
+                if (TeacherManager.DefaultBaldiEnabled) return;
+                TeacherManager teacherMan = __instance.Ec.GetComponent<TeacherManager>();
+                if (teacherMan == null) return;
+                // Was once in `ReplaceHappyBaldiWithTeacherPatch.ReplaceHappyBaldi`, got moved to here because of BBT's Baldi's Yearbook.
+                if (BaseGameManager.Instance is MainGameManager || BaseGameManager.Instance is EndlessGameManager)
+                {
+                    __instance.Ec.npcsToSpawn.Remove(teacherMan.MainTeacherPrefab);
+                    foreach (var prefab in teacherMan.assistingTeachersPrefabs)
+                        __instance.Ec.npcsToSpawn.Remove(prefab);
+                }
+            })).InstructionEnumeration();*/
 
         /*internal static void Postfix(LevelGenerator __instance, ref IEnumerator __result)
         {

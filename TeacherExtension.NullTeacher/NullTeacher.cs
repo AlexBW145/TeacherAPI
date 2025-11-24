@@ -1,11 +1,10 @@
-﻿using MTM101BaldAPI.Components;
-using MTM101BaldAPI.Components.Animation;
-using MTM101BaldAPI.Reflection;
+﻿using HarmonyLib;
+using NullTeacher.Patches;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using TeacherAPI;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 namespace NullTeacher
 {
@@ -29,6 +28,8 @@ namespace NullTeacher
         public Cell currentCell;
 
         internal AudioManager ambientMan;
+        private static readonly FieldInfo _layerMask = AccessTools.DeclaredField(typeof(Looker), "layerMask");
+        [SerializeField] internal Balloon[] meBalloons;
 
         public NullTeacher()
         {
@@ -63,12 +64,12 @@ namespace NullTeacher
 
             if (NullConfiguration.ReplaceNullWithBaldloon.Value)
                 spriteRenderer[0].sprite = NullAssets.baldloon;
-            looker.ReflectionSetVariable("layerMask", (LayerMask)98305); // can see windows at this layer
+            _layerMask.SetValue(looker, (LayerMask)98305); // can see windows at this layer
 
             navigator.Entity.SetHeight(5f);
 
             AddLoseSound(
-                CoreGameManager.Instance.Lives < 1 && (int)CoreGameManager.Instance.ReflectionGetVariable("extraLives") < 1
+                CoreGameManager.Instance.Lives < 1 && (int)EndSequencePatch._extraLives.GetValue(CoreGameManager.Instance) < 1
                 ? NullAssets.phrases[NullPhrase.Haha]
                 : NullAssets.lose, 1);
 
@@ -82,15 +83,13 @@ namespace NullTeacher
                 }
             }
 
-            var randomEvent = Resources.FindObjectsOfTypeAll<PartyEvent>().First();
             foreach (var room in ec.rooms)
             {
                 if (room.category.Equals(RoomCategory.Faculty) || room.category.Equals(RoomCategory.Hall) || room.category.Equals(RoomCategory.Office))
                 {
-                    Balloon[] bald = randomEvent.ReflectionGetVariable("balloon") as Balloon[];
                     for (var i = 0; i < Random.Range(4, 6); i++)
                     {
-                        Instantiate(bald[Random.Range(0, bald.Length)]).Initialize(room);
+                        Instantiate(meBalloons[Random.Range(0, meBalloons.Length)]).Initialize(room);
                     }
                 }
             }

@@ -106,7 +106,8 @@ namespace TeacherAPI
         // Overrides
         public override void Initialize()
         {
-            navigator.Initialize(ec);
+            base.Initialize();
+            //navigator.Initialize(ec);
             /*
              * To: typeof(Baldi_Chase)
              * You stink, you used ResetSprite() on your initialization!!

@@ -198,11 +198,12 @@ namespace TeacherExtension.Viktor
             viktor.spriteRenderer[0].sprite = viktorAssets.Get<Sprite>("ViktorSubsitute");
             viktor.jacketDirtyRandom = new SoundObject[]
                 {
-                    ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/DirtyJacket1"),
-                    ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/DirtyJacket2"),
-                    ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/DirtyJacket3"),
-                    ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/DirtyJacket4")
+                    viktorAssets.Get<SoundObject>("Viktor/DirtyJacket1"),
+                    viktorAssets.Get<SoundObject>("Viktor/DirtyJacket2"),
+                    viktorAssets.Get<SoundObject>("Viktor/DirtyJacket3"),
+                    viktorAssets.Get<SoundObject>("Viktor/DirtyJacket4")
                 };
+            viktor.slap = viktorAssets.Get<SoundObject>("Viktor/Walk");
 
             TeacherPlugin.RegisterTeacher(viktor);
             viktor.AddNewBaldiInteraction<HideableLockerBaldiInteraction>((interaction, evil) => interaction.Check(baldi: evil),

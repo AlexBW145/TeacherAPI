@@ -1,10 +1,7 @@
-﻿using BepInEx;
-using HarmonyLib;
+﻿using HarmonyLib;
 using MTM101BaldAPI;
-using MTM101BaldAPI.Reflection;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
@@ -44,7 +41,7 @@ namespace TeacherAPI.patches
         internal static bool Prefix() => TeacherManager.Instance == null;
     }
 
-    [HarmonyPatch(typeof(Activity), nameof(Activity.Completed), new Type[] { typeof(int), typeof(bool) })]
+    [HarmonyPatch(typeof(Activity), nameof(Activity.Completed), [typeof(int), typeof(bool)])]
     class AngeredTeacherByBadSkill
     {
         static void Postfix(int player, bool correct, Activity __instance, Notebook ___notebook)
@@ -64,7 +61,7 @@ namespace TeacherAPI.patches
     {
         internal static void Postfix(NPC npc, IntVector2 position, EnvironmentController __instance, ref NPC __result)
         {
-            if (TeacherManager.Instance == null || !npc.GetType().IsSubclassOf(typeof(Teacher))) return;
+            if (TeacherManager.Instance == null || npc is not Teacher) return;
             var teacher = __result as Teacher;
             var mainTeacherPrefab = TeacherManager.Instance.MainTeacherPrefab;
             if (mainTeacherPrefab != null && TeacherManager.Instance.SpawnedMainTeacher == null)
@@ -221,7 +218,7 @@ namespace TeacherAPI.patches
         }
     }
 
-    [HarmonyPatch(typeof(RulerEvent), nameof(RulerEvent.Begin))]
+    /*[HarmonyPatch(typeof(RulerEvent), nameof(RulerEvent.Begin))]
     internal class BreakRulerPatch
     {
         public static void Postfix()
@@ -237,7 +234,7 @@ namespace TeacherAPI.patches
         {
             TeacherManager.Instance?.DoIfMainTeacher(t => t.RestoreRuler());
         }
-    }
+    }*/
 
     [HarmonyPatch]
     internal class RedirectNPCStatesPatch
@@ -247,7 +244,7 @@ namespace TeacherAPI.patches
         [HarmonyPrefix]
         static bool RedirectChase(Baldi_Chase __instance)
         {
-            if (__instance.Npc.GetType().IsSubclassOf(typeof(Teacher)))
+            if (__instance.Npc is Teacher)
             {
                 var teacher = __instance.Npc as Teacher;
                 teacher.behaviorStateMachine.ChangeState(teacher.GetAngryState());
@@ -260,7 +257,7 @@ namespace TeacherAPI.patches
         static bool RedirectPraise(Baldi_Praise __instance, float ___time)
         {
             if (__instance.GetType().IsSubclassOf(typeof(Baldi_Praise))) return true; // Do not the locker interaction.
-            if (__instance.Npc.GetType().IsSubclassOf(typeof(Teacher)))
+            if (__instance.Npc is Teacher)
             {
                 var teacher = __instance.Npc as Teacher;
                 teacher.behaviorStateMachine.ChangeState(teacher.GetPraiseState(___time));
@@ -271,7 +268,7 @@ namespace TeacherAPI.patches
         [HarmonyPatch(typeof(Baldi), nameof(Baldi.Praise)), HarmonyPrefix]
         static bool UseThatPraise(float time, bool rewardSticker, Baldi __instance)
         {
-            if (__instance.GetType().IsSubclassOf(typeof(Teacher)))
+            if (__instance is Teacher)
             {
                 var teacher = __instance as Teacher;
                 if (teacher.behaviorStateMachine.currentState.GetType().Equals(teacher.GetHappyState().GetType()))
@@ -284,6 +281,17 @@ namespace TeacherAPI.patches
                 __instance.behaviorStateMachine.ChangeState(new Baldi_Praise(__instance, __instance, __instance.behaviorStateMachine.currentState, time + num));
                 return false;
             }
+            return true;
+        }
+
+        [HarmonyPatch(typeof(Baldi), nameof(Baldi.ResetSprite))]
+        [HarmonyPatch(typeof(Baldi), nameof(Baldi.SlapNormal))]
+        [HarmonyPatch(typeof(Baldi), nameof(Baldi.SlapBroken))]
+        [HarmonyPrefix]
+        static bool RedirectSlapNormal(Baldi __instance, Animator ___animator, VolumeAnimator ___volumeAnimator)
+        {
+            if (__instance is Teacher)
+                return ___animator != null && ___volumeAnimator != null;
             return true;
         }
     }

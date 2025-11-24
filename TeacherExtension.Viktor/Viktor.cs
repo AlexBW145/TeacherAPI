@@ -53,7 +53,7 @@ namespace TeacherExtension.Viktor
             slapTotal = 0f;
             slapDistance = nextSlapDistance;
             nextSlapDistance = 0f;
-            AudMan.PlaySingle(ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/Walk"));
+            AudMan.PlaySingle(slap);
             Navigator.SetSpeed(slapDistance / (Delay * (MovementPortion * 3f)));
         }
 

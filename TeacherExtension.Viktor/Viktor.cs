@@ -135,11 +135,11 @@ namespace TeacherExtension.Viktor
             viktor.Hear(source, position, value, true);
         }
 
-        public virtual void ThePrank() // I'm not even using Viktor's notebooks.
+        public virtual void ThePrank(int count) // I'm not even using Viktor's notebooks.
         {
-            if (BaseGameManager.Instance.FoundNotebooks == Mathf.RoundToInt(viktor.ec.notebookTotal / 2) && viktor.isQuiet && !viktor.IsHelping())
+            if ((BaseGameManager.Instance.FoundNotebooks + count) == Mathf.RoundToInt(viktor.ec.notebookTotal / 2) && viktor.ec.notebookTotal >= 6 && !viktor.isQuiet && !viktor.IsHelping())
                 CoreGameManager.Instance.GetHud(0).BaldiTv.Speak(ViktorPlugin.viktorAssets.Get<SoundObject>("Viktor/HalfNotebooks"));
-            if (BaseGameManager.Instance.FoundNotebooks >= viktor.ec.notebookTotal)
+            else if ((BaseGameManager.Instance.FoundNotebooks + count) >= viktor.ec.notebookTotal)
             {
                 if (!viktor.IsHelping() && !viktor.AllNotebooksPrank)
                 {

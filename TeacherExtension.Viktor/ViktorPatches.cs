@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace TeacherExtension.Viktor.Patches;
 
-[HarmonyPatch(typeof(BaldiTV))]
+/*[HarmonyPatch(typeof(BaldiTV))]
 class ViktorTV
 {
     [HarmonyPatch(typeof(MainGameManager), "AllNotebooks"), HarmonyPrefix]
@@ -15,7 +15,7 @@ class ViktorTV
             return TeacherManager.Instance.SpawnedMainTeacher.GetComponent<Viktor>().AllNotebooksPrank;
         return true;
     }
-}
+}*/
 
 [HarmonyPatch(typeof(ChalkEraser), "Use")] // I still had the dll...
 class ChalkEraserPatch
@@ -54,13 +54,12 @@ class ValvePatch
 [HarmonyPatch(typeof(BaseGameManager), nameof(BaseGameManager.CollectNotebooks))]
 class PranksOfAllTime
 {
-    static void Postfix()
+    static void Prefix(int count)
     {
-        if (TeacherManager.Instance == null) return;
-        if (TeacherManager.Instance?.SpawnedMainTeacher?.GetComponent<Viktor>() != null)
+        if (TeacherManager.Instance?.SpawnedMainTeacher != null && TeacherManager.Instance.SpawnedMainTeacher is Viktor)
         {
             var statebase = TeacherManager.Instance.SpawnedMainTeacher.behaviorStateMachine.CurrentState as Viktor_StateBase;
-            statebase.ThePrank();
+            statebase.ThePrank(count);
         }
     }
 }

@@ -135,6 +135,7 @@ namespace TeacherExtension.Baldimore
         public override void Enter()
         {
             baldi.spriteRenderer[0].sprite = baldi.introSpr;
+            baldi.animatorForIntro.enabled = true;
             base.Enter();
             baldi.behaviorStateMachine.ChangeNavigationState(new NavigationState_DoNothing(baldi, 127));
         }

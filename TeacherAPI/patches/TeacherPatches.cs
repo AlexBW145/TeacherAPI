@@ -218,24 +218,6 @@ namespace TeacherAPI.patches
         }
     }
 
-    /*[HarmonyPatch(typeof(RulerEvent), nameof(RulerEvent.Begin))]
-    internal class BreakRulerPatch
-    {
-        public static void Postfix()
-        {
-            TeacherManager.Instance?.DoIfMainTeacher(t => t.BreakRuler());
-        }
-    }
-
-    [HarmonyPatch(typeof(RulerEvent), nameof(RulerEvent.End))]
-    internal class RestoreRulerPatch
-    {
-        public static void Postfix()
-        {
-            TeacherManager.Instance?.DoIfMainTeacher(t => t.RestoreRuler());
-        }
-    }*/
-
     [HarmonyPatch]
     internal class RedirectNPCStatesPatch
     {

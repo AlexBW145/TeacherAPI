@@ -20,7 +20,8 @@ namespace TeacherExtension.Foxo
         public PlayerManager target;
         public bool forceWrath = false;
         internal System.Random jumpRNG = new System.Random();
-        public float jumpChance => nextSlapDistance / 100f;
+        public float jumpChance => playerDistance / 300f;
+        private float playerDistance;
 
         // Max of 8 deaths from all floors (2 deaths per floor)
         internal bool IsBadPhase1 => IsBadFloor(1, 2) || IsBadFloor(2, 2) || IsBadFloor(3, 4) || IsBadFloor(4, 4) || (!TeacherPlugin.IsEndlessFloorsLoaded() && PlayerFileManager.Instance.lifeMode == LifeMode.Intense && BaseGameManager.Instance.CurrentLevel == 2);
@@ -361,6 +362,7 @@ namespace TeacherExtension.Foxo
         protected override void VirtualUpdate()
         {
             base.VirtualUpdate();
+            playerDistance = Vector3.Distance(transform.position, target.transform.position);
             if (target.ruleBreak.ToLower() != "running" && target.plm.Entity.InternalMovement.magnitude <= 0f)
                 target.plm.AddStamina(target.plm.staminaDrop * 0.8f * Time.deltaTime * target.PlayerTimeScale, true);
             if (!animator.AnimationId.StartsWith("Jump") && navigator.Entity.InternalHeight != 6.5f)
@@ -577,9 +579,7 @@ namespace TeacherExtension.Foxo
         public override void OnStateTriggerStay(Collider other, bool isValid)
         {
             if (isValid && foxo.IsTouchingPlayer(other))
-            {
                 foxo.CaughtPlayer(foxo.target);
-            }
         }
         public override void GoodMathMachineAnswer()
         {
@@ -589,7 +589,7 @@ namespace TeacherExtension.Foxo
         public override void Enter()
         {
             base.Enter();
-            foxo.animator.SetDefaultAnimation("SlapIdle", 1f);
+            foxo.animator.SetDefaultAnimation("SlapIdle", 1f, true);
             delayTimer = foxo.Delay;
             foxo.ResetSlapDistance();
         }

@@ -22,6 +22,25 @@ namespace TeacherAPI.patches
         }
     }
 
+    [HarmonyPatch(typeof(RulerEvent))]
+    internal class RulerEventPatches
+    {
+        [HarmonyPatch(nameof(RulerEvent.Begin)), HarmonyPrefix]
+        public static bool BreakRuler()
+        {
+            if (TeacherManager.Instance?.MainTeacherPrefab == null || TeacherManager.DefaultBaldiEnabled) return true;
+            TeacherManager.Instance?.DoIfMainTeacher(t => t.BreakRuler());
+            return false;
+        }
+        [HarmonyPatch(nameof(RulerEvent.End)), HarmonyPrefix]
+        public static bool RestoreRuler()
+        {
+            if (TeacherManager.Instance?.MainTeacherPrefab == null || TeacherManager.DefaultBaldiEnabled) return true;
+            TeacherManager.Instance?.DoIfMainTeacher(t => t.RestoreRuler());
+            return false;
+        }
+    }
+
     [HarmonyPatch(typeof(BaseGameManager), nameof(BaseGameManager.PleaseBaldi))]
     internal class OnGoodMathMachineAnswer
     {

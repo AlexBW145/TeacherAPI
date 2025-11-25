@@ -11,6 +11,7 @@ using TeacherAPI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.TextCore.LowLevel;
+using static UnityEngine.UIElements.UIR.BestFitAllocator;
 
 namespace TeacherExtension.Foxo
 {
@@ -20,7 +21,7 @@ namespace TeacherExtension.Foxo
         public PlayerManager target;
         public bool forceWrath = false;
         internal System.Random jumpRNG = new System.Random();
-        public float jumpChance => playerDistance / 300f;
+        public float jumpChance => playerDistance / 1000f;
         private float playerDistance;
 
         // Max of 8 deaths from all floors (2 deaths per floor)
@@ -192,31 +193,29 @@ namespace TeacherExtension.Foxo
         //public static EnvironmentController.TempObstacleManagement tempOpenSpecial { get; private set; }
         //public static EnvironmentController.TempObstacleManagement tempCloseSpecial { get; private set; }
 
-        private void TempCloseSpecial()
+        private void Block(bool block)
         {
-            ec.FreezeNavigationUpdates(true);
             foreach (var special in ec.rooms.FindAll(x => x.category == RoomCategory.Special && x.functions.GetComponent<SpecialRoomSwingingDoorsBuilder>() != null))
             {
                 foreach (var cell in special.cells.Where(c => !c.hideFromMap && !c.offLimits))
                     for (int i = 0; i < 4; i++)
                         if (cell.ConstNavigable((Direction)i))
-                            ec.CellFromPosition(cell.position + ((Direction)i).ToIntVector2()).Block(((Direction)i).GetOpposite(), true);
+                            ec.CellFromPosition(cell.position + ((Direction)i).ToIntVector2()).Block(((Direction)i).GetOpposite(), block);
 
             }
+        }
+
+        private void TempCloseSpecial()
+        {
+            ec.FreezeNavigationUpdates(true);
+            Block(true);
             ec.FreezeNavigationUpdates(false);
         }
 
         private void TempOpenSpecial()
         {
             ec.FreezeNavigationUpdates(true);
-            foreach (var special in ec.rooms.FindAll(x => x.category == RoomCategory.Special && x.functions.GetComponent<SpecialRoomSwingingDoorsBuilder>() != null))
-            {
-                foreach (var cell in special.cells.Where(c => !c.hideFromMap && !c.offLimits))
-                    for (int i = 0; i < 4; i++)
-                        if (cell.ConstNavigable((Direction)i))
-                            ec.CellFromPosition(cell.position + ((Direction)i).ToIntVector2()).Block(((Direction)i).GetOpposite(), false);
-
-            }
+            Block(false);
             ec.FreezeNavigationUpdates(false);
         }
 
@@ -563,7 +562,7 @@ namespace TeacherExtension.Foxo
         }
         private IEnumerator GetMad()
         {
-            yield return new WaitForSecondsNPCTimescale(foxo, 13f);
+            yield return new WaitForSecondsNPCTimescale(foxo, 13f + StickerManager.Instance.StickerValue(Sticker.BaldiCountdown));
             foxo.ec.FlickerLights(false);
             AudioManager aud = _audMan.GetValue(foxo.ec) as AudioManager;
             aud.PlaySingle(Foxo.foxoAssets.Get<SoundObject>("ding"));
@@ -581,10 +580,10 @@ namespace TeacherExtension.Foxo
             if (isValid && foxo.IsTouchingPlayer(other))
                 foxo.CaughtPlayer(foxo.target);
         }
-        public override void GoodMathMachineAnswer()
+        public override void GoodMathMachineAnswer(float timer)
         {
             if (foxo.forceWrath || foxo.behaviorStateMachine.currentState.GetType().Equals(typeof(Foxo_Wrath))) return;
-            foxo.behaviorStateMachine.ChangeState(new Foxo_Praise(foxo, this));
+            foxo.behaviorStateMachine.ChangeState(new Foxo_Praise(foxo, this, timer));
         }
         public override void Enter()
         {
@@ -624,7 +623,6 @@ namespace TeacherExtension.Foxo
                     foxo.AudMan.PlaySingle(Foxo.foxoAssets.Get<SoundObject>("teleport"));
                 }
                 // Foxo always know where the player is, except in special rooms
-                foxo.unaccessibleMang?.Invoke();
                 if (!((foxo.target?.GetComponent<PlayerEntity>()?.CurrentRoom != null && foxo.target.GetComponent<PlayerEntity>().CurrentRoom?.category == RoomCategory.Special)
                     /*|| (suc && paths.Exists(x => x.room.category == RoomCategory.Special))*/))
                 {
@@ -637,7 +635,6 @@ namespace TeacherExtension.Foxo
                     //if (suc && paths.Exists(x => x.room.category == RoomCategory.Special)) foxo.Navigator.ClearCurrentDirs();
                     ChangeNavigationState(new NavigationState_WanderRandom(foxo, 0));
                 }
-                foxo.accessibleMang?.Invoke();
 
                 foxo.Slap();
                 ActivateSlapAnimation();

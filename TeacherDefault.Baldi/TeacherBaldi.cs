@@ -197,7 +197,7 @@ namespace TeacherExtension.Baldimore
         private IEnumerator SpawnWait()
         {
             yield return null;
-            float time = 1f;
+            float time = 2f + StickerManager.Instance.StickerValue(Sticker.BaldiCountdown);
             int count = 9;
             while (baldi.AudMan.QueuedAudioIsPlaying || CoreGameManager.Instance.Paused)
                 yield return null;
@@ -221,7 +221,7 @@ namespace TeacherExtension.Baldimore
                 }
 
                 count--;
-                time = 1f;
+                time = 2f + StickerManager.Instance.StickerValue(Sticker.BaldiCountdown);
             }
 
             baldi.AudMan.QueueAudio(baldi.audHere);

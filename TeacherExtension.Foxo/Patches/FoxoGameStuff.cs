@@ -23,12 +23,22 @@ namespace TeacherExtension.Foxo.Patches
         [HarmonyPatch(typeof(Navigator), "TempOpenObstacles"), HarmonyPostfix]
         static void TempOpenInaccessible(Navigator __instance)
         {
+            if (__instance.npc is Foxo)
+            {
+                var foxo = __instance.npc as Foxo;
+                foxo.unaccessibleMang?.Invoke();
+            }
             if (__instance.passableObstacles.Contains(FoxoPlugin.waterbucketofwaterPassable))
                 WaterBucketOfWater.unaccessibleMang?.Invoke();
         }
         [HarmonyPatch(typeof(Navigator), "TempCloseObstacles"), HarmonyPostfix]
         static void TempCloseInaccessible(Navigator __instance)
         {
+            if (__instance.npc is Foxo)
+            {
+                var foxo = __instance.npc as Foxo;
+                foxo.accessibleMang?.Invoke();
+            }
             if (__instance.passableObstacles.Contains(FoxoPlugin.waterbucketofwaterPassable))
                 WaterBucketOfWater.accessibleMang?.Invoke();
         }

@@ -20,7 +20,7 @@
         /// Triggered when the player interact with a math machine, giving the good answer.
         /// <para>Avoid using this for raising anger</para>
         /// </summary>
-        public virtual void GoodMathMachineAnswer()
+        public virtual void GoodMathMachineAnswer(float timer)
         {
 
         }

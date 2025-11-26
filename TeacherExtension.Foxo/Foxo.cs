@@ -11,7 +11,6 @@ using TeacherAPI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.TextCore.LowLevel;
-using static UnityEngine.UIElements.UIR.BestFitAllocator;
 
 namespace TeacherExtension.Foxo
 {

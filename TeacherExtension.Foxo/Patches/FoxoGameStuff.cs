@@ -47,7 +47,7 @@ namespace TeacherExtension.Foxo.Patches
         [HarmonyPatch(typeof(BaseGameManager), nameof(BaseGameManager.LoadNextLevel)), HarmonyPrefix]
         static void IsFoxoF3Teach() => foxoinF3 = !TeacherPlugin.IsEndlessFloorsLoaded() && TeacherManager.Instance != null && TeacherManager.Instance?.SpawnedMainTeacher != null && TeacherManager.Instance?.SpawnedMainTeacher?.GetComponent<Foxo>() != null;
 
-        [HarmonyPatch(typeof(PlaceholderWinManager), nameof(PlaceholderWinManager.Initialize)), HarmonyPrefix]
+        [HarmonyPatch(typeof(PlaceholderWinManager), nameof(PlaceholderWinManager.Initialize)), HarmonyPostfix]
         static void FoxoEnding(PlaceholderWinManager __instance)
         {
             if (!foxoinF3) return;
@@ -66,7 +66,7 @@ namespace TeacherExtension.Foxo.Patches
                 video.url = FoxoPlugin.Instance.deathCounter.deaths >= 6
                     ? Path.Combine("File:///", AssetLoader.GetModPath(FoxoPlugin.Instance), "endings", "GradeCutscene.mov")
                     : Path.Combine("File:///", AssetLoader.GetModPath(FoxoPlugin.Instance), "endings", "GradeCutscene_Good.mov");
-                video.loopPointReached += (vp) => { if (FoxoPlugin.Instance.deathCounter.deaths >= 4) Application.Quit(); else Congrats(__instance); };
+                video.loopPointReached += (vp) => { if (FoxoPlugin.Instance.deathCounter.deaths >= 6) Application.Quit(); else Congrats(__instance); };
                 video.aspectRatio = VideoAspectRatio.FitInside;
                 __instance.gameObject.GetComponent<VideoPlayer>().Play(); // This is stupid...
                 __instance.gameObject.GetComponent<VideoPlayer>().Pause(); // A stupid workaround...

@@ -50,7 +50,7 @@ namespace TeacherExtension.Foxo.Patches
         [HarmonyPatch(typeof(PlaceholderWinManager), nameof(PlaceholderWinManager.Initialize)), HarmonyPostfix]
         static void FoxoEnding(PlaceholderWinManager __instance)
         {
-            if (!foxoinF3) return;
+            if (!foxoinF3 || __instance == null) return;
             {
                 VideoPlayer video = __instance.gameObject.AddComponent<VideoPlayer>();
                 video.playOnAwake = false;

@@ -51,7 +51,7 @@ namespace NullTeacher.Patches
                 Shader.SetGlobalInt("_SpriteColorGlitchVal", Random.Range(0, 4096));
             }
             yield return null;
-            while (time <= (nolives ? 1f : 5f))
+            while (time <= 5f)
             {
                 time += Time.unscaledDeltaTime * 0.5f;
                 Shader.SetGlobalFloat("_VertexGlitchSeed", Random.Range(0f, 1000f));

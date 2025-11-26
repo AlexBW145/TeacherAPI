@@ -176,12 +176,13 @@ namespace TeacherAPI.patches
                 if (TeacherManager.Instance == null || TeacherManager.Instance.SpawnedMainTeacher == null) return;
                 var replacement = TeacherManager.Instance.SpawnedMainTeacher.ReplacementMusic;
                 if (replacement == null) return;
-                if (replacement.GetType().Equals(typeof(string)))
+                if (replacement is string)
                 {
                     string str = replacement as string;
                     if (str.ToLower() == "mute")
                     {
                         MusicManager.Instance.StopMidi();
+                        MusicManager.Instance.Invoke("StopMidi", 0.01f); // Useless strategy is used.
                         return;
                     }
                     if (!string.IsNullOrWhiteSpace(str))
@@ -191,7 +192,7 @@ namespace TeacherAPI.patches
                         return;
                     }
                 }
-                else if (replacement.GetType().Equals(typeof(SoundObject)))
+                else if (replacement is SoundObject)
                 {
                     SoundObject snd = replacement as SoundObject;
                     MusicManager.Instance.StopMidi();

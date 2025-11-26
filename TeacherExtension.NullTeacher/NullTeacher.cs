@@ -1,5 +1,4 @@
 ﻿using HarmonyLib;
-using NullTeacher.Patches;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -31,12 +30,6 @@ namespace NullTeacher
         private static readonly FieldInfo _layerMask = AccessTools.DeclaredField(typeof(Looker), "layerMask");
         [SerializeField] internal Balloon[] meBalloons;
 
-        public NullTeacher()
-        {
-            disableNpcs = true;
-            caughtOffset = new Vector3(0, 0, 0);
-        }
-
         public override void GetAngry(float value)
         {
             base.GetAngry(value * 0.5f);
@@ -45,6 +38,7 @@ namespace NullTeacher
         public override void Initialize()
         {
             base.Initialize();
+            caughtOffset = Vector3.zero;
             ReplacementMusic = "mute";
             ambientMan = Instantiate(CoreGameManager.Instance.musicMan, transform);
 
@@ -68,10 +62,7 @@ namespace NullTeacher
 
             navigator.Entity.SetHeight(5f);
 
-            AddLoseSound(
-                CoreGameManager.Instance.Lives < 1 && (int)EndSequencePatch._extraLives.GetValue(CoreGameManager.Instance) < 1
-                ? NullAssets.phrases[NullPhrase.Haha]
-                : NullAssets.lose, 1);
+            AddLoseSound(NullAssets.lose, 1);
 
             //ReplaceEventText<RulerEvent>("What do you mean Null broke his ruler?!");
 
@@ -96,14 +87,6 @@ namespace NullTeacher
             ec.lightMode = LightMode.Greatest;
             ec.standardDarkLevel = new Color(0.15f, 0.025f, 0.15f);
             ec.FlickerLights(false); // Doing this will update the lights
-
-            if (!IsHelping())
-            {
-                foreach (var activity in ec.activities)
-                {
-                    activity.Corrupt(true);
-                }
-            }
             spriteBase.SetActive(false);
         }
         public override TeacherState GetAngryState() => new Null_Chase(this);
@@ -331,6 +314,14 @@ namespace NullTeacher
         {
         }
 
+        public override void Initialize()
+        {
+            base.Initialize();
+            if (!ohno.IsHelping())
+                foreach (var activity in ohno.ec.activities)
+                    activity.Corrupt(true);
+        }
+
         public override void NotebookCollected(int currentNotebooks, int maxNotebooks)
         {
             base.NotebookCollected(currentNotebooks, maxNotebooks);
@@ -354,9 +345,7 @@ namespace NullTeacher
             base.Enter();
             noGllitchMat = Resources.FindObjectsOfTypeAll<Material>().FirstOrDefault(x => x.name == "SpriteStandard_Billboard_NoGlitch");
             if (ohno.IsHelping())
-            {
                 ohno.transform.position = ohno.ec.elevators[0].transform.position;
-            }
             timer = ohno.Delay;
             ohno.ResetSlapDistance();
             ohno.spriteBase.SetActive(true);

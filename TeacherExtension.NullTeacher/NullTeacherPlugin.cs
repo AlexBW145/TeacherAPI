@@ -48,6 +48,7 @@ namespace NullTeacher
             teacher.Navigator.passableObstacles.Add(PassableObstacle.LockedDoor);
             teacher.spriteRenderer[0].sprite = NullAssets.nullsprite;
             teacher.meBalloons = RandomEventMetaStorage.Instance.Get(RandomEventType.Party).value.ReflectionGetVariable("balloon") as Balloon[];
+            teacher.disableNpcs = true;
 
             TeacherPlugin.RegisterTeacher(teacher);
             NullTeacher = teacher;

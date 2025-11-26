@@ -331,10 +331,17 @@ namespace TeacherAPI
         /// <returns>The text that shows up on the top left of the screen</returns>
         public virtual string GetNotebooksText(string amount) => $"{amount} {name.Replace("(Clone)", "")} Notebooks";
         public virtual WeightedTeacherNotebook GetTeacherNotebookWeight() => new WeightedTeacherNotebook(this);
-        public bool IsHelping() => TeacherManager.MainTeacherPrefab.Character != Character;
+        /// <summary>
+        /// Check if this teacher is an assistant.
+        /// Please know that this will not work if placed on <see cref="NPC.Initialize"/> for some reason.
+        /// </summary>
+        /// <returns></returns>
+        public bool IsHelping() => TeacherManager?.MainTeacherPrefab?.Character != Character;
 
         /// <summary>
-        /// If set to <see cref="string"/>, then that selected MIDI music will play or not (if string is set to "mute"). If set to <see cref="SoundObject"/>, then that audio clip will play. Leave null for schoolhouse music to play.
+        /// If set to <see cref="string"/>, then that selected MIDI music will play or not (if string is set to "mute").
+        /// If set to <see cref="SoundObject"/>, then that audio clip will play.
+        /// Leave null for schoolhouse music to play.
         /// </summary>
         public object ReplacementMusic;
 

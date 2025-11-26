@@ -50,8 +50,8 @@ namespace TeacherAPI.patches
             var component = ___notebook.GetComponent<TeacherNotebook>();
             if (!correct && component != null)
             {
-                var teacher = TeacherManager.Instance.spawnedTeachers.Find(x => x.Character == component.character);
-                teacher?.GetAngry(1f);
+                foreach (var teacher in TeacherManager.Instance.spawnedTeachers.FindAll(x => x.Character == component.character))
+                    teacher?.GetAngry(1f); // Default value from math machine, match machine, and balloon buster.
             }
         }
     }

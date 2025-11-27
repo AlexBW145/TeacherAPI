@@ -1,6 +1,9 @@
 ﻿using HarmonyLib;
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
+using System.Reflection.Emit;
 
 namespace TeacherAPI.patches
 {
@@ -12,16 +15,28 @@ namespace TeacherAPI.patches
             if (TeacherManager.Instance == null) return true;
             if (TeacherManager.Instance.spawnedTeachers.Count > 0)
             {
-                foreach (var teacher in TeacherManager.Instance.spawnedTeachers)
-                {
-                    teacher.behaviorStateMachine.currentState.AsTeacherState().IfSuccess(state => state.PlayerExitedSpawn());
-                }
                 // Don't want baldi to mess up with the spawn
                 return false;
             }
 
             return !TeacherManager.Instance.SpoopModeActivated;
         }
+    }
+
+    [HarmonyPatch(typeof(BaseGameManager), "WaitToExitSpawn", MethodType.Enumerator)]
+    class ElevatorExitPatch // The only patch because the void itself can be overritten by other components.
+    {
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) => new CodeMatcher(instructions)
+            .End()
+            .MatchBack(true,
+            new CodeMatch(OpCodes.Ldloc_1),
+            new CodeMatch(OpCodes.Callvirt, AccessTools.Method(typeof(BaseGameManager), "ExitedSpawn"))).ThrowIfInvalid("TeacherAPI has failed to patch WaitToExitSpawn!").Advance(1)
+            .InsertAndAdvance(Transpilers.EmitDelegate<Action>(() =>
+            {
+                if (TeacherManager.Instance == null) return;
+                foreach (var teacher in TeacherManager.Instance.spawnedTeachers)
+                    teacher.behaviorStateMachine.currentState.AsTeacherState().IfSuccess(state => state.PlayerExitedSpawn()); // It was misleading for some reason...
+            })).InstructionEnumeration();
     }
 
     [HarmonyPatch(typeof(RulerEvent))]

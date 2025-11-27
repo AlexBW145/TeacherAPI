@@ -21,8 +21,13 @@ namespace TeacherAPI.patches
             .InsertAndAdvance(new CodeInstruction(OpCodes.Ldarg_0),
             Transpilers.EmitDelegate<Action<LevelGenerator>>((__instance) =>
             {
+                if (__instance.ld is not CustomLevelGenerationParameters)
+                {
+                    TeacherManager.DefaultBaldiEnabled = true;
+                    return;
+                }
+
                 var ld = __instance.ld as CustomLevelGenerationParameters;
-                var seed = CoreGameManager.Instance.Seed();
                 var man = __instance.Ec.gameObject.AddComponent<TeacherManager>();
                 __instance.controlledRNG = new System.Random(CoreGameManager.Instance.Seed() + __instance.scene.levelNo);
                 man.Initialize(__instance);

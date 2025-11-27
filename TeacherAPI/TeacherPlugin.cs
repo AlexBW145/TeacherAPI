@@ -24,7 +24,7 @@ namespace TeacherAPI
     {
         public const string PLUGIN_GUID = "alexbw145.baldiplus.teacherapi";
         private const string PLUGIN_NAME = "Teacher API";
-        private const string PLUGIN_VERSION = "0.2.2";
+        private const string PLUGIN_VERSION = "0.2.3";
         public static TeacherPlugin Instance { get; private set; }
 
         internal readonly Dictionary<Character, NPC> whoAreTeachers = new Dictionary<Character, NPC>(); // Mostly used to differenciate who are teachers and who are not.
@@ -114,7 +114,7 @@ If you encounter an error, send me the Logs!", false);
         internal Baldi GetPotentialBaldi(LevelGenerationParameters floorObject)
         {
             var baldis = (from x in floorObject.potentialBaldis
-                          where x.selection.GetType().Equals(typeof(Baldi))
+                          where x.selection is Baldi
                           select (Baldi)x.selection).ToArray();
             if (baldis.Count() <= 0)
             {
@@ -123,8 +123,9 @@ If you encounter an error, send me the Logs!", false);
             }
             else if (baldis.Count() > 1)
             {
-                (from baldi in baldis select baldi.name).Print("Baldis", TeacherPlugin.Log);
-                MTM101BaldiDevAPI.CauseCrash(Info, new Exception("Multiple Baldis found in " + floorObject.name + "!"));
+                Log.LogWarning("Multiple Baldis found in " + floorObject.name + "!");
+                (from baldi in baldis select baldi.name).Print("Baldis", Log);
+                return null; // Why did I??
             }
             return baldis.First();
         }

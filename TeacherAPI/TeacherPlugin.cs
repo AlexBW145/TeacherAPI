@@ -40,13 +40,10 @@ namespace TeacherAPI
         {
             Instance = this;
             TeacherAPIConfiguration.Setup();
-            if (!TeacherAPIConfiguration.DebugMode.Value)
-            {
-                MTM101BaldiDevAPI.AddWarningScreen(@"<color=blue>TeacherAPI</color> is still a <color=yellow>prototype</color> and you will see unexpected things!</color>
+            MTM101BaldiDevAPI.AddWarningScreen(@"<color=blue>TeacherAPI</color> is still a <color=yellow>prototype</color> and you will see unexpected things!</color>
 
 Please read the instructions to report any bugs in the mod page!
 If you encounter an error, send me the Logs!", false);
-            }
             new Harmony(PLUGIN_GUID).PatchAllConditionals();
             GeneratorManagement.Register(this, GenerationModType.Base, EditGenerator);
             CustomOptionsCore.OnMenuInitialize += (__instance, handler) =>

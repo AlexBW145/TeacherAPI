@@ -14,7 +14,9 @@ namespace TeacherAPI
         public static ConfigEntry<bool> EnableBaldi { get; internal set; }
         public static ConfigEntry<bool> EnableCustomWarningScreen  { get; internal set; }
         public static ConfigEntry<bool> DisableAssetsWarningScreen { get; internal set; }
+#if debug
         public static ConfigEntry<bool> DebugMode { get; internal set; }
+#endif
         public static ConfigEntry<bool> DisableAssistingTeachers { get; internal set; }
 
         private int i = 0;

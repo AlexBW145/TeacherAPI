@@ -49,7 +49,9 @@ namespace TeacherAPI
         public override void Build()
         {
             AddLabel("Open the config file to change values that requires restarts.", new Vector2(-6, 71), new Vector2(375, 40));
+#if false
             AddToggle(DebugMode, "Enable Debug Mode", "Some goodies to help for development");
+#endif
             AddToggle(EnableCustomWarningScreen, "Custom Warning Screen", "Enable the custom Warning Screen text changed by TeacherAPI.");
             AddToggle(DisableAssistingTeachers, "Disable Assisting Teachers", "Completely disables teachers assisting other teachers.");
         }
@@ -80,12 +82,14 @@ namespace TeacherAPI
                 false,
                 "Completely disables every patches related to Warning Screen, will show a error in the console instead if the mod assets are not installed. Please make sure to have the console enabled first."
             );
+#if false
             DebugMode = TeacherPlugin.Instance.Config.Bind(
                 "Developement",
                 "DebugMode",
                 false,
                 "Skips Logo, Warning Screen, NameMenu (on later versions of BB +Dev API). And helps a bit with debugging."
             );
+#endif
         }
     }
 }

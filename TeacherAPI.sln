@@ -15,11 +15,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TeacherExtension.NullTeache
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TeacherAPI.Analyzers", "TeacherAPI.Analyzers\TeacherAPI.Analyzers.csproj", "{35F263F8-723A-4C2A-902C-7660DFFA3D2C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TeacherExtensionPack2.Paldo", "TeacherExtensionPack2.Paldo\TeacherExtensionPack2.Paldo.csproj", "{3BC5DFA9-AD16-445C-B642-CC54F4B73484}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TeacherExtension.Viktor", "TeacherExtension.Viktor\TeacherExtension.Viktor.csproj", "{A02DA6BA-F79E-4020-8C07-76265F715C74}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeacherDefault.Baldi", "TeacherDefault.Baldi\TeacherDefault.Baldi.csproj", "{782EF572-64B4-4962-BB24-A67DF2C7E136}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TeacherDefault.Baldi", "TeacherDefault.Baldi\TeacherDefault.Baldi.csproj", "{782EF572-64B4-4962-BB24-A67DF2C7E136}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,10 +49,6 @@ Global
 		{35F263F8-723A-4C2A-902C-7660DFFA3D2C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{35F263F8-723A-4C2A-902C-7660DFFA3D2C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{35F263F8-723A-4C2A-902C-7660DFFA3D2C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3BC5DFA9-AD16-445C-B642-CC54F4B73484}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3BC5DFA9-AD16-445C-B642-CC54F4B73484}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3BC5DFA9-AD16-445C-B642-CC54F4B73484}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3BC5DFA9-AD16-445C-B642-CC54F4B73484}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A02DA6BA-F79E-4020-8C07-76265F715C74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A02DA6BA-F79E-4020-8C07-76265F715C74}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A02DA6BA-F79E-4020-8C07-76265F715C74}.Release|Any CPU.ActiveCfg = Release|Any CPU

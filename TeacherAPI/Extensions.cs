@@ -94,12 +94,17 @@ namespace TeacherAPI
         [Obsolete("Dev API function `AssetLoader.ToSprites` exists.", true)]
         public static Sprite ToSprite(this Texture2D tex, float pixelsPerUnit) => AssetLoader.ToSprites(new Texture2D[] { tex }, pixelsPerUnit)[0];
 
+        [Obsolete("This isn't a good one tho...")]
         public static void AddNewBaldiInteraction<BaldiInteractionT>(this Teacher npc, Func<BaldiInteraction, Teacher, bool> check = null, Action<BaldiInteraction, Teacher> trigger = null, Action<BaldiInteraction, Teacher> payload = null) where BaldiInteractionT : BaldiInteraction
         {
             CustomBaldiInteraction.teacherCheck[npc.Character].Add(typeof(BaldiInteractionT), check);
             CustomBaldiInteraction.teacherTriggers[npc.Character].Add(typeof(BaldiInteractionT), trigger);
             CustomBaldiInteraction.teacherPayloads[npc.Character].Add(typeof(BaldiInteractionT), payload);
         }
+
+        public static void AddNewBaldiInteractionCheck<BaldiInteractionT>(this Teacher npc, Func<BaldiInteraction, Teacher, bool> check) => CustomBaldiInteraction.teacherCheck[npc.Character].Add(typeof(BaldiInteractionT), check);
+        public static void AddNewBaldiInteractionTrigger<BaldiInteractionT>(this Teacher npc, Action<BaldiInteraction, Teacher> trigger) => CustomBaldiInteraction.teacherTriggers[npc.Character].Add(typeof(BaldiInteractionT), trigger);
+        public static void AddNewBaldiInteractionPayload<BaldiInteractionT>(this Teacher npc, Action<BaldiInteraction, Teacher> payload) => CustomBaldiInteraction.teacherPayloads[npc.Character].Add(typeof(BaldiInteractionT), payload);
 
         private static FieldInfo _previousState = AccessTools.DeclaredField(typeof(Baldi_SubState), "previousState");
         /// <summary>

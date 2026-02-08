@@ -182,7 +182,7 @@ namespace TeacherExtension.Viktor
             viktorAssets.Add("ViktorEvil", AssetLoader.SpriteFromMod(this, Vector2.one / 2f, 16f, "Texture2D", "Viktor_Evil.png"));
             BaldiTVExtensionHandler.AddCharacter("viktor", new SimpleBaldiTVCharacter(
                 [viktorAssets.Get<SoundObject>("Viktor/HalfNotebooks"), viktorAssets.Get<SoundObject>("Viktor/LastNotebook")], 
-                AssetLoader.SpritesFromSpritesheet(5, 1, 1f, Vector2.one / 2f, AssetLoader.TextureFromMod(this, "Texture2D", "ViktorTV.png"))));
+                AssetLoader.SpritesFromSpritesheet(5, 1, 1f, Vector2.one / 2f, AssetLoader.TextureFromMod(this, "Texture2D", "ViktorTV.png")), 2f));
 
             viktor = new NPCBuilder<Viktor>(Info)
                 .SetName("Viktor Strobovski")

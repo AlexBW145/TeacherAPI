@@ -18,7 +18,7 @@ namespace TeacherExtension.Viktor
     {
         private const string PLUGIN_GUID = "alexbw145.baldiplus.teacherextension.viktor";
         private const string PLUGIN_NAME = "Viktor Strobovski TeacherAPI Port (Continued)";
-        private const string PLUGIN_VERSION = "1.0.1.1";
+        private const string PLUGIN_VERSION = "1.0.2.0";
         public static ViktorPlugin Instance { get; private set; }
         internal static readonly AssetManager viktorAssets = new AssetManager();
         internal Viktor viktor;

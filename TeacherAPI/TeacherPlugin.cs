@@ -18,22 +18,15 @@ namespace TeacherAPI
 {
     [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     [BepInDependency("mtm101.rulerp.bbplus.baldidevapi", MTM101BaldiDevAPI.VersionNumber)]
-    [BepInDependency("alexbw145.baldiplus.arcadeendlessforever", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("alexbw145.baldiplus.pinedebug", BepInDependency.DependencyFlags.SoftDependency)]
     public class TeacherPlugin : BaseUnityPlugin
     {
         public const string PLUGIN_GUID = "alexbw145.baldiplus.teacherapi";
         private const string PLUGIN_NAME = "Teacher API";
-        private const string PLUGIN_VERSION = "0.2.3";
+        private const string PLUGIN_VERSION = "0.2.4";
         public static TeacherPlugin Instance { get; private set; }
 
         internal readonly Dictionary<Character, NPC> whoAreTeachers = new Dictionary<Character, NPC>(); // Mostly used to differenciate who are teachers and who are not.
-        //internal Dictionary<LevelObject, Baldi> originalBaldiPerFloor = new Dictionary<LevelObject, Baldi>();
-        public Baldi CurrentBaldi { get; internal set; }
-
-        //internal Dictionary<LevelObject, List<WeightedSelection<Teacher>>> potentialTeachers = new Dictionary<LevelObject, List<WeightedSelection<Teacher>>>();
-        //internal Dictionary<LevelObject, List<WeightedSelection<Teacher>>> potentialAssistants = new Dictionary<LevelObject, List<WeightedSelection<Teacher>>>();
-        //internal Dictionary<LevelObject, int> floorNumbers = new Dictionary<LevelObject, int>();
         public static ManualLogSource Log { get => Instance.Logger; }
 
         internal void Awake()
@@ -73,12 +66,6 @@ If you encounter an error, send me the Logs!", false);
                     foreach (var baldi in levelObject.potentialBaldis)
                         baldi.weight = 0;
                     Logger.LogInfo("Set Baldi weight to 0 for this floor");
-                }
-
-                if (floorName == "INF")
-                {
-                    foreach (var baldi in levelObject.potentialBaldis)
-                        baldi.weight = TeacherAPIConfiguration.EnableBaldi.Value ? 100 : 0;
                 }
 
                 levelObject.SetCustomModValue(Info, "TeacherAPI_OriginalBaldi", GetPotentialBaldi(levelObject));

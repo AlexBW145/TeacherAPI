@@ -63,22 +63,16 @@ namespace TeacherAPI
         public AssistantPolicy AddAssistants(params string[] characterNames)
         {
             foreach (var name in characterNames)
-            {
                 assistantsList.Add(name);
-            }
             return this;
         }
 
         internal bool CheckAssistant(Teacher assistant)
         {
             if (allowType == PossibleAssistantAllowType.Allow)
-            {
                 return assistantsList.Contains(EnumExtensions.GetExtendedName<Character>((int) assistant.Character));
-            } 
             else if (allowType == PossibleAssistantAllowType.Deny)
-            {
                 return !assistantsList.Contains(EnumExtensions.GetExtendedName<Character>((int)assistant.Character));
-            }
             return true;
         }
     }

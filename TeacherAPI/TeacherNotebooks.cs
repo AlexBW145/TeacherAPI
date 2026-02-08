@@ -134,18 +134,6 @@ namespace TeacherAPI
         }
     }
 
-    /*[HarmonyPatch(typeof(Notebook), "Start")]
-    internal static class AttachTeacherNotebook
-    {
-        internal static void Postfix(Notebook __instance)
-        {
-            if (TeacherManager.DefaultBaldiEnabled || TeacherManager.Instance == null) return;
-            if (__instance.gameObject.GetComponent<TeacherNotebook>() != null) return;
-            var teacherNotebook = __instance.gameObject.GetOrAddComponent<TeacherNotebook>();
-            teacherNotebook.Initialize(BaseGameManager.Instance.Ec);
-        }
-    }*/
-
     [HarmonyPatch(typeof(Activity), nameof(Activity.SetNotebook))]
     internal static class AttachTeacherNotebookToActivity
     {
@@ -157,22 +145,6 @@ namespace TeacherAPI
             teacherNotebook.Initialize(__instance.room.ec);
         }
     }
-
-    /*[HarmonyPatch(typeof(MathMachine), nameof(MathMachine.NumberClicked))]
-    internal static class PreventMathMachinesFromBeingSolved
-    {
-        internal static bool Prefix(MathMachine __instance, ref Notebook ___notebook, ref AudioManager ___audMan, ref SoundObject ___audLose)
-        {
-            if (TeacherManager.DefaultBaldiEnabled || TeacherManager.Instance == null) return true;
-            var teacherNotebook = ___notebook.gameObject.GetComponent<TeacherNotebook>();
-            if (!teacherNotebook.teacherMan.SpoopModeActivated && teacherNotebook.character != teacherNotebook.teacherMan.MainTeacherPrefab.Character)
-            {
-                ___audMan.PlaySingle(___audLose);
-                return false;
-            }
-            return true;
-        }
-    }*/
 
     // Fixes the texture of the notebook being overwritten by defaults when spawning from math machine
     [HarmonyPatch(typeof(Notebook), "Start")]

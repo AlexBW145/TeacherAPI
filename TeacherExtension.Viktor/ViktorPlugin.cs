@@ -8,6 +8,7 @@ using System.Collections;
 using UnityEngine;
 using TeacherAPI;
 using MTM101BaldAPI.ObjectCreation;
+using MTM101BaldAPI.PlusExtensions;
 
 namespace TeacherExtension.Viktor
 {
@@ -179,6 +180,9 @@ namespace TeacherExtension.Viktor
             viktorAssets.Add("Notebook", AssetLoader.SpriteFromMod(this, Vector2.one / 2f, 30f, "notebook", "viktor_math.png"));
             viktorAssets.Add("ViktorSubsitute", AssetLoader.SpriteFromMod(this, Vector2.one / 2f, 16f, "Texture2D", "Viktor_Subsitute.png"));
             viktorAssets.Add("ViktorEvil", AssetLoader.SpriteFromMod(this, Vector2.one / 2f, 16f, "Texture2D", "Viktor_Evil.png"));
+            BaldiTVExtensionHandler.AddCharacter("viktor", new SimpleBaldiTVCharacter(
+                [viktorAssets.Get<SoundObject>("Viktor/HalfNotebooks"), viktorAssets.Get<SoundObject>("Viktor/LastNotebook")], 
+                AssetLoader.SpritesFromSpritesheet(5, 1, 1f, Vector2.one / 2f, AssetLoader.TextureFromMod(this, "Texture2D", "ViktorTV.png"))));
 
             viktor = new NPCBuilder<Viktor>(Info)
                 .SetName("Viktor Strobovski")

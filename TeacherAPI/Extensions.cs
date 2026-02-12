@@ -101,10 +101,39 @@ namespace TeacherAPI
             CustomBaldiInteraction.teacherTriggers[npc.Character].Add(typeof(BaldiInteractionT), trigger);
             CustomBaldiInteraction.teacherPayloads[npc.Character].Add(typeof(BaldiInteractionT), payload);
         }
-
-        public static void AddNewBaldiInteractionCheck<BaldiInteractionT>(this Teacher npc, Func<BaldiInteraction, Teacher, bool> check) => CustomBaldiInteraction.teacherCheck[npc.Character].Add(typeof(BaldiInteractionT), check);
-        public static void AddNewBaldiInteractionTrigger<BaldiInteractionT>(this Teacher npc, Action<BaldiInteraction, Teacher> trigger) => CustomBaldiInteraction.teacherTriggers[npc.Character].Add(typeof(BaldiInteractionT), trigger);
-        public static void AddNewBaldiInteractionPayload<BaldiInteractionT>(this Teacher npc, Action<BaldiInteraction, Teacher> payload) => CustomBaldiInteraction.teacherPayloads[npc.Character].Add(typeof(BaldiInteractionT), payload);
+        /// <summary>
+        /// Adds in a new check interaction for that <see cref="Teacher"/>
+        /// </summary>
+        /// <typeparam name="BaldiInteractionT"></typeparam>
+        /// <param name="npc"></param>
+        /// <param name="check"></param>
+        public static Teacher AddNewBaldiInteractionCheck<BaldiInteractionT>(this Teacher npc, Func<BaldiInteraction, Teacher, bool> check)
+        {
+            CustomBaldiInteraction.teacherCheck[npc.Character].Add(typeof(BaldiInteractionT), check);
+            return npc;
+        }
+        /// <summary>
+        /// Adds in a action method for that <see cref="Teacher"/> after the <see cref="BaldiInteraction.Check(Baldi)"/> has succeeded
+        /// </summary>
+        /// <typeparam name="BaldiInteractionT"></typeparam>
+        /// <param name="npc"></param>
+        /// <param name="trigger"></param>
+        public static Teacher AddNewBaldiInteractionTrigger<BaldiInteractionT>(this Teacher npc, Action<BaldiInteraction, Teacher> trigger)
+        {
+            CustomBaldiInteraction.teacherTriggers[npc.Character].Add(typeof(BaldiInteractionT), trigger);
+            return npc;
+        }
+        /// <summary>
+        /// Adds in a action method for that <see cref="Teacher"/> that is not invoked by <see cref="BaldiInteraction.Check(Baldi)"/> but can be invoked anywhere.
+        /// </summary>
+        /// <typeparam name="BaldiInteractionT"></typeparam>
+        /// <param name="npc"></param>
+        /// <param name="payload"></param>
+        public static Teacher AddNewBaldiInteractionPayload<BaldiInteractionT>(this Teacher npc, Action<BaldiInteraction, Teacher> payload)
+        {
+            CustomBaldiInteraction.teacherPayloads[npc.Character].Add(typeof(BaldiInteractionT), payload);
+            return npc;
+        }
 
         private static FieldInfo _previousState = AccessTools.DeclaredField(typeof(Baldi_SubState), "previousState");
         /// <summary>

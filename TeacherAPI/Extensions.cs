@@ -113,7 +113,8 @@ namespace TeacherAPI
             return npc;
         }
         /// <summary>
-        /// Adds in a action method for that <see cref="Teacher"/> after the <see cref="BaldiInteraction.Check(Baldi)"/> has succeeded
+        /// Adds in an action method for that <see cref="Teacher"/> after the <see cref="BaldiInteraction.Check(Baldi)"/> has succeeded.
+        /// <para>Note that <see cref="BaldiInteraction.Check(Baldi)"/> and <see cref="BaldiInteraction.Trigger(Baldi)"/> are invoked inside of Baldi's behavior state machine code, implement the same code to your Teacher's code for the results.</para>
         /// </summary>
         /// <typeparam name="BaldiInteractionT"></typeparam>
         /// <param name="npc"></param>
@@ -124,7 +125,7 @@ namespace TeacherAPI
             return npc;
         }
         /// <summary>
-        /// Adds in a action method for that <see cref="Teacher"/> that is not invoked by <see cref="BaldiInteraction.Check(Baldi)"/> but can be invoked anywhere.
+        /// Adds in an action method for that <see cref="Teacher"/> that is not triggered by <see cref="BaldiInteraction.Check(Baldi)"/> but can be invoked anywhere.
         /// </summary>
         /// <typeparam name="BaldiInteractionT"></typeparam>
         /// <param name="npc"></param>

@@ -1,10 +1,6 @@
-﻿using BepInEx;
-using HarmonyLib;
-using System;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using UnityEngine;
 
 namespace TeacherAPI
@@ -21,6 +17,8 @@ namespace TeacherAPI
 		internal List<Teacher> assistingTeachersPrefabs = new List<Teacher>(); // Used only for the notebooks rn
 
         internal System.Random controlledRng;
+		internal SceneObject sceneObject => scene;
+		private SceneObject scene;
 		
 		public static bool DefaultBaldiEnabled { get; internal set; }
 		public static TeacherManager Instance { get; private set; }
@@ -32,6 +30,7 @@ namespace TeacherAPI
 			Instance = this;
 			Ec = lb.Ec;
             controlledRng = lb.controlledRNG;
+            scene = lb.scene;
 		}
 
 		private void OnDestroy()

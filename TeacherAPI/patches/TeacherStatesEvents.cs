@@ -1,9 +1,7 @@
 ﻿using HarmonyLib;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Reflection;
-using System.Reflection.Emit;
 
 namespace TeacherAPI.patches
 {
@@ -23,33 +21,31 @@ namespace TeacherAPI.patches
         }
     }
 
-    [HarmonyPatch(typeof(BaseGameManager), "WaitToExitSpawn", MethodType.Enumerator)]
-    class ElevatorExitPatch // The only patch because the void itself can be overritten by other components.
+    [HarmonyPatch(typeof(ElevatorManager), nameof(ElevatorManager.PlayerExitedSpawn))] // Good change??
+    class ElevatorExitPatch
     {
-        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) => new CodeMatcher(instructions)
-            .End()
-            .MatchBack(true,
-            new CodeMatch(OpCodes.Ldloc_1),
-            new CodeMatch(OpCodes.Callvirt, AccessTools.Method(typeof(BaseGameManager), "ExitedSpawn"))).ThrowIfInvalid("TeacherAPI has failed to patch WaitToExitSpawn!").Advance(1)
-            .InsertAndAdvance(Transpilers.EmitDelegate<Action>(() =>
+        static void Prefix(bool ___playerHasExitedSpawn)
+        {
+            if (!___playerHasExitedSpawn)
             {
                 if (TeacherManager.Instance == null) return;
                 foreach (var teacher in TeacherManager.Instance.spawnedTeachers)
                     teacher.behaviorStateMachine.currentState.AsTeacherState().IfSuccess(state => state.PlayerExitedSpawn()); // It was misleading for some reason...
-            })).InstructionEnumeration();
+            }
+        }
     }
 
     [HarmonyPatch(typeof(RulerEvent))]
     internal class RulerEventPatches
     {
-        private static MethodInfo _Timer = AccessTools.Method(typeof(RandomEvent), "Timer");
+        private static readonly MethodInfo _Timer = AccessTools.Method(typeof(RandomEvent), "Timer"),
+            _Begin = AccessTools.Method(typeof(RandomEvent), nameof(RandomEvent.Begin)),
+            _End = AccessTools.Method(typeof(RandomEvent), nameof(RandomEvent.End));
         [HarmonyPatch(nameof(RulerEvent.Begin)), HarmonyPrefix]
-        public static bool BreakRuler(RulerEvent __instance, ref bool ___active, ref IEnumerator ___eventTimer)
+        public static bool BreakRuler(RulerEvent __instance, MethodBase __originalMethod, ref bool ___active, ref IEnumerator ___eventTimer)
         {
             if (TeacherManager.Instance?.MainTeacherPrefab == null || TeacherManager.DefaultBaldiEnabled) return true;
-            ___active = true;
-            ___eventTimer = (IEnumerator)_Timer.Invoke(__instance, [__instance.EventTime]);
-            __instance.StartCoroutine(___eventTimer);
+            AccessTools.MethodDelegate<Action>(_Begin, __instance, false).Invoke();
             TeacherManager.Instance?.DoIfMainTeacher(t => t.BreakRuler());
             return false;
         }
@@ -57,8 +53,7 @@ namespace TeacherAPI.patches
         public static bool RestoreRuler(RulerEvent __instance, ref bool ___active, ref EnvironmentController ___ec)
         {
             if (TeacherManager.Instance?.MainTeacherPrefab == null || TeacherManager.DefaultBaldiEnabled) return true;
-            ___active = false;
-            ___ec.EventOver(__instance);
+            AccessTools.MethodDelegate<Action>(_End, __instance, false).Invoke();
             TeacherManager.Instance?.DoIfMainTeacher(t => t.RestoreRuler());
             return false;
         }

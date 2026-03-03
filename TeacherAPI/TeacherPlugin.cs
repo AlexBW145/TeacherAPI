@@ -1,5 +1,4 @@
 ﻿using BepInEx;
-using BepInEx.Bootstrap;
 using BepInEx.Logging;
 using HarmonyLib;
 using MTM101BaldAPI;
@@ -9,9 +8,7 @@ using MTM101BaldAPI.Registers;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using TeacherAPI.utils;
 using UnityEngine;
 
 namespace TeacherAPI
@@ -23,7 +20,7 @@ namespace TeacherAPI
     {
         public const string PLUGIN_GUID = "alexbw145.baldiplus.teacherapi";
         private const string PLUGIN_NAME = "Teacher API";
-        private const string PLUGIN_VERSION = "0.2.4";
+        private const string PLUGIN_VERSION = "0.2.5";
         public static TeacherPlugin Instance { get; private set; }
 
         internal readonly Dictionary<Character, NPC> whoAreTeachers = new Dictionary<Character, NPC>(); // Mostly used to differenciate who are teachers and who are not.
@@ -49,10 +46,6 @@ If you encounter an error, send me the Logs!", false);
             foreach (var levelObject in sceneObject.GetCustomLevelObjects())
             {
                 if (levelObject.IsModifiedByMod(Info)) continue;
-                if (levelObject.potentialBaldis.Length != 1) {
-                    Log.LogWarning($"There is no exactly one PotentialBaldi, skipping {levelObject.name}!");
-                    break;
-                }
 
                 /*potentialAssistants[floorObject.levelObject] = new List<WeightedSelection<Teacher>>();
                 potentialTeachers[floorObject.levelObject] = new List<WeightedSelection<Teacher>>();
@@ -60,58 +53,8 @@ If you encounter an error, send me the Logs!", false);
 
                 levelObject.SetCustomModValue(Info, "TeacherAPI_PotentialTeachers", new List<WeightedTeacher>());
                 levelObject.SetCustomModValue(Info, "TeacherAPI_PotentialAssistants", new List<WeightedTeacher>());
-
-                if (!TeacherAPIConfiguration.EnableBaldi.Value)
-                {
-                    foreach (var baldi in levelObject.potentialBaldis)
-                        baldi.weight = 0;
-                    Logger.LogInfo("Set Baldi weight to 0 for this floor");
-                }
-
-                levelObject.SetCustomModValue(Info, "TeacherAPI_OriginalBaldi", GetPotentialBaldi(levelObject));
                 levelObject.MarkAsModifiedByMod(Info);
             }
-        }
-
-        internal Baldi GetPotentialBaldi(CustomLevelGenerationParameters floorObject)
-        {
-            if (floorObject.GetCustomModValue(Info, "TeacherAPI_OriginalBaldi") is Baldi)
-                return floorObject.GetCustomModValue(Info, "TeacherAPI_OriginalBaldi") as Baldi;
-            return GetPotentialBaldi(floorObject as LevelGenerationParameters);
-        }
-
-        internal Baldi GetPotentialBaldi(CustomLevelObject floorObject)
-        {
-            var param = new CustomLevelGenerationParameters();
-            param.AssignData(floorObject, new LevelGenerationModifier());
-            param.AssignExtraData(floorObject);
-            return GetPotentialBaldi(param);
-        }
-
-        internal Baldi GetPotentialBaldi(LevelObject floorObject)
-        {
-            var param = new LevelGenerationParameters();
-            param.AssignData(floorObject, new LevelGenerationModifier());
-            return GetPotentialBaldi(param);
-        }
-
-        internal Baldi GetPotentialBaldi(LevelGenerationParameters floorObject)
-        {
-            var baldis = (from x in floorObject.potentialBaldis
-                          where x.selection is Baldi
-                          select (Baldi)x.selection).ToArray();
-            if (baldis.Count() <= 0)
-            {
-                Log.LogWarning("potentialBaldis in " + floorObject.name + "is blank!");
-                return null; // Why did I do that??
-            }
-            else if (baldis.Count() > 1)
-            {
-                Log.LogWarning("Multiple Baldis found in " + floorObject.name + "!");
-                (from baldi in baldis select baldi.name).Print("Baldis", Log);
-                return null; // Why did I??
-            }
-            return baldis.First();
         }
 
         private static FieldInfo _ignorePlayerOnSpawn = AccessTools.DeclaredField(typeof(NPC), "ignorePlayerOnSpawn");

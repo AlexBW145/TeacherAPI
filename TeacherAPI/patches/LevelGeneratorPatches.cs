@@ -31,7 +31,7 @@ namespace TeacherAPI.patches
                 var man = __instance.Ec.gameObject.AddComponent<TeacherManager>();
                 __instance.controlledRNG = new System.Random(CoreGameManager.Instance.Seed() + __instance.scene.levelNo);
                 man.Initialize(__instance);
-                var currentBaldi = TeacherPlugin.Instance.GetPotentialBaldi(ld);
+                var currentBaldi = __instance.scene.baldiPrefab;
 
                 TeacherManager.DefaultBaldiEnabled = currentBaldi == null || TeacherAPIConfiguration.EnableBaldi.Value ||
                     ld.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialTeachers") == null || ld.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_PotentialAssistants") == null ||
@@ -65,10 +65,34 @@ namespace TeacherAPI.patches
                     }
                 }
 
-                ld.potentialBaldis = new WeightedNPC[] { }; // Don't put anything in EC.NPCS, only secondary teachers can be there.
-                                                            
-                ld.forcedNpcs = ld.forcedNpcs.AddToArray(man.MainTeacherPrefab); // Because the new level generator parameters exists.
-                ld.forcedNpcs = ld.forcedNpcs.AddRangeToArray(man.assistingTeachersPrefabs.ToArray()); // Their posters will generate regardless if we are patching the character posters room function.
+                // Obsolete because of v0.14's refactoring `potentialBaldis`
+                //ld.forcedNpcs = ld.forcedNpcs.AddToArray(man.MainTeacherPrefab); // Because the new level generator parameters exists.
+                //ld.forcedNpcs = ld.forcedNpcs.AddRangeToArray(man.assistingTeachersPrefabs.ToArray()); // Their posters will generate regardless if we are patching the character posters room function.
+            }))
+            .InstructionEnumeration();
+
+        [HarmonyPatch(nameof(LevelGenerator.Generate), MethodType.Enumerator), HarmonyTranspiler]
+        static IEnumerable<CodeInstruction> BaldiPrefabPart(IEnumerable<CodeInstruction> instructions) => new CodeMatcher(instructions)
+            .Start()
+            .MatchForward(true,
+            new(OpCodes.Ldloc_2),
+            new(CodeInstruction.LoadField(typeof(LevelBuilder), "ec")),
+            new(CodeInstruction.LoadField(typeof(EnvironmentController), nameof(EnvironmentController.npcsToSpawn))),
+            new(OpCodes.Ldloc_2),
+            new(CodeInstruction.LoadField(typeof(LevelBuilder), nameof(LevelBuilder.scene))),
+            new(CodeInstruction.LoadField(typeof(SceneObject), nameof(SceneObject.baldiPrefab))),
+            new(OpCodes.Callvirt, AccessTools.Method(typeof(List<NPC>), nameof(List<NPC>.Add), [typeof(NPC)])))
+            .ThrowIfInvalid($"TeacherAPI failed to patch {nameof(LevelGenerator.Generate)} due to invalid opcode matching, did something go wrong now??").Advance(1)
+            .InsertAndAdvance(new(OpCodes.Ldloc_2),
+            Transpilers.EmitDelegate<Action<LevelGenerator>>((__instance) =>
+            {
+                var teacherManager = __instance.Ec.gameObject.GetComponent<TeacherManager>();
+                if (teacherManager?.MainTeacherPrefab != null)
+                {
+                    __instance.Ec.npcsToSpawn.Remove(__instance.scene.baldiPrefab);
+                    __instance.Ec.npcsToSpawn.Add(teacherManager.MainTeacherPrefab);
+                    __instance.Ec.npcsToSpawn.AddRange(teacherManager.assistingTeachersPrefabs);
+                }
             }))
             .InstructionEnumeration();
     }

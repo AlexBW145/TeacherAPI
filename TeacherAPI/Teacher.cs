@@ -120,7 +120,7 @@ namespace TeacherAPI
             navigator.Entity.SetInteractionState(false);
 
             var ld = BaseGameManager.Instance.levelObject as CustomLevelGenerationParameters;
-            var baseBaldi = ld.GetCustomModValue(TeacherPlugin.Instance.Info, "TeacherAPI_OriginalBaldi") as Baldi;
+            var baseBaldi = TeacherManager.Instance.sceneObject.baldiPrefab;
             if (baseBaldi == null)
             {
                 TeacherPlugin.Log.LogWarning($"Base Baldi does not exist in {CoreGameManager.Instance.sceneObject.levelTitle}! Despawning {gameObject.name}!");

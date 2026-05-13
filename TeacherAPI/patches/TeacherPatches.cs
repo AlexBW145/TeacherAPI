@@ -237,13 +237,13 @@ namespace TeacherAPI.patches
         }
         [HarmonyPatch(typeof(Baldi_Praise), nameof(Baldi_Praise.Enter))]
         [HarmonyPrefix]
-        static bool RedirectPraise(Baldi_Praise __instance, float ___time)
+        static bool RedirectPraise(Baldi_Praise __instance, float ___time, NpcState ___previousState)
         {
             if (__instance.GetType().IsSubclassOf(typeof(Baldi_Praise))) return true; // Do not the locker interaction.
             if (__instance.Npc is Teacher)
             {
                 var teacher = __instance.Npc as Teacher;
-                teacher.behaviorStateMachine.ChangeState(teacher.GetPraiseState(___time));
+                teacher.behaviorStateMachine.ChangeState(teacher.GetPraiseState(___time, ___previousState));
                 return false;
             }
             return true;

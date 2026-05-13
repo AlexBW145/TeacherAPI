@@ -21,9 +21,9 @@ using UnityEngine.UI;
 
 namespace TeacherExtension.Foxo
 {
-    [BepInPlugin("alexbw145.baldiplus.teacherextension.foxo", "Foxo Teacher for MoreTeachers", "1.1.0.1")]
-    [BepInDependency("alexbw145.baldiplus.teacherapi", BepInDependency.DependencyFlags.HardDependency)]
+    [BepInPlugin("alexbw145.baldiplus.teacherextension.foxo", "Foxo Teacher for MoreTeachers", "1.1.0.2")]
     [BepInDependency("mtm101.rulerp.bbplus.baldidevapi", BepInDependency.DependencyFlags.HardDependency)]
+    [BepInDependency("alexbw145.baldiplus.teacherapi", "0.3.0")]
     public class FoxoPlugin : BaseUnityPlugin
     {
         public static FoxoPlugin Instance { get; private set; }

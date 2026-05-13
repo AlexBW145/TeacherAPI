@@ -119,7 +119,6 @@ namespace TeacherAPI
             behaviorStateMachine.ChangeNavigationState(new NavigationState_DoNothing(this, 0));
             navigator.Entity.SetInteractionState(false);
 
-            var ld = BaseGameManager.Instance.levelObject as CustomLevelGenerationParameters;
             var baseBaldi = TeacherManager.Instance.sceneObject.baldiPrefab;
             if (baseBaldi == null)
             {
@@ -181,7 +180,7 @@ namespace TeacherAPI
         /// Used for a patch towards other things that may will praise the teacher in any way.
         /// </summary>
         /// <returns></returns>
-        public abstract TeacherState GetPraiseState(float time);
+        public abstract TeacherState GetPraiseState(float time, NpcState previousState);
 
         // Ruler related stuff
         protected virtual void OnRulerBroken()

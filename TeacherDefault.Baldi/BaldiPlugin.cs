@@ -18,7 +18,8 @@ using UnityEngine;
 namespace TeacherExtension.Baldimore;
 
 [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
-[BepInDependency("alexbw145.baldiplus.teacherapi", "0.1.6")]
+[BepInDependency("mtm101.rulerp.bbplus.baldidevapi", BepInDependency.DependencyFlags.HardDependency)]
+[BepInDependency("alexbw145.baldiplus.teacherapi", "0.3.0")]
 [BepInDependency("pixelguy.pixelmodding.baldiplus.balditvannouncer", BepInDependency.DependencyFlags.SoftDependency)]
 public class BaldiPlugin : BaseUnityPlugin
 {

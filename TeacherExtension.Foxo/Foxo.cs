@@ -245,7 +245,8 @@ namespace TeacherExtension.Foxo
         }
         public override TeacherState GetAngryState() => forceWrath ? (Foxo_StateBase)(new Foxo_Wrath(this)) : new Foxo_Chase(this);
         public override TeacherState GetHappyState() => forceWrath ? (Foxo_StateBase)(new Foxo_WrathHappy(this)) : new Foxo_Happy(this);
-        public override TeacherState GetPraiseState(float time) => (forceWrath || behaviorStateMachine.currentState.GetType().Equals(typeof(Foxo_Wrath)) || behaviorStateMachine.currentState.GetType().Equals(typeof(Foxo_WrathHappy))) ? (Foxo_StateBase)((Baldi_Praise)behaviorStateMachine.currentState).GetPreviousBaldiState() : new Foxo_Praise(this, (Foxo_StateBase)((Baldi_Praise)behaviorStateMachine.currentState).GetPreviousBaldiState(), time);
+        public override TeacherState GetPraiseState(float time, NpcState previousState) => (forceWrath || behaviorStateMachine.currentState.GetType().Equals(typeof(Foxo_Wrath)) || behaviorStateMachine.currentState.GetType().Equals(typeof(Foxo_WrathHappy))) 
+            ? (TeacherState)previousState : new Foxo_Praise(this, previousState, time);
         public override string GetNotebooksText(string amount) => $"{amount} Foxo Comics";
         public override WeightedTeacherNotebook GetTeacherNotebookWeight()
             => new WeightedTeacherNotebook(this).Weight(100).Sprite(foxoAssets.Get<Sprite[]>("Notebook"));
@@ -574,16 +575,16 @@ namespace TeacherExtension.Foxo
     {
         protected float delayTimer;
         public Foxo_Chase(Foxo foxo) : base(foxo) { }
-        public override void OnStateTriggerStay(Collider other, bool isValid)
+        public override void OnStateTriggerStay(Entity entity, Collider other, bool isValid)
         {
             if (isValid && foxo.IsTouchingPlayer(other))
                 foxo.CaughtPlayer(foxo.target);
         }
-        public override void GoodMathMachineAnswer(float timer)
+        /*public override void GoodMathMachineAnswer(Activity source, float timer)
         {
             if (foxo.forceWrath || foxo.behaviorStateMachine.currentState.GetType().Equals(typeof(Foxo_Wrath))) return;
             foxo.behaviorStateMachine.ChangeState(new Foxo_Praise(foxo, this, timer));
-        }
+        }*/
         public override void Enter()
         {
             base.Enter();
@@ -674,10 +675,10 @@ namespace TeacherExtension.Foxo
     }
     public class Foxo_Praise : Foxo_StateBase
     {
-        public TeacherState previousState;
+        public NpcState previousState;
         protected float time;
 
-        public Foxo_Praise(Foxo foxo, TeacherState previousState, float time = 4f) : base(foxo)
+        public Foxo_Praise(Foxo foxo, NpcState previousState, float time = 4f) : base(foxo)
         {
             this.previousState = previousState;
             this.time = time;

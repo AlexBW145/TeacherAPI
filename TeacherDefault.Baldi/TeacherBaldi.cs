@@ -12,7 +12,7 @@ namespace TeacherExtension.Baldimore
     {
         public override TeacherState GetAngryState() => new TeacherBaldi_Chase(this);
         public override TeacherState GetHappyState() => new TeacherBaldi_Happy(this);
-        public override TeacherState GetPraiseState(float time) => new TeacherBaldi_Praise(this, ((Baldi_Praise)behaviorStateMachine.currentState).GetPreviousBaldiState(), time);
+        public override TeacherState GetPraiseState(float time, NpcState previousState) => new TeacherBaldi_Praise(this, previousState, time);
         public override AssistantPolicy GetAssistantPolicy() => new AssistantPolicy(PossibleAssistantAllowType.Deny)
             .MaxAssistants(BaldiPlugin.EveryAssistantIsHere.Value ? (int)BaseGameManager.Instance?.levelObject?.roomGroup.ToList()?.Find(rm => rm.name == "Class").maxRooms : Mathf.Max(BaseGameManager.Instance.CurrentLevel, CoreGameManager.Instance.sceneObject.levelNo));
         public override WeightedTeacherNotebook GetTeacherNotebookWeight() => new WeightedTeacherNotebook(this)
@@ -252,9 +252,9 @@ namespace TeacherExtension.Baldimore
             baldi.ResetSlapDistance();
         }
 
-        public override void OnStateTriggerStay(Collider other, bool isValid)
+        public override void OnStateTriggerStay(Entity entity, Collider other, bool isValid)
         {
-            base.OnStateTriggerStay(other, isValid);
+            base.OnStateTriggerStay(entity, other, isValid);
             if (!baldi.IsTouchingPlayer(other) || !isValid)
                 return;
 
@@ -270,7 +270,7 @@ namespace TeacherExtension.Baldimore
                 else
                 {
                     var baldiActualState = new Baldi_Chase(baldi, baldi);
-                    baldiActualState.OnStateTriggerStay(other, isValid);
+                    baldiActualState.OnStateTriggerStay(entity, other, isValid);
                     //baldi.CaughtPlayer(component);
                 }
             }
@@ -331,7 +331,7 @@ namespace TeacherExtension.Baldimore
     {
         private bool broken;
         public TeacherBaldi_ChaseBroken(TeacherBaldi baldi) : base(baldi) { }
-        public override void OnStateTriggerStay(Collider other, bool isValid)
+        public override void OnStateTriggerStay(Entity entity, Collider other, bool isValid)
         {
         }
         protected override void ActivateSlapAnimation()

@@ -91,11 +91,7 @@ namespace NullTeacher
         }
         public override TeacherState GetAngryState() => new Null_Chase(this);
         public override TeacherState GetHappyState() => new Null_Happy(this);
-        public override TeacherState GetPraiseState(float time)
-        {
-            PlayPhrase(NullPhrase.Haha);
-            return (TeacherState)((Baldi_Praise)behaviorStateMachine.currentState).GetPreviousBaldiState();
-        }
+        public override TeacherState GetPraiseState(float time, NpcState previousState) => (TeacherState)previousState ?? GetAngryState();
         public override string GetNotebooksText(string amount) => $"{amount} Noteboos";
         public override WeightedTeacherNotebook GetTeacherNotebookWeight() => new WeightedTeacherNotebook(this).Weight(100);
         protected override void VirtualUpdate()
@@ -345,7 +341,7 @@ namespace NullTeacher
             base.Enter();
             noGllitchMat = Resources.FindObjectsOfTypeAll<Material>().FirstOrDefault(x => x.name == "SpriteStandard_Billboard_NoGlitch");
             if (ohno.IsHelping())
-                ohno.transform.position = ohno.ec.elevators[0].transform.position;
+                ohno.transform.position = ohno.ec.spawnPoint;
             timer = ohno.Delay;
             ohno.ResetSlapDistance();
             ohno.spriteBase.SetActive(true);
@@ -380,7 +376,7 @@ namespace NullTeacher
             ohno.SpeechCheck(NullPhrase.Hide, 0.01f);
         }
 
-        public override void OnStateTriggerStay(Collider other, bool isValid)
+        public override void OnStateTriggerStay(Entity entity, Collider other, bool isValid)
         {
             if (isValid && teacher.IsTouchingPlayer(other))
             {
@@ -394,7 +390,7 @@ namespace NullTeacher
                 teacher.CaughtPlayer(other.GetComponent<PlayerManager>());
                 ohno.behaviorStateMachine.ChangeState(new Null_Caught(ohno));
             }
-            else if (ohno.Navigator.passableObstacles.Contains(PassableObstacle.Window) && other.CompareTag("Window"))
+            else if (ohno.Navigator.passableObstacles.Contains(PassableObstacle.BreakableWindow) && other.CompareTag("Window"))
             {
                 // WINDOW BREAK
                 other.GetComponent<Window>().Break(false);
@@ -405,17 +401,17 @@ namespace NullTeacher
         public override void PlayerSighted(PlayerManager player)
         {
             base.PlayerSighted(player);
-            if (!ohno.Navigator.passableObstacles.Contains(PassableObstacle.Window))
+            if (!ohno.Navigator.passableObstacles.Contains(PassableObstacle.BreakableWindow))
             {
-                Debug.Log("Added passable obstacle");
-                ohno.Navigator.passableObstacles.Add(PassableObstacle.Window);
+                //Debug.Log("Added passable obstacle");
+                ohno.Navigator.passableObstacles.Add(PassableObstacle.BreakableWindow);
                 ohno.Navigator.CheckPath();
             }
         }
 
         public override void DestinationEmpty()
         {
-            if (ohno.Navigator.passableObstacles.Contains(PassableObstacle.Window))
+            if (ohno.Navigator.passableObstacles.Contains(PassableObstacle.BreakableWindow))
             {
                 ohno.Navigator.passableObstacles.Clear();
             }

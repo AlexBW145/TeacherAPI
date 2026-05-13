@@ -20,8 +20,8 @@
         /// Triggered when the player has completed the activity correctly
         /// <para>The teacher whose notebook is in that activity will automatically have their anger raised after their own notebook has been collected, avoid using this for raising anger.</para>
         /// </summary>
-        /// <param name="timer">The amount of time given before the teacher returns back to their chase state.</param>
-        public virtual void GoodMathMachineAnswer(float timer)
+        /// <param name="activity">The activity source</param>
+        public virtual void GoodMathMachineAnswer(Activity activity)
         {
 
         }
@@ -30,7 +30,8 @@
         /// Triggered when the player has completed the activity incorrectly
         /// <para>The teacher whose notebook is in that activity will automatically have their anger raised after an incorrect activity that contains their notebook, avoid using this for raising anger.</para>
         /// </summary>
-        public virtual void BadMathMachineAnswer()
+        /// <param name="activity">The activity source</param>
+        public virtual void BadMathMachineAnswer(Activity activity)
         {
 
         }

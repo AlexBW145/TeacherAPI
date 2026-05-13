@@ -9,9 +9,9 @@ using TeacherAPI;
 
 namespace NullTeacher
 {
-    [BepInPlugin("alexbw145.baldiplus.teacherextension.null", "Null Teacher for MoreTeachers", "1.0.5.2")]
-    [BepInDependency("alexbw145.baldiplus.teacherapi", BepInDependency.DependencyFlags.HardDependency)]
+    [BepInPlugin("alexbw145.baldiplus.teacherextension.null", "Null Teacher for MoreTeachers", "1.0.5.3")]
     [BepInDependency("mtm101.rulerp.bbplus.baldidevapi", BepInDependency.DependencyFlags.HardDependency)]
+    [BepInDependency("alexbw145.baldiplus.teacherapi", "0.3.0")]
     public class NullTeacherPlugin : BaseUnityPlugin
     {
         public static NullTeacherPlugin Instance { get; private set; }

@@ -13,12 +13,13 @@ using MTM101BaldAPI.PlusExtensions;
 namespace TeacherExtension.Viktor
 {
     [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
-    [BepInDependency("alexbw145.baldiplus.teacherapi", BepInDependency.DependencyFlags.HardDependency)]
+    [BepInDependency("mtm101.rulerp.bbplus.baldidevapi", BepInDependency.DependencyFlags.HardDependency)]
+    [BepInDependency("alexbw145.baldiplus.teacherapi", "0.3.0")]
     public class ViktorPlugin : BaseUnityPlugin
     {
         private const string PLUGIN_GUID = "alexbw145.baldiplus.teacherextension.viktor";
         private const string PLUGIN_NAME = "Viktor Strobovski TeacherAPI Port (Continued)";
-        private const string PLUGIN_VERSION = "1.0.2.0";
+        private const string PLUGIN_VERSION = "1.0.2.1";
         public static ViktorPlugin Instance { get; private set; }
         internal static readonly AssetManager viktorAssets = new AssetManager();
         internal Viktor viktor;

@@ -60,14 +60,39 @@ namespace TeacherAPI.patches
     }
 
     [HarmonyPatch(typeof(BaseGameManager), nameof(BaseGameManager.PleaseBaldi))]
-    internal class OnGoodMathMachineAnswer
+    internal class PleaseTeacher
     {
-        internal static void Prefix(float time, bool rewardSticker)
+        internal static bool Prefix(float time, bool rewardSticker, EnvironmentController ___ec)
+        {
+            if (TeacherManager.Instance == null) return true;
+            foreach (var teacher in TeacherManager.Instance.spawnedTeachers)
+            {
+                var prevstate = teacher.behaviorStateMachine.currentState;
+                var praisestate = teacher.GetPraiseState(time, prevstate);
+                if (prevstate.GetType() != praisestate.GetType() && prevstate.GetType() != teacher.GetHappyState().GetType())
+                    teacher.behaviorStateMachine.ChangeState(praisestate);
+            }
+            foreach (var npc in ___ec.Npcs)
+            {
+                if (npc.Character == Character.Baldi && npc is not Teacher)
+                    npc.GetComponent<Baldi>().Praise(time, rewardSticker);
+            }
+            return false;
+        }
+    }
+
+    [HarmonyPatch(typeof(Activity), nameof(Activity.Completed), [typeof(int), typeof(bool)])]
+    internal class OnActivityAnswer
+    {
+        internal static void Prefix(int player, bool correct, Activity __instance)
         {
             if (TeacherManager.Instance == null) return;
             foreach (var teacher in TeacherManager.Instance.spawnedTeachers)
             {
-                teacher.behaviorStateMachine.currentState.AsTeacherState().IfSuccess(state => state.GoodMathMachineAnswer(time));
+                if (correct)
+                    teacher.behaviorStateMachine.currentState.AsTeacherState().IfSuccess(state => state.GoodMathMachineAnswer(__instance));
+                else
+                    teacher.behaviorStateMachine.currentState.AsTeacherState().IfSuccess(state => state.BadMathMachineAnswer(__instance));
             }
         }
     }

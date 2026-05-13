@@ -14,13 +14,13 @@ using UnityEngine;
 namespace TeacherAPI
 {
     [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
-    [BepInDependency("mtm101.rulerp.bbplus.baldidevapi", MTM101BaldiDevAPI.VersionNumber)]
+    [BepInDependency("mtm101.rulerp.bbplus.baldidevapi", "11.1.0.0")]
     [BepInDependency("alexbw145.baldiplus.pinedebug", BepInDependency.DependencyFlags.SoftDependency)]
     public class TeacherPlugin : BaseUnityPlugin
     {
         public const string PLUGIN_GUID = "alexbw145.baldiplus.teacherapi";
         private const string PLUGIN_NAME = "Teacher API";
-        private const string PLUGIN_VERSION = "0.2.5";
+        private const string PLUGIN_VERSION = "0.3.0";
         public static TeacherPlugin Instance { get; private set; }
 
         internal readonly Dictionary<Character, NPC> whoAreTeachers = new Dictionary<Character, NPC>(); // Mostly used to differenciate who are teachers and who are not.
@@ -93,24 +93,5 @@ The name of the assets folder must be <color=red>{1}</color>.", Path.GetFileName
         /// </summary>
         /// <returns></returns>
         public static bool IsEndlessFloorsLoaded() => CoreGameManager.Instance?.sceneObject?.levelTitle == "INF";
-
-        /// <summary>
-        /// Load textures from a pattern, used to easily load animations.
-        /// </summary>
-        /// <param name="mod"></param>
-        /// <param name="pattern">A pattern that will go through String.Format(pattern, i)</param>
-        /// <param name="range"></param>
-        /// <returns></returns>
-        [Obsolete("This is barebones old code, consider using the Dev API's functions which also support spritesheets!", true)]
-        public static Texture2D[] TexturesFromMod(BaseUnityPlugin mod, string pattern, (int, int) range)
-        {
-            var textures = new List<Texture2D>();
-            for (int i = range.Item1; i <= range.Item2; i++)
-            {
-                textures.Add(AssetLoader.TextureFromMod(mod, String.Format(pattern, i)));
-            }
-            return textures.ToArray();
-        }
-
     }
 }

@@ -20,7 +20,7 @@ namespace TeacherExtension.Viktor
 
         public override TeacherState GetAngryState() => new Viktor_Chase(this);
         public override TeacherState GetHappyState() => new Viktor_Subsitute(this);
-        public override TeacherState GetPraiseState(float time) => new Viktor_Praise(this, (Viktor_StateBase)((Baldi_Praise)behaviorStateMachine.currentState).GetPreviousBaldiState(), time);
+        public override TeacherState GetPraiseState(float time, NpcState previousState) => new Viktor_Praise(this, previousState, time);
 
         public override string GetNotebooksText(string amount) => $"{amount} Viktor's Math Notebooks";
         public override WeightedTeacherNotebook GetTeacherNotebookWeight() => new WeightedTeacherNotebook(this)
@@ -184,8 +184,8 @@ namespace TeacherExtension.Viktor
 
     public class Viktor_SubState : Viktor_StateBase
     {
-        protected Viktor_StateBase prevState;
-        public Viktor_SubState(Viktor viktor, Viktor_StateBase state) : base (viktor)
+        protected NpcState prevState;
+        public Viktor_SubState(Viktor viktor, NpcState state) : base (viktor)
         {
             prevState = state;
         }
@@ -227,7 +227,7 @@ namespace TeacherExtension.Viktor
     {
         protected float delayTimer;
         public Viktor_Chase(Viktor viktor) : base(viktor) { }
-        public override void OnStateTriggerStay(Collider other, bool isValid)
+        public override void OnStateTriggerStay(Entity entity, Collider other, bool isValid)
         {
             if (isValid && viktor.IsTouchingPlayer(other))
                 viktor.CaughtPlayer(other.GetComponent<PlayerManager>());
@@ -367,7 +367,7 @@ namespace TeacherExtension.Viktor
     public class Viktor_Praise : Viktor_SubState
     {
         private float timer;
-        public Viktor_Praise(Viktor viktor, Viktor_StateBase state, float time) : base(viktor, state) { timer = time; }
+        public Viktor_Praise(Viktor viktor, NpcState state, float time) : base(viktor, state) { timer = time; }
 
         public override void Initialize()
         {

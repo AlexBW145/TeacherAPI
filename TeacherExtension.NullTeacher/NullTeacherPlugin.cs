@@ -5,11 +5,13 @@ using MTM101BaldAPI.ObjectCreation;
 using MTM101BaldAPI.Reflection;
 using MTM101BaldAPI.Registers;
 using MTM101BaldAPI.SaveSystem;
+using System.Linq;
 using TeacherAPI;
+using UnityEngine;
 
 namespace NullTeacher
 {
-    [BepInPlugin("alexbw145.baldiplus.teacherextension.null", "Null Teacher for MoreTeachers", "1.0.5.3")]
+    [BepInPlugin("alexbw145.baldiplus.teacherextension.null", "Null Teacher for MoreTeachers", "1.0.5.4")]
     [BepInDependency("mtm101.rulerp.bbplus.baldidevapi", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("alexbw145.baldiplus.teacherapi", "0.3.0")]
     public class NullTeacherPlugin : BaseUnityPlugin
@@ -49,6 +51,7 @@ namespace NullTeacher
             teacher.spriteRenderer[0].sprite = NullAssets.nullsprite;
             teacher.meBalloons = RandomEventMetaStorage.Instance.Get(RandomEventType.Party).value.ReflectionGetVariable("balloon") as Balloon[];
             teacher.disableNpcs = true;
+            teacher.ambientMan = Instantiate(Resources.FindObjectsOfTypeAll<CoreGameManager>().Last(x => x.GetInstanceID() >= 0).musicMan, teacher.transform);
 
             TeacherPlugin.RegisterTeacher(teacher);
             NullTeacher = teacher;

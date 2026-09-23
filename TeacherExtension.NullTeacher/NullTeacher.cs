@@ -26,7 +26,7 @@ namespace NullTeacher
         public Cell previousCell;
         public Cell currentCell;
 
-        internal AudioManager ambientMan;
+        [SerializeField] internal AudioManager ambientMan;
         private static readonly FieldInfo _layerMask = AccessTools.DeclaredField(typeof(Looker), "layerMask");
         [SerializeField] internal Balloon[] meBalloons;
 
@@ -40,7 +40,6 @@ namespace NullTeacher
             base.Initialize();
             caughtOffset = Vector3.zero;
             ReplacementMusic = "mute";
-            ambientMan = Instantiate(CoreGameManager.Instance.musicMan, transform);
 
             genericPhrases.Add(NullPhrase.Bored);
             genericPhrases.Add(NullPhrase.Scary);
@@ -381,7 +380,7 @@ namespace NullTeacher
             if (isValid && teacher.IsTouchingPlayer(other))
             {
                 // KILL
-                ohno.AudMan.audioDevice.ignoreListenerPause = true;
+                ohno.AudMan.audioSourceManager.ignoreListenerPause = true;
                 ohno.SpeechCheck(NullPhrase.Haha, 1f);
                 ohno.ec.SetAllLights(true);
                 ohno.spriteRenderer[0].material = noGllitchMat;

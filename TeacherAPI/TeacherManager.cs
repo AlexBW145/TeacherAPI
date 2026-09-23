@@ -24,7 +24,9 @@ namespace TeacherAPI
 		public static TeacherManager Instance { get; private set; }
 		public bool SpoopModeActivated { get; internal set; }
 		public bool IsBaldiMainTeacher { get; internal set; }
-		public EnvironmentController Ec { get; private set; }
+        // If HappyBaldi has spawnNpcsOnFinishCounting set to false, nothing happens.
+        internal bool spawnNpcsOnAngry = true;
+        public EnvironmentController Ec { get; private set; }
 		public void Initialize(LevelBuilder lb)
 		{
 			Instance = this;

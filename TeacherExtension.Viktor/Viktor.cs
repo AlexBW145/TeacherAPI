@@ -177,7 +177,7 @@ namespace TeacherExtension.Viktor
 
         public override void PlayerInSight(PlayerManager player)
         {
-            viktor.ClearSoundLocations();
+            viktor.ClearSoundLocations(false, Vector3.zero);
             viktor.Hear(null, player.transform.position, 127, false);
         }
     }
@@ -264,7 +264,7 @@ namespace TeacherExtension.Viktor
         public override void Initialize()
         {
             base.Initialize();
-            viktor.ClearSoundLocations();
+            viktor.ClearSoundLocations(false, Vector3.zero);
             foreach (var player in viktor.ec.Players)
                 if (player?.plm?.Entity?.CurrentRoom?.category == RoomCategory.Class)
                 {

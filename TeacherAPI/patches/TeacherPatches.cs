@@ -79,71 +79,77 @@ namespace TeacherAPI.patches
 
     internal class ReplaceHappyBaldiWithTeacherPatch
     {
-        private static FieldInfo _activity = AccessTools.DeclaredField(typeof(RoomController), "activity");
+        private static FieldInfo 
+            _activity = AccessTools.DeclaredField(typeof(RoomController), "activity"),
+            _spawnUponFinishCounting = AccessTools.DeclaredField(typeof(HappyBaldi), "spawnNpcsOnFinishCounting");
         internal static void ReplaceHappyBaldi(BaseGameManager __instance)
         {
             if (TeacherManager.DefaultBaldiEnabled || TeacherManager.Instance == null) return;
             var happyBaldi = __instance.Ec.gameObject.GetComponentInChildren<HappyBaldi>();
             var teacherManager = __instance.Ec.gameObject.GetComponent<TeacherManager>();
             var tileSpawns = __instance.Ec.npcSpawnTile.ToList();
+            teacherManager.spawnNpcsOnAngry = (bool)_spawnUponFinishCounting.GetValue(happyBaldi);
 
-            // The main teacher
-            if (teacherManager.MainTeacherPrefab)
+            if (teacherManager.spawnNpcsOnAngry)
             {
-                var happyBaldiPos = __instance.Ec.CellFromPosition(happyBaldi.transform.position).position;
-                tileSpawns.RemoveAt(__instance.Ec.npcsToSpawn.IndexOf(teacherManager.MainTeacherPrefab));
-                __instance.Ec.npcsToSpawn.Remove(teacherManager.MainTeacherPrefab);
-                __instance.Ec.SpawnNPC(teacherManager.MainTeacherPrefab, happyBaldiPos);
-                TeacherNotebook.RefreshNotebookText();
-
-                GameObject.Destroy(happyBaldi.gameObject);
-            }
-
-            foreach (var prefab in teacherManager.assistingTeachersPrefabs)
-            {
-                tileSpawns.RemoveAt(__instance.Ec.npcsToSpawn.IndexOf(prefab));
-                __instance.Ec.npcsToSpawn.Remove(prefab);
-                var cells = __instance.Ec.notebooks
-                    .Where(n => n.gameObject.GetComponent<TeacherNotebook>().character == prefab.Character)
-                    .SelectMany(n => n.activity.room.AllEntitySafeCellsNoGarbage()).ToList();
-                var doors = new List<Door>(cells.SelectMany(x => x.room.doors));
-                var notebooks = __instance.Ec.notebooks
-                    .Where(n => n.gameObject.GetComponent<TeacherNotebook>().character == prefab.Character).ToList();
-                for (int cell = cells.Count - 1; cell >= 0; cell--)
+                // The main teacher
+                if (teacherManager.MainTeacherPrefab)
                 {
-                    var notebookPos = __instance.Ec.CellFromPosition(notebooks.Find(notebook => (Activity)_activity.GetValue(cells[cell].room) == notebook.activity).transform.position);
-                    if (cells[cell].shape == TileShapeMask.Open // But why??
-                        || cells[cell].room.size.x <= 4
-                        || cells[cell].room.size.z <= 4
-                        || __instance.Ec.GetDistance(notebookPos, cells[cell]) <= 24)
+                    var happyBaldiPos = __instance.Ec.CellFromPosition(happyBaldi.transform.position).position;
+                    tileSpawns.RemoveAt(__instance.Ec.npcsToSpawn.IndexOf(teacherManager.MainTeacherPrefab));
+                    __instance.Ec.npcsToSpawn.Remove(teacherManager.MainTeacherPrefab);
+                    __instance.Ec.SpawnNPC(teacherManager.MainTeacherPrefab, happyBaldiPos);
+                    TeacherNotebook.RefreshNotebookText();
+
+                    GameObject.Destroy(happyBaldi.gameObject);
+                }
+
+                foreach (var prefab in teacherManager.assistingTeachersPrefabs)
+                {
+                    tileSpawns.RemoveAt(__instance.Ec.npcsToSpawn.IndexOf(prefab));
+                    __instance.Ec.npcsToSpawn.Remove(prefab);
+                    var cells = __instance.Ec.notebooks
+                        .Where(n => n.gameObject.GetComponent<TeacherNotebook>().character == prefab.Character)
+                        .SelectMany(n => n.activity.room.AllEntitySafeCellsNoGarbage()).ToList();
+                    var doors = new List<Door>(cells.SelectMany(x => x.room.doors));
+                    var notebooks = __instance.Ec.notebooks
+                        .Where(n => n.gameObject.GetComponent<TeacherNotebook>().character == prefab.Character).ToList();
+                    for (int cell = cells.Count - 1; cell >= 0; cell--)
                     {
-                        cells.RemoveAt(cell);
-                        continue;
-                    }
-                    for (int j = 0; j < doors.Count; j++)
-                    {
-                        if (cells[cell].room.doors.Contains(doors[j]) && 
-                            (__instance.Ec.GetDistance(doors[j].aTile, cells[cell]) <= 30 || cells[cell].HasWallInDirection(doors[j].direction)))
+                        var notebookPos = __instance.Ec.CellFromPosition(notebooks.Find(notebook => (Activity)_activity.GetValue(cells[cell].room) == notebook.activity).transform.position);
+                        if (cells[cell].shape == TileShapeMask.Open // But why??
+                            || cells[cell].room.size.x <= 4
+                            || cells[cell].room.size.z <= 4
+                            || __instance.Ec.GetDistance(notebookPos, cells[cell]) <= 24)
                         {
                             cells.RemoveAt(cell);
-                            break;
+                            continue;
+                        }
+                        for (int j = 0; j < doors.Count; j++)
+                        {
+                            if (cells[cell].room.doors.Contains(doors[j]) &&
+                                (__instance.Ec.GetDistance(doors[j].aTile, cells[cell]) <= 30 || cells[cell].HasWallInDirection(doors[j].direction)))
+                            {
+                                cells.RemoveAt(cell);
+                                break;
+                            }
                         }
                     }
-                }
-                if (cells.Count == 0) // Failsafe
-                    cells.AddRange(__instance.Ec.rooms.Where(x => x.category == RoomCategory.Faculty).SelectMany(x => x.AllEntitySafeCellsNoGarbage()));
-                if (notebooks.Count > 0)
-                {
-                    if (cells.Count != 0)
+                    if (cells.Count == 0) // Failsafe
+                        cells.AddRange(__instance.Ec.rooms.Where(x => x.category == RoomCategory.Faculty).SelectMany(x => x.AllEntitySafeCellsNoGarbage()));
+                    if (notebooks.Count > 0)
                     {
-                        var i = teacherManager.controlledRng.Next(cells.Count);
-                        __instance.Ec.SpawnNPC(prefab, cells[i].position);
+                        if (cells.Count != 0)
+                        {
+                            var i = teacherManager.controlledRng.Next(cells.Count);
+                            __instance.Ec.SpawnNPC(prefab, cells[i].position);
+                        }
+                        else
+                            TeacherPlugin.Log.LogWarning($"Can't spawn {EnumExtensions.GetExtendedName<Character>((int)prefab.Character)} because there are no cells that are not near the classroom doors and activities and also the lack of faculty rooms.");
                     }
                     else
-                        TeacherPlugin.Log.LogWarning($"Can't spawn {EnumExtensions.GetExtendedName<Character>((int)prefab.Character)} because there are no cells that are not near the classroom doors and activities and also the lack of faculty rooms.");
+                        TeacherPlugin.Log.LogWarning($"Can't spawn {EnumExtensions.GetExtendedName<Character>((int)prefab.Character)} because no notebooks have been assigned.");
                 }
-                else
-                    TeacherPlugin.Log.LogWarning($"Can't spawn {EnumExtensions.GetExtendedName<Character>((int)prefab.Character)} because no notebooks have been assigned.");
             }
 
             /*foreach (var notebook in __instance.Ec.notebooks)

@@ -280,7 +280,7 @@ namespace NullTeacher
         public override void PlayerInSight(PlayerManager player)
         {
             base.PlayerInSight(player);
-            ohno.ClearSoundLocations();
+            ohno.ClearSoundLocations(false, Vector3.zero);
             ohno.Hear(null, player.transform.position, 127, false);
             ohno.timeSinceNullHasSeenPlayer = 0f;
         }

@@ -11,7 +11,6 @@ namespace TeacherAPI
 {
     public abstract class Teacher : Baldi
     {
-
         /// <summary>
         /// Small offset added to the camera during Jumpscare.
         /// </summary>
@@ -298,12 +297,16 @@ namespace TeacherAPI
                 spr.enabled = false;
             }
 
-            TeacherManager.Instance.SpoopModeActivated = true;
-            MusicManager.Instance.StopMidi();
-            CoreGameManager.Instance.musicMan.FlushQueue(true);
-            BaseGameManager.Instance.BeginSpoopMode();
-            if (!teacherManager.SpawnedMainTeacher.disableNpcs)
-                ec.SpawnNPCs();
+            if (teacherManager.spawnNpcsOnAngry)
+            {
+                TeacherManager.Instance.SpoopModeActivated = true;
+                MusicManager.Instance.StopMidi();
+                CoreGameManager.Instance.musicMan.FlushQueue(true);
+                BaseGameManager.Instance.BeginSpoopMode();
+                if (!teacherManager.SpawnedMainTeacher.disableNpcs)
+                    ec.SpawnNPCs();
+                ec.StartEventTimers();
+            }
             if (CoreGameManager.Instance.currentMode == Mode.Main)
             {
                 // Teacher is already in HappyBaldi position, do nothing.
@@ -312,7 +315,6 @@ namespace TeacherAPI
             {
                 Despawn();
             }
-            ec.StartEventTimers();
             /*foreach (var notebook in ec.notebooks)
             {
                 var teacherNotebook = notebook.gameObject.GetComponent<TeacherNotebook>();

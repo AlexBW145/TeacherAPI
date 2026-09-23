@@ -82,7 +82,7 @@ namespace TeacherExtension.Baldimore
         public override void PlayerInSight(PlayerManager player)
         {
             base.PlayerInSight(player);
-            teacher.ClearSoundLocations();
+            teacher.ClearSoundLocations(false, Vector3.zero);
             teacher.Hear(null, player.transform.position, 127, false);
         }
 
@@ -190,7 +190,7 @@ namespace TeacherExtension.Baldimore
             teacher.ActivateSpoopMode();
             baldi.animator.runtimeAnimatorController = baldi.spoopAnimController;
             baldi.behaviorStateMachine.ChangeState(baldi.GetAngryState());
-            baldi.ClearSoundLocations();
+            baldi.ClearSoundLocations(false, Vector3.zero);
             ChangeNavigationState(new NavigationState_WanderRandom(baldi, 0));
         }
 
@@ -209,8 +209,8 @@ namespace TeacherExtension.Baldimore
                 baldi.spriteRenderer[0].sprite = baldi.count;
                 while (time > 0f)
                 {
-                    time -= Time.deltaTime * baldi.ec.NpcTimeScale * 0.5f;
-                    if (time <= 0.5f && baldi.spriteRenderer[0].sprite == baldi.count)
+                    time -= Time.deltaTime * baldi.ec.NpcTimeScale;
+                    if (!baldi.AudMan.QueuedAudioIsPlaying && baldi.spriteRenderer[0].sprite == baldi.count)
                     {
                         if (UnityEngine.Random.value * 100f < 1f)
                             baldi.spriteRenderer[0].sprite = baldi.countpeek;

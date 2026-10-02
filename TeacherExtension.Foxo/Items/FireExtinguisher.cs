@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections;
 using System.Linq;
-using System.Text;
 using TeacherAPI;
 using UnityEngine;
 
@@ -54,6 +51,7 @@ namespace TeacherExtension.Foxo.Items
         private IEnumerator FadeOnFog()
         {
             ec.AddFog(fog);
+            fog.strength = 0f;
             float fogStrength2 = 0f;
             while (fogStrength2 < 1f)
             {

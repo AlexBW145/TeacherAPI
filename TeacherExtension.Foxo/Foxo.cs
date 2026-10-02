@@ -30,6 +30,7 @@ namespace TeacherExtension.Foxo
 
         // Foxo specifically uses a CustomSpriteAnimator
         [SerializeField] internal CustomSpriteRendererAnimator animator;
+        [SerializeField] internal SoundObject wrathSlap;
 
         public static void LoadAssets()
         {
@@ -152,18 +153,7 @@ namespace TeacherExtension.Foxo
             foxoAssets.Add("wrathscream", ObjectCreators.CreateSoundObject(Clip("scream_wrath.wav"), "Vfx_Foxo_WrathScream", SoundType.Voice, Color.black)); // Long ass caption.
             foxoAssets.Add("fear", ObjectCreators.CreateSoundObject(Clip("fear.wav"), "Sfx_mus_foxofear", SoundType.Effect, Color.white, 0f));
 
-            foxoAssets.Add("praise", new WeightedSoundObject[] {
-                                new WeightedSoundObject()
-                                {
-                                    selection = ObjectCreators.CreateSoundObject(Clip("praise1.wav"), "Vfx_Foxo_Praise1", SoundType.Voice, foxoSub),
-                                    weight = 100,
-                                },
-                                new WeightedSoundObject()
-                                {
-                                    selection = ObjectCreators.CreateSoundObject(Clip("praise2.wav"), "Vfx_Foxo_Praise2", SoundType.Voice, foxoSub),
-                                    weight = 100,
-                                }
-                        });
+            foxoAssets.Add("praise", new SoundObject[] { ObjectCreators.CreateSoundObject(Clip("praise1.wav"), "Vfx_Foxo_Praise1", SoundType.Voice, foxoSub), ObjectCreators.CreateSoundObject(Clip("praise2.wav"), "Vfx_Foxo_Praise2", SoundType.Voice, foxoSub) });
             foxoAssets.Add("teleport", ObjectCreators.CreateSoundObject(Clip("foxotp.wav"), "Sfx_Foxo_Teleport", SoundType.Effect, foxoSub));
             foxoAssets.Add("bettergrades", ObjectCreators.CreateSoundObject(Clip("BetterGrades.wav"), "Vfx_Foxo_Floor2Bad", SoundType.Voice, foxoSub));
             foxoAssets.Add("messedup", ObjectCreators.CreateSoundObject(Clip("Floor3MessedUp.wav"), "Vfx_Foxo_Floor3Bad", SoundType.Voice, Color.white, 0f));
@@ -177,16 +167,10 @@ namespace TeacherExtension.Foxo
             foxoAssets.Add("wrath3", ObjectCreators.CreateSoundObject(Clip("wrath3.wav"), "Mfx_FoxoWrath3", SoundType.Music, Color.white, 0f));
             foxoAssets.Add("wrath4", ObjectCreators.CreateSoundObject(Clip("wrath4.wav"), "Mfx_FoxoWrath4", SoundType.Music, Color.white, 0f));
         }
-        public bool IsBadFloor(int num, int deaths)
-        {
-            return !TeacherPlugin.IsEndlessFloorsLoaded() && num == BaseGameManager.Instance.CurrentLevel &&
+        public bool IsBadFloor(int num, int deaths) => !TeacherPlugin.IsEndlessFloorsLoaded() && num == BaseGameManager.Instance.CurrentLevel &&
                 ((deaths <= FoxoPlugin.Instance.deathCounter.deaths) || (PlayerFileManager.Instance.lifeMode == LifeMode.Arcade && (num + 1) <= FoxoPlugin.Instance.deathCounter.deaths));
-        }
 
-        public bool IsBadEndlessFloor(int num, int deaths)
-        {
-            return TeacherPlugin.IsEndlessFloorsLoaded() && num <= BaseGameManager.Instance.CurrentLevel && deaths <= FoxoPlugin.Instance.deathCounter.deaths;
-        }
+        public bool IsBadEndlessFloor(int num, int deaths) => TeacherPlugin.IsEndlessFloorsLoaded() && num <= BaseGameManager.Instance.CurrentLevel && deaths <= FoxoPlugin.Instance.deathCounter.deaths;
 
         internal EnvironmentController.TempObstacleManagement unaccessibleMang, accessibleMang;
         //public static EnvironmentController.TempObstacleManagement tempOpenSpecial { get; private set; }
@@ -194,7 +178,7 @@ namespace TeacherExtension.Foxo
 
         private void Block(bool block)
         {
-            foreach (var special in ec.rooms.FindAll(x => x.category == RoomCategory.Special && x.functions.GetComponent<SpecialRoomSwingingDoorsBuilder>() != null))
+            foreach (var special in ec.rooms.FindAll(x => IsInappropiateRoom(x.functions) && x.functions.RoomFunctionContains<SpecialRoomSwingingDoorsBuilder>()))
             {
                 foreach (var cell in special.cells.Where(c => !c.hideFromMap && !c.offLimits))
                     for (int i = 0; i < 4; i++)
@@ -243,8 +227,8 @@ namespace TeacherExtension.Foxo
             // Random events
             ReplaceEventText<RulerEvent>(foxoAssets.Get<SoundObject>("WrathEventAud"));
         }
-        public override TeacherState GetAngryState() => forceWrath ? (Foxo_StateBase)(new Foxo_Wrath(this)) : new Foxo_Chase(this);
-        public override TeacherState GetHappyState() => forceWrath ? (Foxo_StateBase)(new Foxo_WrathHappy(this)) : new Foxo_Happy(this);
+        public override TeacherState GetAngryState() => forceWrath ? new Foxo_Wrath(this) : new Foxo_Chase(this);
+        public override TeacherState GetHappyState() => forceWrath ? (Foxo_StateBase)new Foxo_WrathHappy(this) : new Foxo_Happy(this);
         public override TeacherState GetPraiseState(float time, NpcState previousState) => (forceWrath || behaviorStateMachine.currentState.GetType().Equals(typeof(Foxo_Wrath)) || behaviorStateMachine.currentState.GetType().Equals(typeof(Foxo_WrathHappy))) 
             ? (TeacherState)previousState : new Foxo_Praise(this, previousState, time);
         public override string GetNotebooksText(string amount) => $"{amount} Foxo Comics";
@@ -263,7 +247,7 @@ namespace TeacherExtension.Foxo
             animator.SetDefaultAnimation("WrathIdle", 1f);
             animator.Play("Wrath", 1f);
             SlapRumble();
-            AudMan.PlaySingle(foxoAssets.Get<SoundObject>("slap2"));
+            AudMan.PlaySingle(wrathSlap);
         }
         public override float DistanceCheck(float val)
         {
@@ -368,6 +352,11 @@ namespace TeacherExtension.Foxo
                 navigator.Entity.SetHeight(6.5f);
         }
 
+        public bool IsInappropiateRoom(RoomFunctionContainer functionContainer) =>
+                    functionContainer?.RoomFunctionContains<SunlightRoomFunction>() == true ||
+                    functionContainer?.RoomFunctionContains<SilenceRoomFunction>() == true ||
+                    functionContainer?.RoomFunctionContains<BlockNavigationRoomFunction>() == true;
+
     }
     public class Foxo_StateBase : TeacherState
     {
@@ -400,7 +389,7 @@ namespace TeacherExtension.Foxo
             }
             else if (foxo.IsBadPhase3 || infwrath)
             {
-                foreach (var light in BaseGameManager.Instance.Ec.lights)
+                foreach (var light in foxo.ec.lights)
                     light.SetPower(false);
                 foxo.disableNpcs = true;
                 foxo.forceWrath = true;
@@ -411,8 +400,8 @@ namespace TeacherExtension.Foxo
                 && !(foxo.IsBadPhase3 || infwrath))
             {
                 foxo.animator.SetDefaultAnimation("Stare", 1f, true);
-                foreach (var light in BaseGameManager.Instance.Ec.lights)
-                    light.SetLight(!(light.room.category != RoomCategory.Special));
+                foreach (var light in foxo.ec.lights)
+                    light.SetLight(!(foxo.IsInappropiateRoom(light.room.functions)));
                 Cell cell = foxo.ec.RandomCell(false, false, true);
                 while ((cell.CenterWorldPosition - foxo.ec.Players[0].transform.position).magnitude < 111f && cell.room.category != RoomCategory.Hall)
                     cell = foxo.ec.RandomCell(false, false, true);
@@ -461,7 +450,7 @@ namespace TeacherExtension.Foxo
         {
             yield return new WaitUntil(() => foxo.ec.Active);
             CoreGameManager.Instance.audMan.PlaySingle(Foxo.foxoAssets.Get<SoundObject>("messedup"));
-            foxo.AudMan.audioDevice.reverbZoneMix = 1;
+            foxo.AudMan.audioSourceManager.GetAudioSource(SoundType.Effect).reverbZoneMix = 1;
             var reverb = foxo.gameObject.AddComponent<AudioReverbZone>();
             reverb.minDistance = 500f;
             reverb.maxDistance = 1000f;
@@ -501,9 +490,9 @@ namespace TeacherExtension.Foxo
                 foxo.animator.SetDefaultAnimation("Stare", 1f, true);
             }
         }
-
-        public override void PlayerSighted(PlayerManager player)
+        public override void Sighted()
         {
+            base.Sighted();
             if (!foxo.IsHelping() && scaryTime)
                 foxo.behaviorStateMachine.ChangeState(new Foxo_Scary(foxo));
         }
@@ -551,7 +540,7 @@ namespace TeacherExtension.Foxo
                 while ((cell.CenterWorldPosition - foxo.ec.Players[0].transform.position).magnitude < 111f)
                     cell = foxo.ec.RandomCell(false, false, true);
                 foxo.Navigator.Entity.Teleport(cell.CenterWorldPosition);
-                foxo.AudMan.audioDevice.reverbZoneMix = 1;
+                foxo.AudMan.audioSourceManager.GetAudioSource(SoundType.Effect).reverbZoneMix = 1;
                 var reverb = foxo.gameObject.AddComponent<AudioReverbZone>();
                 reverb.minDistance = 250f;
                 reverb.maxDistance = 500f;
@@ -614,7 +603,8 @@ namespace TeacherExtension.Foxo
 
                 //foxo.ec.FindPath(foxo.ec.CellFromPosition(foxo.transform.position), foxo.ec.CellFromPosition(foxo.Navigator.CurrentDestination), PathType.Nav, out List<Cell> paths, out bool suc);
                 // This is not fun...
-                if (foxo.Navigator.Entity.CurrentRoom?.category == RoomCategory.Special && currentNavigationState.GetType().Equals(typeof(NavigationState_TargetPlayer)))
+                bool isInSpecial = foxo.IsInappropiateRoom(foxo.Navigator.Entity.CurrentRoom?.functions);
+                if (isInSpecial && currentNavigationState is NavigationState_TargetPlayer)
                 {
                     Cell newcell = foxo.ec.RandomCell(false, true, true);
                     while (newcell.room.category != RoomCategory.Hall || Vector3.Distance(newcell.CenterWorldPosition, foxo.target.transform.position) < 150f)
@@ -623,18 +613,15 @@ namespace TeacherExtension.Foxo
                     foxo.AudMan.PlaySingle(Foxo.foxoAssets.Get<SoundObject>("teleport"));
                 }
                 // Foxo always know where the player is, except in special rooms
-                if (!((foxo.target?.GetComponent<PlayerEntity>()?.CurrentRoom != null && foxo.target.GetComponent<PlayerEntity>().CurrentRoom?.category == RoomCategory.Special)
-                    /*|| (suc && paths.Exists(x => x.room.category == RoomCategory.Special))*/))
+                bool playerInSpecial = foxo.IsInappropiateRoom(foxo.target?.plm.Entity.CurrentRoom?.functions);
+                if (!playerInSpecial)
                 {
-                    if (!currentNavigationState.GetType().Equals(typeof(NavigationState_TargetPlayer)))
+                    if (!(currentNavigationState is NavigationState_TargetPlayer))
                         ChangeNavigationState(new NavigationState_TargetPlayer(foxo, 0, foxo.target.transform.position));
                     currentNavigationState.UpdatePosition(foxo.target.transform.position);
                 }
-                else if (!currentNavigationState.GetType().Equals(typeof(NavigationState_WanderRandom)) /*|| (suc && paths.Exists(x => x.room.category == RoomCategory.Special))*/)
-                {
-                    //if (suc && paths.Exists(x => x.room.category == RoomCategory.Special)) foxo.Navigator.ClearCurrentDirs();
+                else if (!(currentNavigationState is NavigationState_WanderRandom))
                     ChangeNavigationState(new NavigationState_WanderRandom(foxo, 0));
-                }
 
                 foxo.Slap();
                 ActivateSlapAnimation();
@@ -829,7 +816,7 @@ namespace TeacherExtension.Foxo
             base.Initialize();
             if (foxo.forceWrath && !foxo.IsHelping())
             {
-                foxo.AudMan.audioDevice.reverbZoneMix = 1;
+                foxo.AudMan.audioSourceManager.GetAudioSource(SoundType.Effect).reverbZoneMix = 1;
                 var reverb = foxo.ec.gameObject.AddComponent<AudioReverbZone>();
                 reverb.minDistance = 500f;
                 reverb.maxDistance = 1000f;

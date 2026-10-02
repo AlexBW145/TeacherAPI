@@ -19,7 +19,7 @@ namespace TeacherAPI
     {
         public const string PLUGIN_GUID = "alexbw145.baldiplus.teacherapi";
         private const string PLUGIN_NAME = "Teacher API";
-        private const string PLUGIN_VERSION = "0.3.0";
+        private const string PLUGIN_VERSION = "0.3.1";
         public static TeacherPlugin Instance { get; private set; }
 
         internal readonly Dictionary<Character, NPC> whoAreTeachers = new Dictionary<Character, NPC>(); // Mostly used to differenciate who are teachers and who are not.
@@ -66,9 +66,12 @@ If you encounter an error, send me the Logs!", false);
         {
             _ignorePlayerOnSpawn.SetValue(teacher, true); // Or else the teacher won't spawn instantly.
             Instance.whoAreTeachers.Add(teacher.Character, teacher);
-            CustomBaldiInteraction.teacherCheck.Add(teacher.Character, new Dictionary<Type, Func<BaldiInteraction, Teacher, bool>>());
-            CustomBaldiInteraction.teacherTriggers.Add(teacher.Character, new Dictionary<Type, Action<BaldiInteraction, Teacher>>());
-            CustomBaldiInteraction.teacherPayloads.Add(teacher.Character, new Dictionary<Type, Action<BaldiInteraction, Teacher>>());
+            if (!CustomBaldiInteraction.teacherCheck.ContainsKey(teacher.Character))
+                CustomBaldiInteraction.teacherCheck.Add(teacher.Character, new Dictionary<Type, CustomBaldiInteraction.TeacherInteractionCheck>());
+            if (!CustomBaldiInteraction.teacherTriggers.ContainsKey(teacher.Character))
+                CustomBaldiInteraction.teacherTriggers.Add(teacher.Character, new Dictionary<Type, CustomBaldiInteraction.TeacherInteractionTrigger>());
+            if (!CustomBaldiInteraction.teacherPayloads.ContainsKey(teacher.Character))
+                CustomBaldiInteraction.teacherPayloads.Add(teacher.Character, new Dictionary<Type, CustomBaldiInteraction.TeacherInteractionPayload>());
         }
 
         /// <summary>
@@ -91,6 +94,6 @@ The name of the assets folder must be <color=red>{1}</color>.", Path.GetFileName
         /// Returns true if Infinite Floors/Endless Floors is loaded.
         /// </summary>
         /// <returns></returns>
-        public static bool IsEndlessFloorsLoaded() => CoreGameManager.Instance?.sceneObject?.levelTitle == "INF";
+        public static bool IsEndlessFloorsLoaded() => CoreGameManager.Instance?.sceneObject?.GetMeta()?.tags.Contains("arcade") == true;
     }
 }

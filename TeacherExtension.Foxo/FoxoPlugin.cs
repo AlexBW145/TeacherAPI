@@ -8,10 +8,11 @@ using MTM101BaldAPI.PlusExtensions;
 using MTM101BaldAPI.Reflection;
 using MTM101BaldAPI.Registers;
 using MTM101BaldAPI.SaveSystem;
-using MTM101BaldAPI.UI;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using TeacherAPI;
 using TeacherExtension.Foxo;
 using TeacherExtension.Foxo.Items;
@@ -21,14 +22,14 @@ using UnityEngine.UI;
 
 namespace TeacherExtension.Foxo
 {
-    [BepInPlugin("alexbw145.baldiplus.teacherextension.foxo", "Foxo Teacher for MoreTeachers", "1.1.0.2")]
+    [BepInPlugin("alexbw145.baldiplus.teacherextension.foxo", "Foxo Teacher for MoreTeachers", "1.1.1.0")]
     [BepInDependency("mtm101.rulerp.bbplus.baldidevapi", BepInDependency.DependencyFlags.HardDependency)]
-    [BepInDependency("alexbw145.baldiplus.teacherapi", "0.3.0")]
+    [BepInDependency("alexbw145.baldiplus.teacherapi", "0.3.1")]
     public class FoxoPlugin : BaseUnityPlugin
     {
         public static FoxoPlugin Instance { get; private set; }
         public Foxo foxo { get; private set; }
-        public Foxo darkFoxo { get; private set; }
+        //public Foxo darkFoxo { get; private set; }
         public FoxoSave deathCounter = new FoxoSave();
         internal static PassableObstacle waterbucketofwaterPassable;
 
@@ -43,7 +44,10 @@ namespace TeacherExtension.Foxo
             LoadingEvents.RegisterOnAssetsLoaded(Info, OnAssetsLoaded, LoadingEventOrder.Pre);
             LoadingEvents.RegisterOnAssetsLoaded(Info, () =>
             {
-                foreach (var npc in NPCMetaStorage.Instance.FindAll(x => x.value.GetType().Equals(typeof(ArtsAndCrafters)) || x.value.GetType().Equals(typeof(GottaSweep)) || x.value.Character == Character.DrReflex || x.character.ToStringExtended() == "ViktorStrobovski"
+                var meta = foxo.GetMeta();
+                if (meta.value != foxo) // Playable Chars FDLC1 conflict begone.
+                    meta.ReflectionSetVariable("defaultKey", foxo.name);
+                foreach (var npc in NPCMetaStorage.Instance.FindAll(x => x.value is ArtsAndCrafters || x.value is GottaSweep || x.value.Character == Character.DrReflex || x.character.ToStringExtended() == "ViktorStrobovski"
                 || x.tags.Contains("foxoteacherapi_hateswater")))
                 {
                     foreach (var prefab in npc.prefabs)
@@ -57,23 +61,50 @@ namespace TeacherExtension.Foxo
         {
             var newFoxo = new NPCBuilder<Foxo>(Info)
                 .SetName(name)
-                .SetEnum(name)
+                .SetEnum("Foxo")
                 .SetPoster(Foxo.foxoAssets.Get<Texture2D>("PosterBase"), "PRI_Foxo1", "PRI_Foxo2")
                 .AddLooker()
                 .AddTrigger()
                 .DisableNavigationPrecision()
                 .SetWanderEnterRooms()
-                .SetMetaTags(new string[] { "teacher", "faculty" })
+                .SetMetaTags(new string[] { "lethal", "teacher", "faculty" })
                 .Build();
             newFoxo.Navigator.accel = 0f;
             newFoxo.audMan = newFoxo.GetComponent<AudioManager>();
             newFoxo.Navigator.passableObstacles.AddRange(new PassableObstacle[] { PassableObstacle.LockedDoor, waterbucketofwaterPassable });
-            newFoxo.correctSounds = Foxo.foxoAssets.Get<WeightedSoundObject[]>("praise");
+            List<WeightedSoundObject> praise = new List<WeightedSoundObject>();
+            Foxo.foxoAssets.Get<SoundObject[]>("praise").Do(x => praise.Add(new WeightedSoundObject() { selection = x, weight = 100 }));
+            newFoxo.correctSounds = praise.ToArray();
 
             // Adds a custom animator
             CustomSpriteRendererAnimator animator = newFoxo.gameObject.AddComponent<CustomSpriteRendererAnimator>();
             animator.renderer = newFoxo.spriteRenderer[0];
             newFoxo.animator = animator;
+
+            var waveSprites = Foxo.foxoAssets.Get<Sprite[]>("Wave");
+            var slapSprites = Foxo.foxoAssets.Get<Sprite[]>("Slap");
+            var wrathSprites = Foxo.foxoAssets.Get<Sprite[]>("Wrath");
+            newFoxo.animator.AddAnimation("Wave", new SpriteAnimation(waveSprites, 3f));
+            newFoxo.animator.AddAnimation("Happy", new SpriteAnimation(new Sprite[] { waveSprites[waveSprites.Length - 1] }, 1f));
+
+            newFoxo.animator.AddAnimation("Slap", new SpriteAnimation(slapSprites, 1f));
+            newFoxo.animator.AddAnimation("SlapIdle", new SpriteAnimation(new Sprite[] { slapSprites[slapSprites.Length - 1] }, 1f));
+            newFoxo.animator.AddAnimation("Sprayed", new SpriteAnimation(Foxo.foxoAssets.Get<Sprite[]>("Sprayed"), 0.1f));
+            newFoxo.animator.AddAnimation("Jump", new SpriteAnimation(Foxo.foxoAssets.Get<Sprite[]>("Jump"), 0.2f));
+            //animator.animations.Add("JumpIdle", new CustomAnimation<Sprite>(new Sprite[] { Foxo.sprites.Get<Sprite[]>("Jump").Last() }, 1f));
+
+            newFoxo.animator.AddAnimation("WrathIdle", new SpriteAnimation(new Sprite[] { wrathSprites[0] }, 1f));
+            newFoxo.animator.AddAnimation("Wrath", new SpriteAnimation(wrathSprites.Reverse().ToArray(), 0.3f));
+            newFoxo.animator.AddAnimation("WrathSprayed", new SpriteAnimation(Foxo.foxoAssets.Get<Sprite[]>("WrathSprayed"), 0.02f));
+
+            newFoxo.slap = Foxo.foxoAssets.Get<SoundObject>("slap");
+            newFoxo.wrathSlap = Foxo.foxoAssets.Get<SoundObject>("slap2");
+
+            TeacherPlugin.RegisterTeacher(newFoxo);
+            newFoxo
+                .AddNewBaldiInteractionCheck<HideableLockerBaldiInteraction>(CustomFoxoInteractions.LockerCheck)
+                .AddNewBaldiInteractionTrigger<HideableLockerBaldiInteraction>(CustomFoxoInteractions.LockerInteract)
+                .AddNewBaldiInteractionPayload<HideableLockerBaldiInteraction>(CustomFoxoInteractions.LockerPayload);
             return newFoxo;
         }
 
@@ -87,36 +118,9 @@ namespace TeacherExtension.Foxo
             // Create and Register Foxo and DarkFoxo
             {
                 foxo = NewFoxo("Foxo");
-                darkFoxo = NewFoxo("WrathFoxo");
-                var meta = foxo.GetMeta();
-                if (meta.value != foxo) // Playable Chars FDLC1 conflict begone.
-                    meta.ReflectionSetVariable("defaultKey", foxo.name);
-                darkFoxo.forceWrath = true;
-                foxo.slap = Foxo.foxoAssets.Get<SoundObject>("slap");
-                darkFoxo.slap = Foxo.foxoAssets.Get<SoundObject>("slap2");
+                //darkFoxo = NewFoxo("WrathFoxo");
+                //darkFoxo.forceWrath = true;
 
-                var waveSprites = Foxo.foxoAssets.Get<Sprite[]>("Wave");
-                var slapSprites = Foxo.foxoAssets.Get<Sprite[]>("Slap");
-                var wrathSprites = Foxo.foxoAssets.Get<Sprite[]>("Wrath");
-                foxo.animator.AddAnimation("Wave", new SpriteAnimation(waveSprites, 3f));
-                foxo.animator.AddAnimation("Happy", new SpriteAnimation(new Sprite[] { waveSprites[waveSprites.Length - 1] }, 1f));
-
-                foxo.animator.AddAnimation("Slap", new SpriteAnimation(slapSprites, 1f));
-                foxo.animator.AddAnimation("SlapIdle", new SpriteAnimation(new Sprite[] { slapSprites[slapSprites.Length - 1] }, 1f));
-                foxo.animator.AddAnimation("Sprayed", new SpriteAnimation(Foxo.foxoAssets.Get<Sprite[]>("Sprayed"), 0.1f));
-                foxo.animator.AddAnimation("Jump", new SpriteAnimation(Foxo.foxoAssets.Get<Sprite[]>("Jump"), 0.2f));
-                //animator.animations.Add("JumpIdle", new CustomAnimation<Sprite>(new Sprite[] { Foxo.sprites.Get<Sprite[]>("Jump").Last() }, 1f));
-
-                foxo.animator.AddAnimation("WrathIdle", new SpriteAnimation(new Sprite[] { wrathSprites[0] }, 1f));
-                foxo.animator.AddAnimation("Wrath", new SpriteAnimation(wrathSprites.Reverse().ToArray(), 0.3f));
-                foxo.animator.AddAnimation("WrathSprayed", new SpriteAnimation(Foxo.foxoAssets.Get<Sprite[]>("WrathSprayed"), 0.02f));
-
-                TeacherPlugin.RegisterTeacher(foxo);
-                TeacherPlugin.RegisterTeacher(darkFoxo);
-                foxo.AddNewBaldiInteraction<HideableLockerBaldiInteraction>(
-                check: CustomFoxoInteractions.LockerCheck,
-                trigger: CustomFoxoInteractions.LockerInteract,
-                payload: CustomFoxoInteractions.LockerPayload);
                 BaldiTVExtensionHandler.AddCharacter("Foxo", new FoxoWrathTV());
             }
             // Also create and register some items specifically to combat against Foxo.
@@ -237,5 +241,15 @@ internal class FoxoWrathTV : BaldiTVCharacter
             yield return null;
         }
         yield break;
+    }
+}
+
+internal static class FoxoExtensions
+{
+    private static FieldInfo _functions = AccessTools.DeclaredField(typeof(RoomFunctionContainer), "functions");
+    internal static bool RoomFunctionContains<F>(this RoomFunctionContainer rm) where F : RoomFunction
+    {
+        List<RoomFunction> functions = (List<RoomFunction>)_functions.GetValue(rm);
+        return functions.Exists(x => x is F);
     }
 }

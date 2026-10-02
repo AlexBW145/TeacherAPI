@@ -230,7 +230,7 @@ namespace TeacherAPI.patches
     {
         [HarmonyPatch(typeof(Baldi_Chase), nameof(Baldi_Chase.Enter))]
         [HarmonyPatch(typeof(Baldi_Chase_Broken), nameof(Baldi_Chase_Broken.Enter))]
-        [HarmonyPrefix]
+        [HarmonyPrefix, HarmonyPriority(Priority.Last)]
         static bool RedirectChase(Baldi_Chase __instance)
         {
             if (__instance.Npc is Teacher)
@@ -242,7 +242,7 @@ namespace TeacherAPI.patches
             return true;
         }
         [HarmonyPatch(typeof(Baldi_Praise), nameof(Baldi_Praise.Enter))]
-        [HarmonyPrefix]
+        [HarmonyPrefix, HarmonyPriority(Priority.Last)]
         static bool RedirectPraise(Baldi_Praise __instance, float ___time, NpcState ___previousState)
         {
             if (__instance.GetType().IsSubclassOf(typeof(Baldi_Praise))) return true; // Do not the locker interaction.
@@ -254,9 +254,10 @@ namespace TeacherAPI.patches
             }
             return true;
         }
-        [HarmonyPatch(typeof(Baldi), nameof(Baldi.Praise)), HarmonyPrefix]
-        static bool UseThatPraise(float time, bool rewardSticker, Baldi __instance)
+        [HarmonyPatch(typeof(Baldi), nameof(Baldi.Praise)), HarmonyPrefix, HarmonyPriority(Priority.Last)]
+        static bool UseThatPraise(float time, bool rewardSticker, Baldi __instance, bool __runOriginal)
         {
+            if (!__runOriginal) return false;
             if (__instance is Teacher)
             {
                 var teacher = __instance as Teacher;
@@ -276,12 +277,22 @@ namespace TeacherAPI.patches
         [HarmonyPatch(typeof(Baldi), nameof(Baldi.ResetSprite))]
         [HarmonyPatch(typeof(Baldi), nameof(Baldi.SlapNormal))]
         [HarmonyPatch(typeof(Baldi), nameof(Baldi.SlapBroken))]
-        [HarmonyPrefix]
+        [HarmonyPrefix, HarmonyPriority(Priority.Last)]
         static bool RedirectSlapNormal(Baldi __instance, Animator ___animator, VolumeAnimator ___volumeAnimator)
         {
             if (__instance is Teacher)
                 return ___animator != null && ___volumeAnimator != null;
             return true;
+        }
+        private static readonly MethodInfo _InitializeNPC = AccessTools.Method(typeof(NPC), nameof(NPC.Initialize)),
+            _End = AccessTools.Method(typeof(RandomEvent), nameof(RandomEvent.End));
+        [HarmonyPatch(typeof(Baldi), nameof(Baldi.Initialize)), HarmonyPrefix, HarmonyPriority(Priority.Last)]
+        private static bool DoNotInvokeBaldiStates(Baldi __instance, bool __runOriginal)
+        {
+            if (!__runOriginal) return false;
+            if (__instance is not Teacher) return true;
+            AccessTools.MethodDelegate<Action>(_InitializeNPC, __instance, false).Invoke();
+            return false;
         }
     }
 

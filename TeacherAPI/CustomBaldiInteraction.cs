@@ -7,9 +7,13 @@ namespace TeacherAPI
 {
     public static class CustomBaldiInteraction
     {
-        internal static readonly Dictionary<Character, Dictionary<Type, Action<BaldiInteraction, Teacher>>> teacherTriggers = new Dictionary<Character, Dictionary<Type, Action<BaldiInteraction, Teacher>>>();
-        internal static readonly Dictionary<Character, Dictionary<Type, Action<BaldiInteraction, Teacher>>> teacherPayloads = new Dictionary<Character, Dictionary<Type, Action<BaldiInteraction, Teacher>>>();
-        internal static readonly Dictionary<Character, Dictionary<Type, Func<BaldiInteraction, Teacher, bool>>> teacherCheck = new Dictionary<Character, Dictionary<Type, Func<BaldiInteraction, Teacher, bool>>>();
+        public delegate void TeacherInteractionTrigger(BaldiInteraction interaction, Teacher teacher);
+        public delegate void TeacherInteractionPayload(BaldiInteraction interaction, Teacher teacher);
+        public delegate bool TeacherInteractionCheck(BaldiInteraction interaction, Teacher teacher);
+
+        internal static readonly Dictionary<Character, Dictionary<Type, TeacherInteractionTrigger>> teacherTriggers = new Dictionary<Character, Dictionary<Type, TeacherInteractionTrigger>>();
+        internal static readonly Dictionary<Character, Dictionary<Type, TeacherInteractionPayload>> teacherPayloads = new Dictionary<Character, Dictionary<Type, TeacherInteractionPayload>>();
+        internal static readonly Dictionary<Character, Dictionary<Type, TeacherInteractionCheck>> teacherCheck = new Dictionary<Character, Dictionary<Type, TeacherInteractionCheck>>();
 
         public static bool Check(this BaldiInteraction interaction, Teacher me)
         {

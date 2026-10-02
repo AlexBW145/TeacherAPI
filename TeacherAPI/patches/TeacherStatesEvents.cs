@@ -41,17 +41,19 @@ namespace TeacherAPI.patches
         private static readonly MethodInfo _Timer = AccessTools.Method(typeof(RandomEvent), "Timer"),
             _Begin = AccessTools.Method(typeof(RandomEvent), nameof(RandomEvent.Begin)),
             _End = AccessTools.Method(typeof(RandomEvent), nameof(RandomEvent.End));
-        [HarmonyPatch(nameof(RulerEvent.Begin)), HarmonyPrefix]
-        public static bool BreakRuler(RulerEvent __instance, MethodBase __originalMethod, ref bool ___active, ref IEnumerator ___eventTimer)
+        [HarmonyPatch(nameof(RulerEvent.Begin)), HarmonyPrefix, HarmonyPriority(Priority.Last)]
+        public static bool BreakRuler(RulerEvent __instance, ref bool ___active, ref IEnumerator ___eventTimer, bool __runOriginal)
         {
+            if (!__runOriginal) return false;
             if (TeacherManager.Instance?.MainTeacherPrefab == null || TeacherManager.DefaultBaldiEnabled) return true;
             AccessTools.MethodDelegate<Action>(_Begin, __instance, false).Invoke();
             TeacherManager.Instance?.DoIfMainTeacher(t => t.BreakRuler());
             return false;
         }
-        [HarmonyPatch(nameof(RulerEvent.End)), HarmonyPrefix]
-        public static bool RestoreRuler(RulerEvent __instance, ref bool ___active, ref EnvironmentController ___ec)
+        [HarmonyPatch(nameof(RulerEvent.End)), HarmonyPrefix, HarmonyPriority(Priority.Last)]
+        public static bool RestoreRuler(RulerEvent __instance, ref bool ___active, ref EnvironmentController ___ec, bool __runOriginal)
         {
+            if (!__runOriginal) return false;
             if (TeacherManager.Instance?.MainTeacherPrefab == null || TeacherManager.DefaultBaldiEnabled) return true;
             AccessTools.MethodDelegate<Action>(_End, __instance, false).Invoke();
             TeacherManager.Instance?.DoIfMainTeacher(t => t.RestoreRuler());
@@ -62,15 +64,16 @@ namespace TeacherAPI.patches
     [HarmonyPatch(typeof(BaseGameManager), nameof(BaseGameManager.PleaseBaldi))]
     internal class PleaseTeacher
     {
-        internal static bool Prefix(float time, bool rewardSticker, EnvironmentController ___ec)
+        [HarmonyPrefix, HarmonyPriority(Priority.Last)]
+        private static bool Praise(float time, bool rewardSticker, EnvironmentController ___ec, bool __runOriginal)
         {
+            if (!__runOriginal) return false;
             if (TeacherManager.Instance == null) return true;
             foreach (var teacher in TeacherManager.Instance.spawnedTeachers)
             {
                 var prevstate = teacher.behaviorStateMachine.currentState;
-                var praisestate = teacher.GetPraiseState(time, prevstate);
-                if (prevstate.GetType() != praisestate.GetType() && prevstate.GetType() != teacher.GetHappyState().GetType())
-                    teacher.behaviorStateMachine.ChangeState(praisestate);
+                if (prevstate.GetType() != teacher.GetHappyState().GetType())
+                    teacher.behaviorStateMachine.ChangeState(teacher.GetPraiseState(time, prevstate));
             }
             foreach (var npc in ___ec.Npcs)
             {
@@ -84,9 +87,10 @@ namespace TeacherAPI.patches
     [HarmonyPatch(typeof(Activity), nameof(Activity.Completed), [typeof(int), typeof(bool)])]
     internal class OnActivityAnswer
     {
-        internal static void Prefix(int player, bool correct, Activity __instance)
+        [HarmonyPrefix, HarmonyPriority(Priority.Last)]
+        internal static void ActivityAnswered(int player, bool correct, Activity __instance, bool __runOriginal)
         {
-            if (TeacherManager.Instance == null) return;
+            if (!__runOriginal || TeacherManager.Instance == null) return;
             foreach (var teacher in TeacherManager.Instance.spawnedTeachers)
             {
                 if (correct)

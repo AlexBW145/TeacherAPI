@@ -95,7 +95,7 @@ namespace TeacherAPI
         public static Sprite ToSprite(this Texture2D tex, float pixelsPerUnit) => AssetLoader.ToSprites(new Texture2D[] { tex }, pixelsPerUnit)[0];
 
         [Obsolete("This isn't a good one tho...")]
-        public static void AddNewBaldiInteraction<BaldiInteractionT>(this Teacher npc, Func<BaldiInteraction, Teacher, bool> check = null, Action<BaldiInteraction, Teacher> trigger = null, Action<BaldiInteraction, Teacher> payload = null) where BaldiInteractionT : BaldiInteraction
+        public static void AddNewBaldiInteraction<BaldiInteractionT>(this Teacher npc, CustomBaldiInteraction.TeacherInteractionCheck check = null, CustomBaldiInteraction.TeacherInteractionTrigger trigger = null, CustomBaldiInteraction.TeacherInteractionPayload payload = null) where BaldiInteractionT : BaldiInteraction
         {
             CustomBaldiInteraction.teacherCheck[npc.Character].Add(typeof(BaldiInteractionT), check);
             CustomBaldiInteraction.teacherTriggers[npc.Character].Add(typeof(BaldiInteractionT), trigger);
@@ -107,7 +107,7 @@ namespace TeacherAPI
         /// <typeparam name="BaldiInteractionT"></typeparam>
         /// <param name="npc"></param>
         /// <param name="check"></param>
-        public static Teacher AddNewBaldiInteractionCheck<BaldiInteractionT>(this Teacher npc, Func<BaldiInteraction, Teacher, bool> check)
+        public static Teacher AddNewBaldiInteractionCheck<BaldiInteractionT>(this Teacher npc, CustomBaldiInteraction.TeacherInteractionCheck check)
         {
             CustomBaldiInteraction.teacherCheck[npc.Character].Add(typeof(BaldiInteractionT), check);
             return npc;
@@ -119,7 +119,7 @@ namespace TeacherAPI
         /// <typeparam name="BaldiInteractionT"></typeparam>
         /// <param name="npc"></param>
         /// <param name="trigger"></param>
-        public static Teacher AddNewBaldiInteractionTrigger<BaldiInteractionT>(this Teacher npc, Action<BaldiInteraction, Teacher> trigger)
+        public static Teacher AddNewBaldiInteractionTrigger<BaldiInteractionT>(this Teacher npc, CustomBaldiInteraction.TeacherInteractionTrigger trigger)
         {
             CustomBaldiInteraction.teacherTriggers[npc.Character].Add(typeof(BaldiInteractionT), trigger);
             return npc;
@@ -130,7 +130,7 @@ namespace TeacherAPI
         /// <typeparam name="BaldiInteractionT"></typeparam>
         /// <param name="npc"></param>
         /// <param name="payload"></param>
-        public static Teacher AddNewBaldiInteractionPayload<BaldiInteractionT>(this Teacher npc, Action<BaldiInteraction, Teacher> payload)
+        public static Teacher AddNewBaldiInteractionPayload<BaldiInteractionT>(this Teacher npc, CustomBaldiInteraction.TeacherInteractionPayload payload)
         {
             CustomBaldiInteraction.teacherPayloads[npc.Character].Add(typeof(BaldiInteractionT), payload);
             return npc;
@@ -138,10 +138,23 @@ namespace TeacherAPI
 
         private static FieldInfo _previousState = AccessTools.DeclaredField(typeof(Baldi_SubState), "previousState");
         /// <summary>
-        /// A faster way to get Baldi's previous substate, mainly for <see cref="Teacher.GetPraiseState(float)"/> when it comes to reverting back to the Teacher's default state.
+        /// A faster way to get Baldi's previous substate, mainly for <see cref="Teacher.GetPraiseState(float, NpcState)"/> when it comes to reverting back to the Teacher's default state.
         /// </summary>
         /// <param name="state">Baldi's or any teacher's current <see cref="Baldi_SubState"/></param>
         /// <returns></returns>
         public static NpcState GetPreviousBaldiState(this Baldi_SubState state) => (NpcState)_previousState.GetValue(state);
+
+        public static AETeacherSetting AddTeacher(this Teacher teacher, int weight)
+        {
+            AETeacherSetting setting = new(new WeightedTeacher() { selection = teacher, weight = weight });
+            AE_Setup.teachers.Add(setting);
+            return setting;
+        }
+        public static AETeacherSetting AddAssist(this Teacher teacher, int weight)
+        {
+            AETeacherSetting setting = new(new WeightedTeacher() { selection = teacher, weight = weight });
+            AE_Setup.assistingTeachers.Add(setting);
+            return setting;
+        }
     }
 }
